@@ -255,6 +255,7 @@ static void ProfilerThread(int startSec, int durationSec)
     Sleep(startSec * 1000);
     HANDLE target = (g_profileGX && g_gxThreadHandle) ? g_gxThreadHandle : s_guestThread;
     std::map<uintptr_t, int> hits, stacks;
+    std::map<uint32_t, int> interpHits;   // guest PC (64-byte buckets) seen by the interpreter
     std::vector<std::vector<uintptr_t>> stackSamples;
     int total = 0;
     timeBeginPeriod(1);
@@ -266,6 +267,7 @@ static void ProfilerThread(int startSec, int durationSec)
         c.ContextFlags = CONTEXT_FULL;
         GetThreadContext(target, &c);
         hits[(uintptr_t)c.Rip]++;
+        { extern volatile uint32_t g_interpPC; interpHits[g_interpPC & ~0x3Fu]++; }
         // walk up to 24 frames for inclusive attribution
         uintptr_t frames[24];
         int nf = 0;
@@ -346,6 +348,13 @@ static void ProfilerThread(int startSec, int durationSec)
     std::vector<std::pair<int, std::string>> vw;
     for (auto& [k, n] : waitCallers) vw.push_back({ n, k });
     std::sort(vw.rbegin(), vw.rend());
+    {
+        std::vector<std::pair<int, uint32_t>> vh;
+        for (auto& [k, n] : interpHits) if (k) vh.push_back({ n, k });
+        std::sort(vh.rbegin(), vh.rend());
+        LOG_INFO("=== interpreter guest PCs (last seen, 64-byte buckets) ===");
+        for (size_t i = 0; i < vh.size() && i < 15; i++) LOG_INFO("  {:5.1f}%  {:08x}", 100.0 * vh[i].first / total, vh[i].second);
+    }
     LOG_INFO("=== wait call chains ===");
     for (size_t i = 0; i < vw.size() && i < 12; i++)
         LOG_INFO("  {:5.1f}%  {}", 100.0 * vw[i].first / total, vw[i].second);

@@ -41,6 +41,8 @@ static inline bool NativeCall(PPCContext& ctx, uint8_t* base, uint32_t target)
     return true;
 }
 
+volatile uint32_t g_interpPC = 0;   // sampled by the profiler
+
 extern "C" void Interp_Run(PPCContext& ctx, uint8_t* base, uint32_t entry)
 {
     uint32_t savedLr = ctx.lr;
@@ -50,6 +52,7 @@ extern "C" void Interp_Run(PPCContext& ctx, uint8_t* base, uint32_t entry)
     for (;;)
     {
         if (pc == RETURN_MAGIC) break;
+        g_interpPC = pc;
         uint32_t w = ld32n(base, pc);
         uint32_t op = w >> 26;
         uint32_t rd = (w >> 21) & 31, ra = (w >> 16) & 31, rb = (w >> 11) & 31, rc_ = (w >> 6) & 31;

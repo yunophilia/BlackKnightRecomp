@@ -18,6 +18,33 @@ static constexpr uint32_t CODE_BEGIN = 0x80004000;
 static constexpr uint32_t CODE_END = 0x80700000;
 static std::vector<PPCFunc> s_table;
 
+// The HOME menu module, recompiled at its boot-time link address. Its functions are
+// used only once the code in guest memory is verified to be that exact image.
+#include "ppc_rso_info.h"
+#ifdef PPC_RSO_TEXT_BEGIN
+static std::vector<PPCFunc> s_rsoTable;
+static int s_rsoState = 0;   // 0 unchecked, 1 verified, <0 mismatch (re-check countdown)
+
+static bool RsoVerified()
+{
+    if (s_rsoState > 0) return true;
+    if (s_rsoState < 0 && ++s_rsoState < 0) return false;
+    const uint8_t* p = g_base + PPC_RSO_TEXT_BEGIN;
+    uint64_t h = 0xCBF29CE484222325ull;
+    for (uint32_t i = 0; i < PPC_RSO_TEXT_END - PPC_RSO_TEXT_BEGIN; i++) h = (h ^ p[i]) * 0x100000001B3ull;
+    if (h == PPC_RSO_TEXT_HASH)
+    {
+        s_rsoState = 1;
+        LOG_INFO("HOME menu module matches the recompiled image");
+        return true;
+    }
+    static bool warned = false;
+    if (!warned) { warned = true; LOG_INFO("HOME menu module differs from the recompiled image; interpreting it"); }
+    s_rsoState = -100000;
+    return false;
+}
+#endif
+
 extern "C" volatile uint32_t g_ppcIrqPending = 0;
 extern "C" uint32_t g_cfgFrameRate = 30;
 extern "C" void Interp_Run(PPCContext& ctx, uint8_t* base, uint32_t entry);
@@ -26,8 +53,20 @@ void Cpu_Init()
 {
     s_table.assign((CODE_END - CODE_BEGIN) / 4, nullptr);
     size_t n = 0;
+#ifdef PPC_RSO_TEXT_BEGIN
+    s_rsoTable.assign((PPC_RSO_TEXT_END - PPC_RSO_TEXT_BEGIN) / 4, nullptr);
+#endif
     for (const PPCFuncMapping* m = PPCFuncMappings; m->host; m++, n++)
+    {
+#ifdef PPC_RSO_TEXT_BEGIN
+        if (m->guest >= PPC_RSO_TEXT_BEGIN && m->guest < PPC_RSO_TEXT_END)
+        {
+            s_rsoTable[(m->guest - PPC_RSO_TEXT_BEGIN) / 4] = m->host;
+            continue;
+        }
+#endif
         s_table[(m->guest - CODE_BEGIN) / 4] = m->host;
+    }
     LOG_INFO("registered {} recompiled functions", n);
     Timebase_Init();
 }
@@ -39,6 +78,10 @@ void Cpu_SetFunction(uint32_t guest, PPCFunc f)
 
 extern "C" PPCFunc ppc_lookup(uint32_t addr)
 {
+#ifdef PPC_RSO_TEXT_BEGIN
+    if (addr >= PPC_RSO_TEXT_BEGIN && addr < PPC_RSO_TEXT_END && !(addr & 3))
+        return RsoVerified() ? s_rsoTable[(addr - PPC_RSO_TEXT_BEGIN) / 4] : nullptr;
+#endif
     if (addr < CODE_BEGIN || addr >= CODE_END || (addr & 3))
         return nullptr;
     return s_table[(addr - CODE_BEGIN) / 4];
@@ -53,6 +96,17 @@ extern "C" void ppc_call_indirect(PPCContext& ctx, uint8_t* base, uint32_t addr)
         bool inRam = (addr >= 0x80000000) && (phys < MEM1_SIZE || (phys >= 0x10000000 && phys < 0x10000000 + MEM2_SIZE));
         if (!inRam || (addr & 3))
             FATAL("indirect call to invalid address {:08x} (lr={:08x})", addr, ctx.lr);
+        // BKR_DUMPMEM2=1: dump MEM2 on the first call into it (input for tools/rso.py)
+        static const bool dumpMem2 = getenv("BKR_DUMPMEM2") != nullptr;
+        if (dumpMem2)
+        {
+            static bool dumped = false;
+            if (!dumped && addr >= 0x90000000)
+            {
+                dumped = true;
+                if (FILE* f = fopen("mem2_dump.bin", "wb")) { fwrite(base + 0x90000000, 1, 0x100000, f); fclose(f); }
+            }
+        }
         static std::unordered_map<uint32_t, int> seen;
         if (seen[addr]++ == 0) LOG_INFO("interpreting non-recompiled code at {:08x} (lr={:08x})", addr, ctx.lr);
         Interp_Run(ctx, base, addr);
