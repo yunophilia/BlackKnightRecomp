@@ -66,6 +66,11 @@ Dolphin (for `DolphinTool.exe` and its signature database).
    ```
    python tools/build_generated.py
    ```
+   Optional: the HOME menu module (`hbm_part.rso`) runs in the built-in interpreter
+   unless it is recompiled too. Run the game once with `BKR_DUMPMEM2=1` set (it writes
+   `mem2_dump.bin` next to the exe when the module is first called; move it to `out/`),
+   then `python tools/rso.py` and rerun `python tools/build_generated.py`. The runtime
+   only uses the recompiled module if the code in memory matches it exactly.
 3. Build:
 
    ```

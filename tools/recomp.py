@@ -841,6 +841,22 @@ if __name__ == '__main__':
     overrides = []
     if len(sys.argv) > 4:
         overrides = [int(x, 16) for x in open(sys.argv[4]).read().split()]
+    # Optional: the linked HOME menu module (see tools/rso.py), appended as an extra
+    # text section; the runtime only uses it after checking the code in memory.
+    rso_info = os.path.join(os.path.dirname(sys.argv[2]), 'rso_info.json')
+    rso = None
+    if os.path.exists(rso_info):
+        from dol import Section
+        rso = json.load(open(rso_info))
+        img = open(os.path.join(os.path.dirname(sys.argv[2]), 'rso_image.bin'), 'rb').read()
+        dol.sections.append(Section('text', 7, 0, rso['text'], img))
+        dol.text = [x for x in dol.sections if x.kind == 'text']
+        funcs = funcs + json.load(open(os.path.join(os.path.dirname(sys.argv[2]), 'rso_functions.json')))
+    info = ['#pragma once\n// HOME menu module recompiled at its boot-time link address (tools/rso.py)\n']
+    if rso:
+        info.append(f'#define PPC_RSO_TEXT_BEGIN 0x{rso["text"]:08X}u\n#define PPC_RSO_TEXT_END 0x{rso["text"] + rso["size"]:08X}u\n'
+                    f'#define PPC_RSO_TEXT_HASH 0x{rso["hash"]:016X}ull\n')
+    write_if_changed(os.path.join(sys.argv[3], 'ppc_rso_info.h'), ''.join(info))
     rc = Recompiler(dol, funcs, overrides)
     files = rc.run(sys.argv[3])
     print(f'wrote {len(files)} source files ({len(overrides)} overrides)', file=sys.stderr)
