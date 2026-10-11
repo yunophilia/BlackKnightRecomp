@@ -97,9 +97,18 @@ private:
     void Flush()
     {
         if (!m_dirty) return;
+        // write-then-rename so an interrupted save never leaves a truncated file
         fs::path hp = HostPath(m_name);
-        std::ofstream f(hp, std::ios::binary | std::ios::trunc);
-        f.write((const char*)m_data.data(), m_data.size());
+        fs::path tmp = hp;
+        tmp += ".tmp";
+        {
+            std::ofstream f(tmp, std::ios::binary | std::ios::trunc);
+            f.write((const char*)m_data.data(), m_data.size());
+            if (!f) { LOG_WARN("FS: failed to write {}", hp.string()); return; }
+        }
+        std::error_code ec;
+        fs::rename(tmp, hp, ec);
+        if (ec) LOG_WARN("FS: failed to replace {}: {}", hp.string(), ec.message());
         m_dirty = false;
     }
 

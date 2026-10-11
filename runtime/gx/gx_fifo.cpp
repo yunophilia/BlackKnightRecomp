@@ -297,8 +297,11 @@ static void LoadBP(uint32_t word)
 
 static size_t RunCommands(const uint8_t* p, size_t n, bool inDisplayList);
 
+static uint32_t s_curDL = 0, s_curDLSize = 0;   // for diagnostics
 static void CallDisplayList(uint32_t addr, uint32_t size)
 {
+    s_curDL = addr;
+    s_curDLSize = size;
     const uint8_t* p = PhysPtr(addr);
     RunCommands(p, size, true);
 }
@@ -385,13 +388,36 @@ static size_t RunCommands(const uint8_t* p, size_t n, bool inDisplayList)
                     layout = ce.l;
                 }
                 need = 3 + (size_t)count * layout.size;
+                if (count && layout.size == 0)
+                {
+                    static int warned = 0;
+                    if (warned++ < 5)
+                        LOG_WARN("GX: draw op {:02x} count {} with empty vertex layout (VCD {:08x}/{:08x} VAT{} {:08x} {:08x} {:08x}) in {}", op, count,
+                                 g_gx.cp[CP_VCD_LO], g_gx.cp[CP_VCD_HI], vat, g_gx.cp[CP_VAT_A + vat], g_gx.cp[CP_VAT_B + vat], g_gx.cp[CP_VAT_C + vat],
+                                 inDisplayList ? "DL" : "FIFO");
+                }
                 if (left < need) return pos;
                 if (count)
                     Render_Draw(prim, vat, count, c + 3, layout);
                 pos += need;
                 continue;
             }
-            LOG_ERROR("GX: unknown opcode {:02x} (in {} at +{}), dropping {} bytes", op, inDisplayList ? "DL" : "FIFO", pos, left);
+            {
+                static int logged = 0;
+                if (logged < 20)
+                {
+                    logged++;
+                    std::string bytes;
+                    for (size_t i = 0; i < std::min<size_t>(n, 24); i++) bytes += std::format("{:02x} ", p[i]);
+                    LOG_ERROR("GX: unknown opcode {:02x} (in {} {:08x}/{} at +{}), dropping {} bytes; start: {}", op, inDisplayList ? "DL" : "FIFO",
+                              inDisplayList ? s_curDL : 0, inDisplayList ? s_curDLSize : 0, pos, left, bytes);
+                }
+                else if (logged == 20)
+                {
+                    logged++;
+                    LOG_ERROR("GX: further unknown-opcode errors suppressed");
+                }
+            }
             return n;
         }
     }
@@ -491,8 +517,40 @@ std::unique_lock<std::mutex> GX_SyncGPU()
 
 static uint32_t s_gatherCount = 0;
 
+// Display list recording: GXBeginDisplayList points the CPU FIFO (PI registers) at a
+// RAM buffer while the GP keeps reading its own FIFO (CP registers). Gather-pipe data
+// then belongs in RAM, not in the command stream.
+static inline bool RecordingToRAM()
+{
+    uint32_t piBase = PI_GetFifoBase();
+    return piBase && s_cpFifoBase && piBase != (s_cpFifoBase & 0x1FFFFFE0);
+}
+
 static inline void Gather(const uint8_t* b, int n)
 {
+    // Our gather bytes are forwarded immediately, so a FIFO switch starts with an
+    // empty pipe: reset the 32-byte burst offset whenever the destination changes.
+    static uint32_t lastDest = 0;
+    bool rec = RecordingToRAM();
+    uint32_t dest = rec ? PI_GetFifoBase() : 0;
+    if (dest != lastDest)
+    {
+        lastDest = dest;
+        s_gatherCount = 0;
+        if (rec) LOG_DEBUG("GX: recording display list at {:08x}", dest);
+    }
+    if (rec)
+    {
+        uint32_t w = PI_GetFifoWptr() + s_gatherCount;
+        for (int i = 0; i < n; i++) *PhysPtr(w + i) = b[i];
+        s_gatherCount += n;
+        if (s_gatherCount >= 32)
+        {
+            AdvanceWptr(s_gatherCount & ~31u);
+            s_gatherCount &= 31;
+        }
+        return;
+    }
     if (s_threadStarted)
     {
         while (s_localW + n - s_ringR.load(std::memory_order_acquire) > RING_SIZE)

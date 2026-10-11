@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <mutex>
+#include <share.h>
 #include <windows.h>
 
 static std::mutex s_logMutex;
@@ -11,7 +12,8 @@ bool g_noMessageBox = false;
 
 void Log_Open(const char* path)
 {
-    fopen_s(&s_logFile, path, "w");
+    // shared so the log can be read while the game is running
+    s_logFile = _fsopen(path, "w", _SH_DENYWR);
 }
 
 void Log_Write(int level, const std::string& s)

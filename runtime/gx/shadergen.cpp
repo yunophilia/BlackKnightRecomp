@@ -110,9 +110,11 @@ static void GenLightingChannel(std::string& s, const VSKey& k, int j)
 std::string GenerateVertexShader(const VSKey& k)
 {
     std::string s = kVSCommon;
-    W(s, "struct VSOut\n{\n\tfloat4 pos : SV_Position;\n\tfloat4 col0 : COLOR0;\n\tfloat4 col1 : COLOR1;\n");
+    // clipPos precedes the texcoords so its register does not depend on the texgen
+    // count (the XF and BP texgen counts can disagree between the two stages)
+    W(s, "struct VSOut\n{\n\tfloat4 pos : SV_Position;\n\tfloat4 col0 : COLOR0;\n\tfloat4 col1 : COLOR1;\n\tfloat4 clipPos : TEXCOORD8;\n");
     for (uint32_t i = 0; i < k.numTexGens; i++) W(s, std::format("\tfloat3 tex{0} : TEXCOORD{0};\n", i));
-    W(s, "\tfloat4 clipPos : TEXCOORD8;\n};\n");
+    W(s, "};\n");
     GenLightingChannel(s, k, 0);
     GenLightingChannel(s, k, 1);
 
@@ -296,9 +298,9 @@ int4 sampleTex(uint m, int2 uv)
     return int4(round(r * 255.0));
 }
 )");
-    W(s, "struct PSIn\n{\n\tfloat4 pos : SV_Position;\n\tfloat4 col0 : COLOR0;\n\tfloat4 col1 : COLOR1;\n");
+    W(s, "struct PSIn\n{\n\tfloat4 pos : SV_Position;\n\tfloat4 col0 : COLOR0;\n\tfloat4 col1 : COLOR1;\n\tfloat4 clipPos : TEXCOORD8;\n");
     for (uint32_t i = 0; i < k.numTexGens; i++) W(s, std::format("\tfloat3 tex{0} : TEXCOORD{0};\n", i));
-    W(s, "\tfloat4 clipPos : TEXCOORD8;\n};\n");
+    W(s, "};\n");
     W(s, "struct PSOut\n{\n\tfloat4 col : SV_Target0;\n\tfloat4 col1 : SV_Target1;\n");
     if (k.perPixelDepth) W(s, "\tfloat depth : SV_Depth;\n");
     W(s, "};\n");
@@ -482,7 +484,7 @@ int4 sampleTex(uint m, int2 uv)
 
     // depth
     W(s, "\tint zCoord = int(depthParams.x) + int((i.clipPos.z / i.clipPos.w) * depthParams.y);\n");
-    W(s, "\tzCoord = clamp(zCoord, 0, 0xFFFFFF);\n");
+    W(s, "\tzCoord = clamp(zCoord, 0, 16777215);\n");   // decimal: a hex literal makes HLSL pick the unsigned clamp
     uint32_t zop = (k.zTexType >> 2) & 3;
     if (zop != 0 && k.numTevStages > 0)
     {

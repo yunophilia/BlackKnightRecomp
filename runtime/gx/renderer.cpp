@@ -771,6 +771,7 @@ static uint32_t TexReg(int map, uint32_t base03, uint32_t base47)
 }
 
 static bool Capturing();
+static void SaveTextureBMP(ID3D11Texture2D* tex, const char* path);
 static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* outH, bool* hasMips)
 {
     uint32_t img0 = TexReg(map, 0x88, 0xA8);
@@ -1208,6 +1209,10 @@ static void Flush()
     PSConstants pc;
     FillPSConstants(pc, texW, texH);
     UpdateCB(s_psCB, pc);
+    if (Capturing())
+        CaptureLog(std::format("  psconst fogF=({},{},{},{}) fogI=({},{},{},{}) depth=({},{}) range0=({},{},{},{})", pc.fogF[0], pc.fogF[1], pc.fogF[2], pc.fogF[3],
+                               pc.fogI[0], pc.fogI[1], pc.fogI[2], pc.fogI[3], pc.depthParams[0], pc.depthParams[1], pc.fogRange[0][0], pc.fogRange[0][1],
+                               pc.fogRange[0][2], pc.fogRange[0][3]));
 
     // geometry
     uint32_t vbytes = (uint32_t)(s_verts.size() * sizeof(HostVertex));
@@ -1257,6 +1262,37 @@ static void Flush()
                 uint32_t img0 = TexReg(m, 0x88, 0xA8), img3 = TexReg(m, 0x94, 0xB4);
                 t += std::format(" t{}={:08x}:{}x{}f{}", m, (img3 & 0xFFFFFF) << 5, (img0 & 0x3FF) + 1, ((img0 >> 10) & 0x3FF) + 1, (img0 >> 20) & 15);
             }
+        {
+            uint32_t matA = g_gx.xfregs[XF_MATINDEX_A];
+            uint32_t ti = (matA >> 6) & 63;
+            t += std::format(" texgen0={:08x} post0={:08x} tm0idx={} row=", g_gx.xfregs[0x40], g_gx.xfregs[0x50], ti);
+            for (int r = 0; r < 8; r++) t += std::format("{:.3f},", XFFloat(ti * 4 + r));
+            t += " post=";
+            uint32_t pb = 0x500 + (g_gx.xfregs[0x50] & 0x3F) * 4;
+            for (int r = 0; r < 12; r++) t += std::format("{:.3f},", XFFloat(pb + r));
+            t += std::format(" mode0={:06x} mode1={:06x} dual={}", TexReg(0, 0x80, 0xA0), TexReg(0, 0x84, 0xA4), g_gx.xfregs[0x12]);
+        }
+        {
+            const uint32_t* pp = &g_gx.xfregs[XF_PROJECTION];
+            t += std::format(" projv={:.4f},{:.4f},{:.4f},{:.4f},{:.6f},{:.6f} vpz={:.1f},{:.1f}", AsFloat(pp[0]), AsFloat(pp[1]), AsFloat(pp[2]), AsFloat(pp[3]), AsFloat(pp[4]), AsFloat(pp[5]),
+                             XFFloat(0x1000 + XF_VIEWPORT + 2), XFFloat(0x1000 + XF_VIEWPORT + 5));
+            if (!s_verts.empty())
+            {
+                uint32_t pidx = s_verts[0].mtx[0] & 0xFF;
+                t += std::format(" pmtx{}=", pidx);
+                for (int r = 0; r < 12; r++) t += std::format("{:.3f},", XFFloat(pidx * 4 + r));
+            }
+        }
+        {
+            static int dumped = 0;
+            if (dumped++ == 1)
+                if (FILE* f = fopen("capture_ps.hlsl", "w")) { fputs(GeneratePixelShader(pk).c_str(), f); fclose(f); }
+        }
+        t += std::format(" fogregs={:06x},{:06x},{:06x},{:06x},{:06x} range={:06x},{:06x},{:06x},{:06x},{:06x},{:06x}", BP(0xEE), BP(0xEF), BP(0xF0), BP(0xF1), BP(0xF2),
+                         BP(0xE8), BP(0xE9), BP(0xEA), BP(0xEB), BP(0xEC), BP(0xED));
+        t += std::format(" ksel={:06x},{:06x},{:06x},{:06x},{:06x},{:06x},{:06x},{:06x}", BP(0xF6), BP(0xF7), BP(0xF8), BP(0xF9), BP(0xFA), BP(0xFB), BP(0xFC), BP(0xFD));
+        if (!s_verts.empty()) t += std::format(" v0col={:08x} v0uv=({:.3f},{:.3f}) v0pos=({:.1f},{:.1f},{:.1f})", s_verts[0].col[0], s_verts[0].tex[0][0], s_verts[0].tex[0][1],
+                                               s_verts[0].pos[0], s_verts[0].pos[1], s_verts[0].pos[2]);
         CaptureLog(std::format("draw idx={} topo={} vc={:x} tev={} gens={} ind={} blend={:06x} z={:02x} cull={} fog={:x} af={:x} pf={} cc0={:06x} ac0={:06x} cc1={:06x} ac1={:06x} vp=({},{},{},{}) proj={} chan={:x}/{:x}{}",
             s_indices.size(), (int)s_topo, s_batchComponents, pk.numTevStages, pk.numTexGens, pk.numIndStages, BP(0x41) & 0xFFFF, BP(0x40) & 0x1F, cull,
             pk.fogType, pk.alphaFunc, pk.pixelFormat, pk.colorComb[0], pk.alphaComb[0], pk.colorComb[1], pk.alphaComb[1], vx, vy, vw, vh,
@@ -1264,6 +1300,16 @@ static void Flush()
     }
     g_ctx->DrawIndexed((UINT)s_indices.size(), 0, 0);
     s_drawCalls++;
+    if (Capturing())
+    {
+        static int step = 0;
+        if (step < 12)
+        {
+            char path[64];
+            snprintf(path, sizeof(path), "efbstep_%02d.bmp", step++);
+            SaveTextureBMP(s_efbColor, path);
+        }
+    }
 
     s_verts.clear();
     s_indices.clear();

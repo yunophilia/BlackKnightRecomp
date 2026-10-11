@@ -30,7 +30,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     switch (msg)
     {
     case WM_CLOSE:
+        // Closing the window quits. Saves are written to the host NAND as the game
+        // issues them, so there is nothing to flush; terminate directly rather than
+        // running DLL teardown while guest/GX/audio threads are mid-operation.
         s_closed = true;
+        LOG_INFO("window closed, exiting");
+        TerminateProcess(GetCurrentProcess(), 0);
         return 0;
     case WM_SIZE:
         s_resized = true;
