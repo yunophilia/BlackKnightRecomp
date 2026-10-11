@@ -77,8 +77,8 @@ Dolphin (for `DolphinTool.exe` and its signature database).
    cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -T host=x64
    cmake --build build --config Release
    ```
-   If the link step crashes with `LNK1000` (seen with VS2019 16.10 and the Windows SDK
-   10.0.26100 import libraries), use `tools/dev_build.bat`, which links against 10.0.19041.
+   CMake picks the Windows SDK 10.0.19041 when it is installed: VS2019 16.10's linker
+   crashes (`LNK1000`) on the 10.0.26100 import libraries.
    `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`; players
    put their own `extracted/`, `.iso` (any name), `dsp_coef.bin` and optional
    `textures/` into its `game/` folder.
