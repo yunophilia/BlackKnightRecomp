@@ -2,6 +2,8 @@
 #include "audio_out.h"
 #include "../log.h"
 
+#include <algorithm>
+#include <cstdlib>
 #include <deque>
 #include <mutex>
 #include <vector>
@@ -16,6 +18,7 @@ static std::vector<int16_t> s_staging;
 static std::deque<std::vector<int16_t>> s_inFlight;   // buffers owned until played
 static constexpr uint32_t BATCH_FRAMES_PER_SEC_DIV = 100;   // 10 ms batches
 float g_audioVolume = 1.0f;
+int g_audioPeak = 0;   // max |sample| since last status line
 
 static void CreateVoice(uint32_t rate)
 {
@@ -71,6 +74,7 @@ void AudioOut_PushDSP(const uint8_t* data, uint32_t bytes, uint32_t sampleRate)
     {
         int16_t r = (int16_t)((data[4 * i] << 8) | data[4 * i + 1]);
         int16_t l = (int16_t)((data[4 * i + 2] << 8) | data[4 * i + 3]);
+        g_audioPeak = std::max(g_audioPeak, std::max(std::abs((int)l), std::abs((int)r)));
         s_staging.push_back((int16_t)(l * g_audioVolume));
         s_staging.push_back((int16_t)(r * g_audioVolume));
     }

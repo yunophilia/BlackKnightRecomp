@@ -9,6 +9,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <windows.h>
+
+extern void* Video_HWND();
 
 namespace
 {
@@ -16,9 +19,9 @@ constexpr int G = 100;   // counts per 1 g (matches the reported gravity unit)
 
 enum : uint16_t
 {
-    WB_LEFT = 0x0001, WB_RIGHT = 0x0002, WB_DOWN = 0x0004, WB_UP = 0x0008, WB_PLUS = 0x0010,
-    WB_TWO = 0x0100, WB_ONE = 0x0200, WB_B = 0x0400, WB_A = 0x0800, WB_MINUS = 0x1000,
-    WB_Z = 0x2000, WB_C = 0x4000, WB_HOME = 0x8000,
+    WPB_LEFT = 0x0001, WPB_RIGHT = 0x0002, WPB_DOWN = 0x0004, WPB_UP = 0x0008, WPB_PLUS = 0x0010,
+    WPB_TWO = 0x0100, WPB_ONE = 0x0200, WPB_B = 0x0400, WPB_A = 0x0800, WPB_MINUS = 0x1000,
+    WPB_Z = 0x2000, WPB_C = 0x4000, WPB_HOME = 0x8000,
 };
 
 struct Pulse
@@ -112,18 +115,18 @@ void Motion_FillStatus(int chan, uint32_t st, bool connected)
         return;
     }
     uint16_t b = 0;
-    if (p.buttons & PAD_A) b |= WB_A;
-    if (p.buttons & PAD_B) b |= WB_B;
-    if (p.buttons & PAD_RB) b |= WB_Z;
-    if (p.buttons & PAD_LB) b |= WB_C;
-    if (p.buttons & PAD_START) b |= WB_PLUS;
-    if (p.buttons & PAD_BACK) b |= WB_MINUS;
-    if (p.buttons & PAD_LTHUMB) b |= WB_ONE;
-    if (p.buttons & PAD_RTHUMB) b |= WB_TWO;
-    if (p.buttons & PAD_DPAD_UP) b |= WB_UP;
-    if (p.buttons & PAD_DPAD_DOWN) b |= WB_DOWN;
-    if (p.buttons & PAD_DPAD_LEFT) b |= WB_LEFT;
-    if (p.buttons & PAD_DPAD_RIGHT) b |= WB_RIGHT;
+    if (p.buttons & PAD_A) b |= WPB_A;
+    if (p.buttons & PAD_B) b |= WPB_B;
+    if (p.buttons & PAD_RB) b |= WPB_Z;
+    if (p.buttons & PAD_LB) b |= WPB_C;
+    if (p.buttons & PAD_START) b |= WPB_PLUS;
+    if (p.buttons & PAD_BACK) b |= WPB_MINUS;
+    if (p.buttons & PAD_LTHUMB) b |= WPB_ONE;
+    if (p.buttons & PAD_RTHUMB) b |= WPB_TWO;
+    if (p.buttons & PAD_DPAD_UP) b |= WPB_UP;
+    if (p.buttons & PAD_DPAD_DOWN) b |= WPB_DOWN;
+    if (p.buttons & PAD_DPAD_LEFT) b |= WPB_LEFT;
+    if (p.buttons & PAD_DPAD_RIGHT) b |= WPB_RIGHT;
     Write16(st + 0x00, b);
 
     float k = PulseShape(s.remote);
@@ -134,8 +137,23 @@ void Motion_FillStatus(int chan, uint32_t st, bool connected)
     Write16(st + 0x04, (uint16_t)(int16_t)std::clamp(ay, -511, 511));
     Write16(st + 0x06, (uint16_t)(int16_t)std::clamp(az, -511, 511));
 
-    // IR: two sensor bar dots around the screen centre
-    struct Dot { int x, y; } dots[2] = { { 412, 384 }, { 612, 384 } };
+    // IR: two sensor bar dots. The mouse (inside the window) aims the pointer;
+    // the camera sees the bar move opposite to where the remote points.
+    float px = 0.5f, py = 0.5f;
+    {
+        HWND hwnd = (HWND)Video_HWND();
+        POINT pt;
+        RECT rc;
+        if (hwnd && GetCursorPos(&pt) && ScreenToClient(hwnd, &pt) && GetClientRect(hwnd, &rc) && rc.right > 0 && rc.bottom > 0 &&
+            pt.x >= 0 && pt.y >= 0 && pt.x < rc.right && pt.y < rc.bottom)
+        {
+            px = (float)pt.x / rc.right;
+            py = (float)pt.y / rc.bottom;
+        }
+    }
+    int cx = (int)(512 + (0.5f - px) * 700.0f);
+    int cy = (int)(384 + (0.5f - py) * 560.0f);
+    struct Dot { int x, y; } dots[2] = { { cx - 100, cy }, { cx + 100, cy } };
     for (int i = 0; i < 4; i++)
     {
         uint32_t o = st + 0x08 + i * 8;

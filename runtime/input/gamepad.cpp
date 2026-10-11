@@ -23,9 +23,73 @@ static bool Key(int vk)
 
 bool g_autoPress = false;   // test aid: tap A every few seconds
 
+// Test aid: timed input script. Each line: <start seconds> <duration> <BUTTONS|LX=v|LY=v ...>
+// e.g. "12.0 0.2 A+B" or "30 2.0 LY=1.0"
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+struct ScriptEvent { double t0, t1; uint16_t buttons; float lx, ly, rx, ry, rt; bool hasStick; };
+static std::vector<ScriptEvent> s_script;
+static DWORD s_scriptStart = 0;
+
+void Gamepad_LoadScript(const char* path)
+{
+    std::ifstream f(path);
+    std::string line;
+    while (std::getline(f, line))
+    {
+        if (line.empty() || line[0] == '#') continue;
+        std::istringstream ss(line);
+        ScriptEvent e{};
+        double dur;
+        std::string what;
+        ss >> e.t0 >> dur;
+        e.t1 = e.t0 + dur;
+        while (ss >> what)
+        {
+            std::istringstream parts(what);
+            std::string tok;
+            while (std::getline(parts, tok, '+'))
+            {
+                auto eq = tok.find('=');
+                if (eq != std::string::npos)
+                {
+                    float v = std::stof(tok.substr(eq + 1));
+                    std::string k = tok.substr(0, eq);
+                    e.hasStick = true;
+                    if (k == "LX") e.lx = v; else if (k == "LY") e.ly = v; else if (k == "RX") e.rx = v; else if (k == "RY") e.ry = v; else if (k == "RT") e.rt = v;
+                    continue;
+                }
+                static const struct { const char* n; uint16_t b; } names[] = {
+                    { "A", PAD_A }, { "B", PAD_B }, { "X", PAD_X }, { "Y", PAD_Y }, { "LB", PAD_LB }, { "RB", PAD_RB },
+                    { "START", PAD_START }, { "BACK", PAD_BACK }, { "UP", PAD_DPAD_UP }, { "DOWN", PAD_DPAD_DOWN },
+                    { "LEFT", PAD_DPAD_LEFT }, { "RIGHT", PAD_DPAD_RIGHT },
+                };
+                for (auto& n : names) if (tok == n.n) e.buttons |= n.b;
+            }
+        }
+        s_script.push_back(e);
+    }
+    s_scriptStart = GetTickCount();
+}
+
 void Gamepad_Poll(int index, GamepadState& out)
 {
     out = GamepadState();
+    if (!s_script.empty() && index == 0)
+    {
+        double t = (GetTickCount() - s_scriptStart) / 1000.0;
+        for (auto& e : s_script)
+            if (t >= e.t0 && t < e.t1)
+            {
+                out.buttons |= e.buttons;
+                if (e.hasStick) { out.lx = e.lx; out.ly = e.ly; out.rx = e.rx; out.ry = e.ry; out.rt = e.rt; }
+            }
+        out.connected = true;
+        // Script is authoritative; skip real devices so a script run is reproducible
+        return;
+    }
     if (g_autoPress && index == 0)
     {
         DWORD t = GetTickCount() % 3000;

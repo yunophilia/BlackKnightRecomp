@@ -10,13 +10,17 @@ if not exist out\rtobj mkdir out\rtobj
 set SRCS=
 for /R runtime %%f in (*.cpp) do call set SRCS=%%SRCS%% "%%f"
 cl /nologo /c /MP /O2 /MT /EHsc /std:c++latest /wd4611 /utf-8 /DNOMINMAX /DWIN32_LEAN_AND_MEAN /D_CRT_SECURE_NO_WARNINGS /Iruntime /Iruntime\cpu /Igenerated %SRCS% /Foout\rtobj\ > out\cl.log 2>&1
-findstr /C:"error" out\cl.log
-if errorlevel 1 if not errorlevel 2 (
-    rem findstr found errors
-    findstr /C:"error" out\cl.log >nul && (echo COMPILE FAILED & exit /b 1)
+findstr /R /C:"error C[0-9]" /C:"fatal error" out\cl.log
+if not errorlevel 1 (
+    echo COMPILE FAILED
+    exit /b 1
 )
 dir /b /s out\rtobj\*.obj > out\link_dev.rsp
 dir /b /s build\ppcrecomp.dir\Release\*.obj >> out\link_dev.rsp
-link /nologo /OUT:out\BlackKnightRecomp.exe /MACHINE:X64 /SUBSYSTEM:CONSOLE /STACK:16777216 /DEBUG:FASTLINK /INCREMENTAL:NO @out\link_dev.rsp d3d11.lib dxgi.lib d3dcompiler.lib xinput.lib winmm.lib ole32.lib xaudio2.lib kernel32.lib user32.lib gdi32.lib > out\link.log 2>&1
-if errorlevel 1 (type out\link.log & echo LINK FAILED & exit /b 1)
+link /nologo /OUT:out\BlackKnightRecomp.exe /MACHINE:X64 /SUBSYSTEM:CONSOLE /STACK:268435456 /DEBUG:FASTLINK /INCREMENTAL:NO @out\link_dev.rsp d3d11.lib dxgi.lib d3dcompiler.lib xinput.lib winmm.lib ole32.lib xaudio2.lib kernel32.lib user32.lib gdi32.lib dbghelp.lib > out\link.log 2>&1
+if errorlevel 1 (
+    type out\link.log
+    echo LINK FAILED
+    exit /b 1
+)
 echo BUILD OK

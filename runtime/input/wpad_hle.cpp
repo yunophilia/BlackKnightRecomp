@@ -37,7 +37,7 @@ struct Chan
     uint32_t extensionCb = 0;
     bool connectNotified = false;
     bool extNotified = false;
-    uint32_t dataFormat = 0;
+    uint32_t dataFormat = 5;   // WPAD_FMT_FREESTYLE_ACC_DPD
     bool motor = false;
     uint64_t lastSampleTb = 0;
 };
@@ -242,8 +242,12 @@ PPC_FUNC(fn_803D4EA0)
     ctx.r[3] = WPAD_ERR_NONE;
 }
 
-// BOOL WPADIsDpdEnabled(s32 chan) (two copies in this executable)
-PPC_FUNC(fn_803D4D50) { ctx.r[3] = 1; }
+// u32 WPADGetDataFormat(s32 chan) (Dolphin's signature DB calls it WPADIsDpdEnabled)
+PPC_FUNC(fn_803D4D50)
+{
+    ctx.r[3] = s_chan[ctx.r[3] & 3].dataFormat;
+}
+// BOOL WPADIsDpdEnabled(s32 chan)
 PPC_FUNC(fn_803D73C4) { ctx.r[3] = 1; }
 
 // s32 WPADDisconnect(s32 chan)
@@ -274,5 +278,42 @@ PPC_FUNC(fn_803D37D4) { ctx.r[3] = 100; }
 PPC_FUNC(fn_80574558)
 {
     WPAD_Pump(ctx, base);
+    uint32_t chan = ctx.r[3], buf = ctx.r[4];
     fn_80574558_impl(ctx, base);
+    static uint64_t lastDump = 0;
+    uint64_t now = Timebase_Now();
+    if (chan == 0 && (int32_t)ctx.r[3] > 0 && now - lastDump > TB_FREQ * 2)
+    {
+        lastDump = now;
+        std::string s;
+        for (int i = 0; i < 0xB0; i += 4) s += std::format("{:08x}{}", Read32(buf + i), (i % 32) == 28 ? " | " : " ");
+        LOG_INFO("KPAD[0] n={} {}", (int32_t)ctx.r[3], s);
+    }
+}
+
+// s32 WPADSetDataFormat(s32 chan, u32 fmt)
+PPC_FUNC(fn_803D4D94)
+{
+    int chan = (int)ctx.r[3];
+    if (chan < 0 || chan > 3 || !Connected(chan)) { ctx.r[3] = (uint32_t)WPAD_ERR_NO_CONTROLLER; return; }
+    if (s_chan[chan].dataFormat != ctx.r[4])
+        LOG_INFO("WPAD: channel {} data format {}", chan, ctx.r[4]);
+    s_chan[chan].dataFormat = ctx.r[4];
+    ctx.r[3] = WPAD_ERR_NONE;
+}
+
+// s32 WPADControlDpd(s32 chan, u32 command, WPADCallback cb)
+PPC_FUNC(fn_803D7498)
+{
+    uint32_t chan = ctx.r[3], cb = ctx.r[5];
+    if (cb) s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE });
+    ctx.r[3] = WPAD_ERR_NONE;
+}
+
+// s32 (WPAD control with callback, e.g. MotionPlus/BLC control) - acknowledge immediately
+PPC_FUNC(fn_803D8518)
+{
+    uint32_t chan = ctx.r[3], cb = ctx.r[5];
+    if (cb) s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE });
+    ctx.r[3] = WPAD_ERR_NONE;
 }

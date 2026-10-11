@@ -8,6 +8,7 @@
 
 #include <bit>
 #include <limits>
+#include <unordered_map>
 #include <vector>
 #include <windows.h>
 
@@ -18,6 +19,7 @@ static constexpr uint32_t CODE_END = 0x80700000;
 static std::vector<PPCFunc> s_table;
 
 extern "C" volatile uint32_t g_ppcIrqPending = 0;
+extern "C" uint32_t g_cfgFrameRate = 30;
 extern "C" void Interp_Run(PPCContext& ctx, uint8_t* base, uint32_t entry);
 
 void Cpu_Init()
@@ -51,8 +53,8 @@ extern "C" void ppc_call_indirect(PPCContext& ctx, uint8_t* base, uint32_t addr)
         bool inRam = (addr >= 0x80000000) && (phys < MEM1_SIZE || (phys >= 0x10000000 && phys < 0x10000000 + MEM2_SIZE));
         if (!inRam || (addr & 3))
             FATAL("indirect call to invalid address {:08x} (lr={:08x})", addr, ctx.lr);
-        static int warned = 0;
-        if (warned++ < 32) LOG_INFO("interpreting non-recompiled code at {:08x} (lr={:08x})", addr, ctx.lr);
+        static std::unordered_map<uint32_t, int> seen;
+        if (seen[addr]++ == 0) LOG_INFO("interpreting non-recompiled code at {:08x} (lr={:08x})", addr, ctx.lr);
         Interp_Run(ctx, base, addr);
         return;
     }

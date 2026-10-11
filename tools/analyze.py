@@ -106,6 +106,9 @@ class Analyzer:
                 if table is not None and bound is not None:
                     break
             a -= 4
+        if table is None and lwzx is not None:
+            # resolve the table base register by backward constant propagation
+            table = self.resolve_const(lwzx[0], bctr_addr - 4, fstart, 0, skip_lwzx=True)
         if table is None:
             return None
         sec = self.dol.section_at(table)
@@ -124,6 +127,38 @@ class Analyzer:
             # partial table: still usable but flag it
             pass
         return targets if targets else None
+
+    def resolve_const(self, reg, a, fstart, depth, skip_lwzx=False):
+        """Value of `reg` before address `a` (inclusive), following lis/addi/ori chains."""
+        if depth > 6:
+            return None
+        while a >= fstart:
+            ins = decode(self.words[a])
+            p = ins.w >> 26
+            writes = None
+            if p in (14, 15) and ins.rd == reg:
+                if ins.ra == 0:
+                    return (ins.simm << 16 if p == 15 else ins.simm) & 0xFFFFFFFF
+                base = self.resolve_const(ins.ra, a - 4, fstart, depth + 1)
+                if base is None:
+                    return None
+                return (base + (ins.simm << 16 if p == 15 else ins.simm)) & 0xFFFFFFFF
+            if p == 24 and ins.ra == reg:   # ori rA, rS, imm
+                base = self.resolve_const(ins.rs, a - 4, fstart, depth + 1)
+                return None if base is None else (base | ins.uimm)
+            if p == 31 and ins.op == 'or' and ins.ra == reg and ins.rs == ins.rb:   # mr
+                return self.resolve_const(ins.rs, a - 4, fstart, depth + 1)
+            # any other instruction writing reg ends the search
+            if ins.op == 'lwzx' and skip_lwzx:
+                pass
+            elif p in (32, 33, 34, 35, 40, 41, 42, 43, 7, 8, 12, 13, 20, 21, 23) and ins.rd == reg and p not in (20, 21, 23):
+                return None
+            elif p in (20, 21, 23, 24, 25, 26, 27, 28, 29) and ins.ra == reg:
+                return None
+            elif p == 31 and ins.op not in ('stw', 'stwx', 'cmp', 'cmpl') and (ins.rd == reg if ins.op in ('lwzx', 'add', 'subf', 'mullw', 'lbzx', 'lhzx') else ins.ra == reg) and not (ins.op == 'lwzx' and skip_lwzx):
+                return None
+            a -= 4
+        return None
 
     def run(self):
         funcs = []
@@ -225,10 +260,35 @@ def cross_targets(an, funcs):
     return new
 
 
+TERMINATORS = (0x4E800020, 0x4E800420, 0x4C000064)
+
+
+def data_code_pointers(an, jt_targets):
+    """Words in data sections pointing at plausible function entries (vtables, callbacks)."""
+    out = set()
+    for sec in an.dol.data:
+        n = sec.size // 4
+        for i in range(n):
+            v = struct.unpack_from('>I', sec.data, i * 4)[0]
+            if v & 3 or v not in an.words or v in jt_targets:
+                continue
+            prev = an.words.get(v - 4)
+            if prev is None:
+                continue
+            if prev in TERMINATORS or prev == 0 or (prev >> 26) == 18 and not (prev & 1):
+                out.add(v)
+    return out
+
+
 if __name__ == '__main__':
     dol = Dol(sys.argv[1])
     known = load_known(sys.argv[2]) if len(sys.argv) > 2 else {}
     an = Analyzer(dol, known.keys())
+    funcs = an.run()
+    jt_targets = {t for f in funcs for ts in f.jumptables.values() for t in ts}
+    dp = data_code_pointers(an, jt_targets) - an.starts
+    print(f'{len(dp)} new function starts from data pointers', file=sys.stderr)
+    an.starts |= dp
     while True:
         funcs = an.run()
         extra = cross_targets(an, funcs) - an.starts

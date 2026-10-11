@@ -22,7 +22,7 @@ static constexpr uint32_t ADDR_OS_CURRENT_THREAD = 0x800000E4;
 static constexpr uint32_t ADDR_OS_CURRENT_CONTEXT = 0x800000D4;
 static constexpr uint32_t ADDR_EXCEPTION_TABLE_PTR = 0x80805028;   // r13 - 5784
 
-static constexpr SIZE_T FIBER_STACK = 8 * 1024 * 1024;
+static constexpr SIZE_T FIBER_STACK = 256 * 1024 * 1024;
 
 // ------------------------------------------------------------- context helpers
 static void LoadCtxFromGuest(PPCContext& c, uint32_t oc)

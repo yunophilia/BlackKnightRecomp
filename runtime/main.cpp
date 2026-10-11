@@ -21,6 +21,7 @@ void Crash_Init();
 void Crash_StartWatchdog();
 extern bool g_noMessageBox;
 extern int g_logLevel;
+extern "C" uint32_t g_cfgFrameRate;
 
 static std::string ExeDir()
 {
@@ -39,8 +40,10 @@ int main(int argc, char** argv)
         if (a == "--data" && i + 1 < argc) dataDir = argv[++i];
         else if (a == "--iso" && i + 1 < argc) isoPath = argv[++i];
         else if (a == "--verbose") g_logLevel = 0;
+        else if (a == "--60fps") g_cfgFrameRate = 60;
         else if (a == "--nobox") g_noMessageBox = true;
         else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }
+        else if (a == "--input-script" && i + 1 < argc) { extern void Gamepad_LoadScript(const char*); Gamepad_LoadScript(argv[++i]); }
         else if (a == "--shots" && i + 1 < argc) { extern int g_screenshotEvery; g_screenshotEvery = atoi(argv[++i]); }
     }
     // Default locations: <exe>/game/... or the repo layout

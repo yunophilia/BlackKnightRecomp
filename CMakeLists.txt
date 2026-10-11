@@ -26,5 +26,5 @@ target_link_libraries(BlackKnightRecomp PRIVATE d3d11 dxgi d3dcompiler xinput wi
 if(MSVC)
     target_compile_options(BlackKnightRecomp PRIVATE /MP /EHsc /std:c++latest /wd4611 /utf-8)
     target_compile_definitions(BlackKnightRecomp PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
-    target_link_options(BlackKnightRecomp PRIVATE /STACK:16777216)
+    target_link_options(BlackKnightRecomp PRIVATE /STACK:268435456)
 endif()

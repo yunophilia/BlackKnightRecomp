@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <vector>
 #include <windows.h>
+#include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib")
 
 extern "C" const PPCFuncMapping PPCFuncMappings[];
 
@@ -34,7 +36,27 @@ static void DumpContext(const PPCContext& c)
     LOG_ERROR("  lr={:08x} ctr={:08x} msr={:08x}", c.lr, c.ctr, c.msr);
 }
 
+static LONG CrashReport(EXCEPTION_POINTERS* ep);
+struct CrashJob { EXCEPTION_POINTERS* ep; void* frames[62]; USHORT n; };
+static CrashJob s_job;
+static DWORD WINAPI CrashThread(void*) { CrashReport(s_job.ep); return 0; }
+
 static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS* ep)
+{
+    DWORD c = ep->ExceptionRecord->ExceptionCode;
+    if (c != EXCEPTION_ACCESS_VIOLATION && c != EXCEPTION_ILLEGAL_INSTRUCTION && c != EXCEPTION_INT_DIVIDE_BY_ZERO &&
+        c != EXCEPTION_STACK_OVERFLOW && c != EXCEPTION_PRIV_INSTRUCTION)
+        return EXCEPTION_CONTINUE_SEARCH;
+    // Capture the faulting stack here (cheap), report from a fresh thread (safe even on stack overflow)
+    s_job.ep = ep;
+    s_job.n = RtlCaptureStackBackTrace(0, 62, s_job.frames, nullptr);
+    HANDLE h = CreateThread(nullptr, 4 << 20, CrashThread, nullptr, 0, nullptr);
+    WaitForSingleObject(h, 60000);
+    TerminateProcess(GetCurrentProcess(), 2);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static LONG CrashReport(EXCEPTION_POINTERS* ep)
 {
     DWORD code = ep->ExceptionRecord->ExceptionCode;
     if (code != EXCEPTION_ACCESS_VIOLATION && code != EXCEPTION_ILLEGAL_INSTRUCTION && code != EXCEPTION_INT_DIVIDE_BY_ZERO &&
@@ -51,23 +73,31 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS* ep)
     uint32_t gf = Crash_GuestFunctionForHost(rip);
     LOG_ERROR("  in guest function ~fn_{:08X} (host offset +{:x})", gf, gf ? rip - (uintptr_t)s_hostToGuest[0].first : 0);
     // Walk the host stack for more guest frames
-    void* frames[48];
-    USHORT n = RtlCaptureStackBackTrace(0, 48, frames, nullptr);
+    void** frames = s_job.frames;
+    USHORT n = s_job.n;
+    static bool symInit = false;
+    if (!symInit) { SymInitialize(GetCurrentProcess(), nullptr, TRUE); symInit = true; }
     for (USHORT i = 0; i < n; i++)
     {
-        uint32_t g = Crash_GuestFunctionForHost((uintptr_t)frames[i]);
-        if (g) LOG_ERROR("  host frame {:2}: {} -> fn_{:08X}", i, frames[i], g);
+        alignas(SYMBOL_INFO) char buf[sizeof(SYMBOL_INFO) + 256];
+        SYMBOL_INFO* si = (SYMBOL_INFO*)buf;
+        si->SizeOfStruct = sizeof(SYMBOL_INFO);
+        si->MaxNameLen = 255;
+        DWORD64 disp = 0;
+        const char* nm = SymFromAddr(GetCurrentProcess(), (DWORD64)frames[i], &disp, si) ? si->Name : "?";
+        LOG_ERROR("  host frame {:2}: {} {}+{:x}", i, frames[i], nm, disp);
     }
     if (g_curThread)
         DumpContext(g_curThread->ctx);
     fflush(stdout);
     extern bool g_noMessageBox;
     if (!g_noMessageBox) MessageBoxA(nullptr, "The game crashed. See BlackKnightRecomp.log for details.", "BlackKnightRecomp", MB_ICONERROR);
-    ExitProcess(2);
+    return 0;
 }
 
 void Crash_Init()
 {
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
     BuildMap();
     AddVectoredExceptionHandler(1, CrashHandler);
 }
@@ -101,6 +131,13 @@ static void WatchdogThread()
         extern uint32_t g_excCount[16];
         extern uint32_t PI_Read32(uint32_t off);
         extern uint32_t g_viFieldCount;
+        {
+            extern int g_audioPeak;
+            static uint32_t lastFields = 0;
+            LOG_INFO("status: {:.1f} fps, VI {:.1f} Hz, audio peak {}", (g_framesPresented - lastFrames) / 3.0, (g_viFieldCount - lastFields) / 3.0, g_audioPeak);
+            lastFields = g_viFieldCount;
+            g_audioPeak = 0;
+        }
         if (g_framesPresented == lastFrames)
         {
             LOG_INFO("watchdog: no new frames; guest at: {}", s);

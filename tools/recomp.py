@@ -142,10 +142,15 @@ class FuncGen:
         name = self.f.get('name')
         hdr = f'// {name}\n' if name else ''
         macro = 'PPC_FUNC_IMPL' if self.start in self.rc.overrides else 'PPC_FUNC'
+        if any(self.start <= pa < self.end for pa in PATCHES):
+            hdr = 'extern "C" uint32_t g_cfgFrameRate;\n' + hdr
         return hdr + f'{macro}(fn_{self.start:08X}) {{\n\tPPC_FUNC_PROLOGUE();\n' + '\n'.join(body) + '\n}\n'
 
     def insn(self, a, i):
         """Emit one instruction. Returns True if control never falls through."""
+        if a in PATCHES:
+            self.emit(PATCHES[a])
+            return False
         op = i.op
         e = self.emit
         R = self.r
@@ -736,6 +741,11 @@ class FuncGen:
             e('PPC_CR1();')
         return False
 
+
+# Instruction replacements (address -> C++). Used for runtime-configurable tweaks.
+PATCHES = {
+    0x800887D8: 'ctx.r[0] = g_cfgFrameRate;   // li r0,30: target frame rate (30 or 60)',
+}
 
 X_LDST = {
     'lwzx': ('lwz', False), 'lwzux': ('lwz', True), 'lbzx': ('lbz', False), 'lbzux': ('lbz', True),
