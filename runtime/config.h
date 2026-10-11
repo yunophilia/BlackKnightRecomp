@@ -13,6 +13,8 @@ struct Config
     bool fullscreen = false;
     bool vsync = false;
     bool widescreen = true;
+    bool texturePack = true;     // load Dolphin-format custom textures if present
+    std::string texturePackDir;  // empty: <exe>/textures, game/textures, Dolphin's Load/Textures
     // [System]
     int language = 1;            // Wii IPL.LNG: 0 ja, 1 en, 2 de, 3 fr, 4 es, 5 it, 6 nl
     // [Input]

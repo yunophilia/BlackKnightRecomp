@@ -101,6 +101,11 @@ F11 or Alt+Enter toggles fullscreen.
   setting, so game speed stays correct; treat it as experimental.
 * `internal_scale`: internal resolution multiplier (default 3, about 1080p).
 * `window_width`, `window_height`, `fullscreen`, `vsync`, `widescreen`.
+* `texture_pack`, `texture_pack_dir`: Dolphin-format HD texture packs (for example the one
+  in the GameBanana "Ai HD Texture Overhaul" mod). Put the pack's `RENE8P` folder in
+  `textures/` next to the exe or in `game/textures/`; packs installed in Dolphin's
+  `Load/Textures` are picked up too. PNG and DDS (BC1/2/3/7) are supported.
+  `--dump-textures` writes the game's textures under Dolphin's names to `dump/textures`.
 * `language`: english, german, french, spanish, italian, dutch, japanese.
 * `rumble`: controller vibration.
 * `data`, `iso`: game file locations, if they are not in `game/`.

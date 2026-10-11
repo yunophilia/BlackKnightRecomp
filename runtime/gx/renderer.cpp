@@ -3,6 +3,8 @@
 #include "shadergen.h"
 #include "texture_decode.h"
 #include "vertex_loader.h"
+#include "hires.h"
+#include "../config.h"
 #include "video.h"
 #include "../kernel/memory.h"
 #include "../log.h"
@@ -390,6 +392,7 @@ void Renderer_Init()
 {
     if (!Video_Init()) FATAL("video init failed");
     if (!InitDevice()) FATAL("renderer init failed");
+    if (g_config.texturePack) HiRes_Init(g_config.texturePackDir);
     s_ready = true;
 }
 
@@ -780,6 +783,21 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
         return e.srv;
     }
     ReleaseTex(e);
+    if (HiRes_Enabled() && !Capturing())
+    {
+        uint32_t tOff = tlutOff & (sizeof(s_tmem) - 1);
+        if (ID3D11ShaderResourceView* hd = HiRes_Find(src, GXTex_Size(fmt, w, h), s_tmem + tOff, (uint32_t)sizeof(s_tmem) - tOff, fmt, w, h,
+                                                      ((mode0 >> 5) & 3) != 0))
+        {
+            e.srv = hd;
+            e.w = w;
+            e.h = h;
+            e.hash = hash;
+            e.lastFrame = s_frame;
+            e.hashedFrame = s_frame;
+            return e.srv;
+        }
+    }
     std::vector<std::vector<uint32_t>> lv(levels);
     std::vector<const uint32_t*> ptrs(levels);
     uint32_t lw = w, lh = h, off = 0;
@@ -793,6 +811,11 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
         lh = std::max(1u, lh / 2);
     }
     CreateTexture(e, w, h, levels, ptrs.data(), false);
+    if (g_dumpTextures)
+    {
+        uint32_t tOff = tlutOff & (sizeof(s_tmem) - 1);
+        HiRes_Dump(src, GXTex_Size(fmt, w, h), s_tmem + tOff, (uint32_t)sizeof(s_tmem) - tOff, fmt, w, h, ((mode0 >> 5) & 3) != 0, lv[0].data());
+    }
     if (Capturing())
     {
         char path[64];

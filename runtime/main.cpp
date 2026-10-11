@@ -56,6 +56,7 @@ int main(int argc, char** argv)
         else if (a == "--watch" && i + 1 < argc) watchAddr = (uint32_t)strtoul(argv[++i], nullptr, 16);
         else if (a == "--capture" && i + 1 < argc) { extern uint32_t g_captureFrame; g_captureFrame = (uint32_t)atoi(argv[++i]); }
         else if (a == "--nobox") g_noMessageBox = true;
+        else if (a == "--dump-textures") { extern bool g_dumpTextures; g_dumpTextures = true; }
         else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }
         else if (a == "--input-script" && i + 1 < argc) { extern void Gamepad_LoadScript(const char*); Gamepad_LoadScript(argv[++i]); }
         else if (a == "--shots" && i + 1 < argc) { extern int g_screenshotEvery; g_screenshotEvery = atoi(argv[++i]); }

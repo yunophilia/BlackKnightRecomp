@@ -22,6 +22,10 @@ static const char* kDefaultIni =
     "fullscreen = false\n"
     "vsync = false\n"
     "widescreen = true\n"
+    "; Dolphin-format HD texture packs: <dir>/RENE8P/**/tex1_*.png|dds. Empty dir searches\n"
+    "; textures/ next to the exe, game/textures and Documents/Dolphin Emulator/Load/Textures\n"
+    "texture_pack = true\n"
+    "texture_pack_dir =\n"
     "\n"
     "[System]\n"
     "; english, german, french, spanish, italian, dutch, japanese\n"
@@ -103,6 +107,8 @@ void Config_Load(const std::string& path)
             else if (key == "fullscreen") c.fullscreen = ParseBool(val);
             else if (key == "vsync") c.vsync = ParseBool(val);
             else if (key == "widescreen") c.widescreen = ParseBool(val);
+            else if (key == "texture_pack") c.texturePack = ParseBool(val);
+            else if (key == "texture_pack_dir") c.texturePackDir = val;
         }
         else if (section == "system")
         {
