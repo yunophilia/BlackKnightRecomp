@@ -1,0 +1,82 @@
+// BlackKnightRecomp: statically recompiled Sonic and the Black Knight (RENE8P)
+#include "log.h"
+#include "cpu/cpu.h"
+#include "kernel/memory.h"
+#include "kernel/boot.h"
+#include "kernel/scheduler.h"
+#include "kernel/threads.h"
+#include "hw/hw.h"
+#include "ios/disc.h"
+#include "ios/ios.h"
+
+#include <filesystem>
+#include <string>
+#include <windows.h>
+
+void Log_Open(const char* path);
+void NAND_InitSystemFiles();
+void Renderer_Init();
+void AudioOut_Init();
+void Crash_Init();
+void Crash_StartWatchdog();
+extern bool g_noMessageBox;
+extern int g_logLevel;
+
+static std::string ExeDir()
+{
+    wchar_t buf[MAX_PATH];
+    GetModuleFileNameW(nullptr, buf, MAX_PATH);
+    return std::filesystem::path(buf).parent_path().string();
+}
+
+int main(int argc, char** argv)
+{
+    std::string root = ExeDir();
+    std::string dataDir, isoPath;
+    for (int i = 1; i < argc; i++)
+    {
+        std::string a = argv[i];
+        if (a == "--data" && i + 1 < argc) dataDir = argv[++i];
+        else if (a == "--iso" && i + 1 < argc) isoPath = argv[++i];
+        else if (a == "--verbose") g_logLevel = 0;
+        else if (a == "--nobox") g_noMessageBox = true;
+        else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }
+        else if (a == "--shots" && i + 1 < argc) { extern int g_screenshotEvery; g_screenshotEvery = atoi(argv[++i]); }
+    }
+    // Default locations: <exe>/game/... or the repo layout
+    auto pick = [&](std::string& v, const char* rel) {
+        if (!v.empty()) return;
+        for (std::string base : { root, root + "/..", root + "/../..", root + "/../../.." })
+        {
+            std::filesystem::path p = std::filesystem::path(base) / rel;
+            if (std::filesystem::exists(p)) { v = std::filesystem::weakly_canonical(p).string(); return; }
+        }
+    };
+    pick(dataDir, "game/extracted/DATA");
+    pick(isoPath, "game/RENE8P_Sonic_and_the_Black_Knight.iso");
+
+    Log_Open((root + "/BlackKnightRecomp.log").c_str());
+    LOG_INFO("BlackKnightRecomp starting; data={} iso={}", dataDir, isoPath);
+    if (dataDir.empty())
+        FATAL("Game data not found. Extract the disc with DolphinTool into game/extracted (see README).");
+
+    if (!Memory_Init()) FATAL("memory init failed");
+    Crash_Init();
+    Cpu_Init();
+    Sched_Init();
+    Threads_Init();
+    HW_Init();
+    Renderer_Init();
+    AudioOut_Init();
+    if (!Disc_Open(dataDir, isoPath)) FATAL("cannot open disc data");
+    std::string nand = root + "/nand";
+    std::filesystem::create_directories(nand);
+    IOS_Init(nand);
+    NAND_InitSystemFiles();
+
+    uint32_t entry = Boot_Setup(dataDir);
+    if (!entry) FATAL("boot failed");
+    Crash_StartWatchdog();
+    Threads_RunMain(entry);
+    return 0;
+}

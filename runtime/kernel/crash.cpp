@@ -1,0 +1,157 @@
+// Crash reporting: maps host faults back to guest functions and dumps guest state.
+#include "threads.h"
+#include "memory.h"
+#include "../log.h"
+#include "../cpu/cpu.h"
+
+#include <algorithm>
+#include <vector>
+#include <windows.h>
+
+extern "C" const PPCFuncMapping PPCFuncMappings[];
+
+static std::vector<std::pair<uintptr_t, uint32_t>> s_hostToGuest;
+
+static void BuildMap()
+{
+    for (const PPCFuncMapping* m = PPCFuncMappings; m->host; m++)
+        s_hostToGuest.push_back({ (uintptr_t)m->host, m->guest });
+    std::sort(s_hostToGuest.begin(), s_hostToGuest.end());
+}
+
+uint32_t Crash_GuestFunctionForHost(uintptr_t rip)
+{
+    auto it = std::upper_bound(s_hostToGuest.begin(), s_hostToGuest.end(), std::make_pair(rip, 0xFFFFFFFFu));
+    if (it == s_hostToGuest.begin()) return 0;
+    --it;
+    return it->second;
+}
+
+static void DumpContext(const PPCContext& c)
+{
+    for (int i = 0; i < 32; i += 4)
+        LOG_ERROR("  r{:<2}={:08x} r{:<2}={:08x} r{:<2}={:08x} r{:<2}={:08x}", i, c.r[i], i + 1, c.r[i + 1], i + 2, c.r[i + 2], i + 3, c.r[i + 3]);
+    LOG_ERROR("  lr={:08x} ctr={:08x} msr={:08x}", c.lr, c.ctr, c.msr);
+}
+
+static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS* ep)
+{
+    DWORD code = ep->ExceptionRecord->ExceptionCode;
+    if (code != EXCEPTION_ACCESS_VIOLATION && code != EXCEPTION_ILLEGAL_INSTRUCTION && code != EXCEPTION_INT_DIVIDE_BY_ZERO &&
+        code != EXCEPTION_STACK_OVERFLOW && code != EXCEPTION_PRIV_INSTRUCTION)
+        return EXCEPTION_CONTINUE_SEARCH;
+    static bool inHandler = false;
+    if (inHandler) return EXCEPTION_CONTINUE_SEARCH;
+    inHandler = true;
+    uintptr_t rip = (uintptr_t)ep->ContextRecord->Rip;
+    uintptr_t addr = code == EXCEPTION_ACCESS_VIOLATION ? (uintptr_t)ep->ExceptionRecord->ExceptionInformation[1] : 0;
+    LOG_ERROR("=== host exception {:08x} at rip={:x} (fault addr {:x}) ===", (uint32_t)code, rip, addr);
+    if (g_base && addr >= (uintptr_t)g_base && addr < (uintptr_t)g_base + 0x100000000ull)
+        LOG_ERROR("  guest address {:08x}", (uint32_t)(addr - (uintptr_t)g_base));
+    uint32_t gf = Crash_GuestFunctionForHost(rip);
+    LOG_ERROR("  in guest function ~fn_{:08X} (host offset +{:x})", gf, gf ? rip - (uintptr_t)s_hostToGuest[0].first : 0);
+    // Walk the host stack for more guest frames
+    void* frames[48];
+    USHORT n = RtlCaptureStackBackTrace(0, 48, frames, nullptr);
+    for (USHORT i = 0; i < n; i++)
+    {
+        uint32_t g = Crash_GuestFunctionForHost((uintptr_t)frames[i]);
+        if (g) LOG_ERROR("  host frame {:2}: {} -> fn_{:08X}", i, frames[i], g);
+    }
+    if (g_curThread)
+        DumpContext(g_curThread->ctx);
+    fflush(stdout);
+    extern bool g_noMessageBox;
+    if (!g_noMessageBox) MessageBoxA(nullptr, "The game crashed. See BlackKnightRecomp.log for details.", "BlackKnightRecomp", MB_ICONERROR);
+    ExitProcess(2);
+}
+
+void Crash_Init()
+{
+    BuildMap();
+    AddVectoredExceptionHandler(1, CrashHandler);
+}
+
+// ---------------------------------------------------------------- watchdog / sampling profiler
+#include <thread>
+static HANDLE s_guestThread = nullptr;
+extern uint32_t g_framesPresented;
+
+static void WatchdogThread()
+{
+    uint32_t lastFrames = 0;
+    for (;;)
+    {
+        Sleep(3000);
+        if (!s_guestThread) continue;
+        // sample a few times and report the most frequent guest functions
+        uint32_t samples[16];
+        for (int i = 0; i < 16; i++)
+        {
+            SuspendThread(s_guestThread);
+            CONTEXT c{};
+            c.ContextFlags = CONTEXT_CONTROL;
+            GetThreadContext(s_guestThread, &c);
+            ResumeThread(s_guestThread);
+            samples[i] = Crash_GuestFunctionForHost((uintptr_t)c.Rip);
+            Sleep(5);
+        }
+        std::string s;
+        for (int i = 0; i < 16; i++) s += std::format("{:08X} ", samples[i]);
+        extern uint32_t g_excCount[16];
+        extern uint32_t PI_Read32(uint32_t off);
+        extern uint32_t g_viFieldCount;
+        if (g_framesPresented == lastFrames)
+        {
+            LOG_INFO("watchdog: no new frames; guest at: {}", s);
+            LOG_INFO("  exceptions: ext={} dec={}  PI cause={:08x} mask={:08x}  VI fields={}  curThread={:08x}", g_excCount[4], g_excCount[8],
+                     PI_Read32(0), PI_Read32(4), g_viFieldCount, Read32(0x800000E4));
+            extern uint16_t VI_Read16(uint32_t off);
+            LOG_INFO("  VI: DI0={:04x}{:04x} DI1={:04x}{:04x} DI2={:04x}{:04x} DI3={:04x}{:04x} vtr={:04x} dcr={:04x} beam={}", VI_Read16(0x30), VI_Read16(0x32),
+                     VI_Read16(0x34), VI_Read16(0x36), VI_Read16(0x38), VI_Read16(0x3A), VI_Read16(0x3C), VI_Read16(0x3E), VI_Read16(0), VI_Read16(2), VI_Read16(0x2C));
+            bool armed; extern uint64_t Dec_Deadline(bool*); uint64_t dl = Dec_Deadline(&armed);
+            LOG_INFO("  DEC armed={} remaining={}", armed, (int64_t)(dl - Timebase_Now()));
+            if (g_curThread)
+            {
+                const PPCContext& c = g_curThread->ctx;
+                std::string bt;
+                uint32_t fp = c.r[1];
+                for (int i = 0; i < 12 && fp >= 0x80000000 && fp < 0x93600000; i++) { uint32_t nx = Read32(fp); if (nx < 0x80000000 || nx >= 0x93600000) break; bt += std::format("{:08x} ", Read32(nx + 4)); fp = nx; }
+                LOG_INFO("  current fiber: lr={:08x} msr={:08x} r1={:08x} r3={:08x} chain: {}", c.lr, c.msr, c.r[1], c.r[3], bt);
+            }
+            extern void Crash_DumpThreads();
+            Crash_DumpThreads();
+        }
+        lastFrames = g_framesPresented;
+    }
+}
+
+void Crash_StartWatchdog()
+{
+    DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &s_guestThread, 0, FALSE, DUPLICATE_SAME_ACCESS);
+    std::thread(WatchdogThread).detach();
+}
+
+// Walk the OS active thread queue and print each thread with a back-chain trace.
+void Crash_DumpThreads()
+{
+    uint32_t t = Read32(0x800000DC);
+    for (int n = 0; t && n < 32; n++)
+    {
+        uint16_t state = Read16(t + 0x2C8);
+        int32_t prio = (int32_t)Read32(t + 0x2D0);
+        uint32_t queue = Read32(t + 0x2DC);
+        uint32_t sp = Read32(t + 4);
+        std::string bt;
+        uint32_t fp = sp;
+        for (int i = 0; i < 10 && fp >= 0x80000000 && fp < 0x81800000; i++)
+        {
+            uint32_t next = Read32(fp);
+            if (next < 0x80000000 || next >= 0x81800000) break;
+            bt += std::format("{:08x} ", Read32(next + 4));
+            fp = next;
+        }
+        LOG_INFO("  thread {:08x} state={} prio={} queue={:08x} sp={:08x} lr-chain: {}", t, state, prio, queue, sp, bt);
+        t = Read32(t + 0x2FC);
+    }
+}
