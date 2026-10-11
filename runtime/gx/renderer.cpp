@@ -4,6 +4,7 @@
 #include "texture_decode.h"
 #include "vertex_loader.h"
 #include "hires.h"
+#include <filesystem>
 #include "../config.h"
 #include "video.h"
 #include "../kernel/memory.h"
@@ -57,10 +58,41 @@ struct KeyHash
     size_t operator()(const K& k) const { return (size_t)Hash64(&k, sizeof(K)); }
 };
 
+// Compiled shaders are cached on disk (shadercache/ next to the exe), keyed by a hash
+// of the generated source, so areas seen before do not stutter on compilation.
+static std::filesystem::path ShaderCachePath(const std::string& src, const char* target)
+{
+    static std::filesystem::path dir;
+    if (dir.empty())
+    {
+        wchar_t buf[MAX_PATH];
+        GetModuleFileNameW(nullptr, buf, MAX_PATH);
+        dir = std::filesystem::path(buf).parent_path() / "shadercache";
+        std::error_code ec;
+        std::filesystem::create_directories(dir, ec);
+    }
+    uint64_t h = Hash64(src.data(), src.size(), 0x5ADE0001ull);
+    return dir / std::format("{}_{:016x}_{:x}.cso", target, h, src.size());
+}
+
 static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
 {
     ID3DBlob* blob = nullptr;
     ID3DBlob* err = nullptr;
+    std::filesystem::path cachePath = ShaderCachePath(src, target);
+    if (FILE* f = _wfopen(cachePath.c_str(), L"rb"))
+    {
+        fseek(f, 0, SEEK_END);
+        long n = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        if (n > 0 && SUCCEEDED(D3DCreateBlob((SIZE_T)n, &blob)) && fread(blob->GetBufferPointer(), 1, n, f) == (size_t)n)
+        {
+            fclose(f);
+            return blob;
+        }
+        if (blob) { blob->Release(); blob = nullptr; }
+        fclose(f);
+    }
     HRESULT hr = D3DCompile(src.data(), src.size(), nullptr, nullptr, nullptr, "main", target,
                             D3DCOMPILE_OPTIMIZATION_LEVEL2 | D3DCOMPILE_IEEE_STRICTNESS, 0, &blob, &err);
     if (FAILED(hr))
@@ -70,6 +102,11 @@ static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
         return nullptr;
     }
     if (err) err->Release();
+    if (FILE* f = _wfopen(cachePath.c_str(), L"wb"))
+    {
+        fwrite(blob->GetBufferPointer(), 1, blob->GetBufferSize(), f);
+        fclose(f);
+    }
     return blob;
 }
 
