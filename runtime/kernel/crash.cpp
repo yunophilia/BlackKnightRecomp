@@ -179,7 +179,13 @@ static void WatchdogThread()
         {
             extern int g_audioPeak;
             static uint32_t lastFields = 0;
-            LOG_INFO("status: {:.1f} fps, VI {:.1f} Hz, audio peak {}", (g_framesPresented - lastFrames) / 3.0, (g_viFieldCount - lastFields) / 3.0, g_audioPeak);
+            static uint64_t lastQpc = 0;
+            LARGE_INTEGER q, fq;
+            QueryPerformanceCounter(&q);
+            QueryPerformanceFrequency(&fq);
+            double secs = lastQpc ? (double)(q.QuadPart - lastQpc) / fq.QuadPart : 3.0;
+            lastQpc = q.QuadPart;
+            LOG_INFO("status: {:.1f} fps, VI {:.2f} Hz, audio peak {}", (g_framesPresented - lastFrames) / secs, (g_viFieldCount - lastFields) / secs, g_audioPeak);
             lastFields = g_viFieldCount;
             g_audioPeak = 0;
         }
