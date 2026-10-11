@@ -27,7 +27,10 @@
 - [x] Dolphin-format HD texture packs + texture dumping
 - [x] Wii Remote speaker audio, multiple controllers (Battle mode), button bindings
 - [x] 60 FPS mode keeps game time correct through menus, FMV and cutscenes
-- [ ] Verify 60 FPS mode in all stage types
+- [x] HOME menu module recompiled (verified by hash at runtime); intro movie 60 fps
+- [x] Soak tests: 4 x 15 min + 30 min random input (30 and 60 fps) with no errors;
+      mission 1 cleared, results/save/retry/item codex/world map exercised
+- [ ] Verify 60 FPS mode in all stage types (needs real play-testing)
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
 
 ## Performance notes
