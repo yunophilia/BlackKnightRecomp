@@ -237,7 +237,9 @@ uint16_t s_cmdlist[512];
 
 void LoadCoeffs()
 {
-    static const char* paths[] = { "dsp_coef.bin", "C:\\dolphin_emu\\Dolphin-x64\\Sys\\GC\\dsp_coef.bin" };
+    // Dolphin's free DSP ROM coefficient table (Dolphin/Sys/GC/dsp_coef.bin)
+    static const char* paths[] = { "dsp_coef.bin", "game/dsp_coef.bin", "../game/dsp_coef.bin",
+                                   "C:\\dolphin_emu\\Dolphin-x64\\Sys\\GC\\dsp_coef.bin" };
     for (const char* p : paths)
     {
         FILE* f = nullptr;

@@ -51,7 +51,9 @@ Dolphin (for `DolphinTool.exe` and its signature database).
    DolphinTool extract -i RENE8P.iso -o game/extracted -g
    ```
 
-   (keep the `.iso` in `game/` as well; it is used for raw disc reads)
+   (keep the `.iso` in `game/` as well; it is used for raw disc reads). Copy
+   `Dolphin/Sys/GC/dsp_coef.bin` into `game/` too: the audio resampler uses it (without it
+   audio falls back to linear resampling).
 2. Generate the recompiled sources:
 
    ```
@@ -63,6 +65,8 @@ Dolphin (for `DolphinTool.exe` and its signature database).
    cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -T host=x64
    cmake --build build --config Release
    ```
+   If the link step crashes with `LNK1000` (seen with VS2019 16.10 and the Windows SDK
+   10.0.26100 import libraries), use `tools/dev_build.bat`, which links against 10.0.19041.
 4. Run `build/Release/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
    repo root, or pass `--data <dir> --iso <file>`).
 
