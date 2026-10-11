@@ -17,11 +17,30 @@
       EFB copies, XFB present (untested on real frames yet)
 - [x] AX audio HLE (port of Dolphin's AXWii) + XAudio2 output (untested)
 - [x] WPAD HLE + gamepad motion synthesis (untested)
-- [ ] First frame on screen
-- [ ] Title screen / menus
-- [ ] Gameplay, controls tuning (swing gestures)
-- [ ] Home Button Menu (`hbm_part.rso` is a separate module, not yet recompiled)
-- [ ] Widescreen/high-res polish, 60 FPS option
+- [x] First frame on screen
+- [x] Title screen / menus / FMV
+- [x] Gameplay with a gamepad (movement, jump, slash, guard, Soul Surge)
+- [x] Home Button Menu (`hbm_part.rso` runs in the interpreter; IR pointer from
+      mouse/right stick; Wii Menu quits, Reset restarts)
+- [x] config.ini, 3x internal resolution, 16:9, 60 FPS option (holds 60 in stage 1)
+- [ ] Verify 60 FPS mode across cutscenes and all stage types
+- [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
+
+## Performance notes
+
+- Map(WRITE_DISCARD) of a big dynamic VB per draw made the driver stall (~31% of the
+  frame): vertex/index data now goes through NO_OVERWRITE ring buffers.
+- Texture validation is once per frame per texture; CI index data likewise, the
+  palette on every use. Hash64 uses 4 independent lanes.
+- Remaining CPU cost is mostly the vertex loader (~20%) and the GX FIFO parser.
+
+## KPAD pointer notes
+
+- KPAD rejects IR dot pairs whose distance estimate (`kp+1348 / spacing`) is outside
+  (`kp+1352` ≈ 0.52, sdata `r13-14728`, which the game sets to 1.0). Dots are spaced
+  360 counts apart (≈0.74).
+- KPADStatus: pos at 0x20, horizon at 0x34, dist at 0x48, acc_vertical at 0x54,
+  dpd_valid_fg at 0x5E. KPAD per-channel state at 0x80781580 + chan*1472.
 
 ## Boot log milestones
 
