@@ -278,17 +278,7 @@ PPC_FUNC(fn_803D37D4) { ctx.r[3] = 100; }
 PPC_FUNC(fn_80574558)
 {
     WPAD_Pump(ctx, base);
-    uint32_t chan = ctx.r[3], buf = ctx.r[4];
     fn_80574558_impl(ctx, base);
-    static uint64_t lastDump = 0;
-    uint64_t now = Timebase_Now();
-    if (chan == 0 && (int32_t)ctx.r[3] > 0 && now - lastDump > TB_FREQ * 2)
-    {
-        lastDump = now;
-        std::string s;
-        for (int i = 0; i < 0xB0; i += 4) s += std::format("{:08x}{}", Read32(buf + i), (i % 32) == 28 ? " | " : " ");
-        LOG_INFO("KPAD[0] n={} {}", (int32_t)ctx.r[3], s);
-    }
 }
 
 // s32 WPADSetDataFormat(s32 chan, u32 fmt)

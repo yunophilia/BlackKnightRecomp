@@ -8,6 +8,7 @@
 #include <vector>
 #include <windows.h>
 #include <dbghelp.h>
+#include <timeapi.h>
 #pragma comment(lib, "dbghelp.lib")
 
 extern "C" const PPCFuncMapping PPCFuncMappings[];
@@ -235,4 +236,112 @@ void Crash_DumpThreads()
         LOG_INFO("  thread {:08x} state={} prio={} queue={:08x} sp={:08x} lr-chain: {}", t, state, prio, queue, sp, bt);
         t = Read32(t + 0x2FC);
     }
+}
+
+// ---------------------------------------------------------------- sampling profiler
+#include <map>
+#include <set>
+static void ProfilerThread(int startSec, int durationSec)
+{
+    Sleep(startSec * 1000);
+    std::map<uintptr_t, int> hits, stacks;
+    std::vector<std::vector<uintptr_t>> stackSamples;
+    int total = 0;
+    timeBeginPeriod(1);
+    DWORD end = GetTickCount() + durationSec * 1000;
+    while (GetTickCount() < end)
+    {
+        SuspendThread(s_guestThread);
+        CONTEXT c{};
+        c.ContextFlags = CONTEXT_FULL;
+        GetThreadContext(s_guestThread, &c);
+        hits[(uintptr_t)c.Rip]++;
+        // walk up to 24 frames for inclusive attribution
+        uintptr_t frames[24];
+        int nf = 0;
+        for (int i = 0; i < 24 && c.Rip; i++)
+        {
+            frames[nf++] = (uintptr_t)c.Rip;
+            DWORD64 imageBase;
+            PRUNTIME_FUNCTION rf = RtlLookupFunctionEntry(c.Rip, &imageBase, nullptr);
+            if (!rf) break;
+            void* hd;
+            DWORD64 ef;
+            RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, c.Rip, rf, &c, &hd, &ef, nullptr);
+        }
+        ResumeThread(s_guestThread);
+        for (int i = 0; i < nf; i++) stacks[frames[i]]++;
+        stackSamples.push_back(std::vector<uintptr_t>(frames, frames + nf));
+        total++;
+        Sleep(1);
+    }
+    SymInitialize(GetCurrentProcess(), nullptr, TRUE);
+    std::map<std::string, int> byFunc;
+    for (auto& [rip, n] : hits)
+    {
+        alignas(SYMBOL_INFO) char buf[sizeof(SYMBOL_INFO) + 256];
+        SYMBOL_INFO* si = (SYMBOL_INFO*)buf;
+        si->SizeOfStruct = sizeof(SYMBOL_INFO);
+        si->MaxNameLen = 255;
+        DWORD64 disp = 0;
+        std::string name = SymFromAddr(GetCurrentProcess(), rip, &disp, si) ? si->Name : std::format("?{:x}", rip >> 12 << 12);
+        byFunc[name] += n;
+    }
+    std::vector<std::pair<int, std::string>> v;
+    for (auto& [k, n] : byFunc) v.push_back({ n, k });
+    std::sort(v.rbegin(), v.rend());
+    LOG_INFO("=== profile: {} samples ===", total);
+    for (size_t i = 0; i < v.size() && i < 40; i++)
+        LOG_INFO("  {:5.1f}%  {}", 100.0 * v[i].first / total, v[i].second);
+    // inclusive: count each function once per sample
+    std::map<uintptr_t, std::string> names;
+    auto nameOf = [&](uintptr_t rip) -> const std::string& {
+        auto it = names.find(rip);
+        if (it != names.end()) return it->second;
+        alignas(SYMBOL_INFO) char buf[sizeof(SYMBOL_INFO) + 256];
+        SYMBOL_INFO* si = (SYMBOL_INFO*)buf;
+        si->SizeOfStruct = sizeof(SYMBOL_INFO);
+        si->MaxNameLen = 255;
+        DWORD64 disp = 0;
+        return names[rip] = SymFromAddr(GetCurrentProcess(), rip, &disp, si) ? si->Name : std::format("?{:x}", rip >> 12 << 12);
+    };
+    std::map<std::string, int> incl;
+    for (auto& st : stackSamples)
+    {
+        std::set<std::string> seen;
+        for (uintptr_t r : st) seen.insert(nameOf(r));
+        for (auto& n : seen) incl[n]++;
+    }
+    std::vector<std::pair<int, std::string>> vi;
+    for (auto& [k, n] : incl) if (k.rfind("fn_", 0) != 0) vi.push_back({ n, k });
+    std::sort(vi.rbegin(), vi.rend());
+    LOG_INFO("=== inclusive (host functions) ===");
+    for (size_t i = 0; i < vi.size() && i < 50; i++)
+        LOG_INFO("  {:5.1f}%  {}", 100.0 * vi[i].first / total, vi[i].second);
+    // callers of the wait
+    std::map<std::string, int> waitCallers;
+    for (auto& st : stackSamples)
+    {
+        if (st.empty() || nameOf(st[0]).find("Wait") == std::string::npos) continue;
+        std::string chain;
+        for (size_t i = 1, k = 0; i < st.size() && k < 5; i++)
+        {
+            const std::string& n = nameOf(st[i]);
+            if (n.find("Wait") != std::string::npos) continue;
+            chain += n + " < ";
+            k++;
+        }
+        waitCallers[chain]++;
+    }
+    std::vector<std::pair<int, std::string>> vw;
+    for (auto& [k, n] : waitCallers) vw.push_back({ n, k });
+    std::sort(vw.rbegin(), vw.rend());
+    LOG_INFO("=== wait call chains ===");
+    for (size_t i = 0; i < vw.size() && i < 12; i++)
+        LOG_INFO("  {:5.1f}%  {}", 100.0 * vw[i].first / total, vw[i].second);
+}
+
+void Crash_StartProfiler(int startSec, int durationSec)
+{
+    std::thread(ProfilerThread, startSec, durationSec).detach();
 }

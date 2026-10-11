@@ -362,10 +362,7 @@ int4 sampleTex(uint m, int2 uv)
             static const char* bfield[8] = { "", "x", "y", "xy", "z", "xz", "yz", "xyz" };
             const char* badd = fmt == 0 ? "-128" : "1";
             if (bias)
-            {
-                int cnt = __popcnt(bias);
-                W(s, std::format("\tiindtevcrd{}.{} += int{}({});\n", n, bfield[bias], cnt == 1 ? "" : std::to_string(cnt), badd));
-            }
+                W(s, std::format("\tiindtevcrd{}.{} += {};\n", n, bfield[bias], badd));
             uint32_t mtxIdx = 2 * ((mid & 3) - 1);
             uint32_t mtxId = mid >> 2;   // 0 = indirect matrix, 1 = S, 2 = T
             if (mtxId == 0)

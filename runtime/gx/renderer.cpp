@@ -115,7 +115,6 @@ static VertexLayout s_batchLayout;
 static uint32_t s_batchComponents = 0;
 static bool s_xfDirty = true;
 static std::vector<uint8_t> s_skip;
-static std::vector<HostVertex> s_tmpVerts;
 
 // ------------------------------------------------------------------ textures
 struct TexEntry
@@ -127,6 +126,7 @@ struct TexEntry
     uint32_t lastFrame = 0;
     bool efbCopy = false;
     uint64_t ramHash = 0;    // RAM content hash when an EFB copy was made
+    uint32_t hashedFrame = ~0u;   // frame in which `hash` was last verified
     uint32_t ramSize = 0;
 };
 static std::unordered_map<uint64_t, TexEntry> s_texCache;   // key: addr | fmt | w | h
@@ -688,9 +688,10 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
     if (ec != s_efbCopies.end())
     {
         TexEntry& e = ec->second;
-        if (e.ramHash == Hash64(PhysPtr(addr), e.ramSize))
+        if (e.hashedFrame == s_frame || e.ramHash == Hash64(PhysPtr(addr), e.ramSize))
         {
             e.lastFrame = s_frame;
+            e.hashedFrame = s_frame;
             return e.srv;
         }
         ReleaseTex(e);
@@ -723,6 +724,16 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
     }
     const uint8_t* src = PhysPtr(addr);
     bool isCI = fmt == TF_C4 || fmt == TF_C8 || fmt == TF_C14X2;
+    uint64_t key0 = (uint64_t)addr | ((uint64_t)fmt << 32) | ((uint64_t)w << 36) | ((uint64_t)h << 47) | ((uint64_t)(levels > 1) << 58) | ((uint64_t)isCI << 59);
+    if (!isCI && !Capturing())
+    {
+        auto fast = s_texCache.find(key0);
+        if (fast != s_texCache.end() && fast->second.srv && fast->second.hashedFrame == s_frame)
+        {
+            *hasMips = levels > 1;
+            return fast->second.srv;
+        }
+    }
     uint32_t tlutOff = (tlutReg & 0x3FF) << 9;
     uint32_t tlutFmt = (tlutReg >> 10) & 3;
     uint32_t palSize = fmt == TF_C4 ? 32 : fmt == TF_C8 ? 512 : 0x8000;
@@ -736,6 +747,7 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
     if (e.srv && e.hash == hash && !Capturing())
     {
         e.lastFrame = s_frame;
+        e.hashedFrame = s_frame;
         return e.srv;
     }
     ReleaseTex(e);
@@ -781,6 +793,7 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
     }
     e.hash = hash;
     e.lastFrame = s_frame;
+    e.hashedFrame = s_frame;
     return e.srv;
 }
 
@@ -926,19 +939,22 @@ static void UpdateCB(ID3D11Buffer* b, const T& data)
     g_ctx->Unmap(b, 0);
 }
 
+static UINT s_vbPos = 0, s_ibPos = 0;
 static void EnsureBuffers(uint32_t vbytes, uint32_t ibytes)
 {
     if (vbytes > s_vbCap)
     {
         if (s_vb) s_vb->Release();
-        s_vbCap = std::max(vbytes, 4u << 20);
+        s_vbCap = std::max(vbytes, 32u << 20);
+        s_vbPos = s_vbCap;   // force a discard on first use
         D3D11_BUFFER_DESC d{ s_vbCap, D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
         g_device->CreateBuffer(&d, nullptr, &s_vb);
     }
     if (ibytes > s_ibCap)
     {
         if (s_ib) s_ib->Release();
-        s_ibCap = std::max(ibytes, 2u << 20);
+        s_ibCap = std::max(ibytes, 8u << 20);
+        s_ibPos = s_ibCap;
         D3D11_BUFFER_DESC d{ s_ibCap, D3D11_USAGE_DYNAMIC, D3D11_BIND_INDEX_BUFFER, D3D11_CPU_ACCESS_WRITE, 0, 0 };
         g_device->CreateBuffer(&d, nullptr, &s_ib);
     }
@@ -1060,19 +1076,29 @@ static void Flush()
     // geometry
     uint32_t vbytes = (uint32_t)(s_verts.size() * sizeof(HostVertex));
     uint32_t ibytes = (uint32_t)(s_indices.size() * 4);
-    EnsureBuffers(vbytes, ibytes);
+    EnsureBuffers(vbytes * 4, ibytes * 4);
+    // Ring buffers: append with NO_OVERWRITE, discard only when wrapping, so the
+    // driver does not have to rename a multi-megabyte buffer on every draw.
     D3D11_MAPPED_SUBRESOURCE m;
-    g_ctx->Map(s_vb, 0, D3D11_MAP_WRITE_DISCARD, 0, &m);
-    memcpy(m.pData, s_verts.data(), vbytes);
+    UINT vbOffset = (s_vbPos + sizeof(HostVertex) - 1) / sizeof(HostVertex) * sizeof(HostVertex);
+    bool vbWrap = vbOffset + vbytes > s_vbCap;
+    if (vbWrap) vbOffset = 0;
+    g_ctx->Map(s_vb, 0, vbWrap ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m);
+    memcpy((uint8_t*)m.pData + vbOffset, s_verts.data(), vbytes);
     g_ctx->Unmap(s_vb, 0);
-    g_ctx->Map(s_ib, 0, D3D11_MAP_WRITE_DISCARD, 0, &m);
-    memcpy(m.pData, s_indices.data(), ibytes);
+    s_vbPos = vbOffset + vbytes;
+    UINT ibOffset = s_ibPos;
+    bool ibWrap = ibOffset + ibytes > s_ibCap;
+    if (ibWrap) ibOffset = 0;
+    g_ctx->Map(s_ib, 0, ibWrap ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m);
+    memcpy((uint8_t*)m.pData + ibOffset, s_indices.data(), ibytes);
     g_ctx->Unmap(s_ib, 0);
+    s_ibPos = ibOffset + ibytes;
 
-    UINT stride = sizeof(HostVertex), offset = 0;
+    UINT stride = sizeof(HostVertex), offset = vbOffset;
     g_ctx->IASetInputLayout(s_layout);
     g_ctx->IASetVertexBuffers(0, 1, &s_vb, &stride, &offset);
-    g_ctx->IASetIndexBuffer(s_ib, DXGI_FORMAT_R32_UINT, 0);
+    g_ctx->IASetIndexBuffer(s_ib, DXGI_FORMAT_R32_UINT, ibOffset);
     g_ctx->IASetPrimitiveTopology(s_topo == Topo::Tri ? D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
                                   : s_topo == Topo::Line ? D3D11_PRIMITIVE_TOPOLOGY_LINELIST : D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
     g_ctx->VSSetShader(vs, nullptr, 0);
@@ -1118,12 +1144,12 @@ void Render_Draw(int prim, int vat, uint32_t count, const uint8_t* data, const V
     s_topo = topo;
     s_batchComponents = comps;
 
-    s_tmpVerts.resize(count);
-    VertexLoader_Decode(layout, data, count, s_tmpVerts.data(), s_skip);
     uint32_t base = (uint32_t)s_verts.size();
-    s_verts.insert(s_verts.end(), s_tmpVerts.begin(), s_tmpVerts.end());
+    s_verts.resize(base + count);
+    VertexLoader_Decode(layout, data, count, s_verts.data() + base, s_skip);
+    const bool checkSkip = !s_skip.empty();
     auto tri = [&](uint32_t a, uint32_t b, uint32_t c) {
-        if (s_skip[a] || s_skip[b] || s_skip[c]) return;
+        if (checkSkip && (s_skip[a] || s_skip[b] || s_skip[c])) return;
         s_indices.push_back(base + a);
         s_indices.push_back(base + b);
         s_indices.push_back(base + c);
@@ -1287,6 +1313,7 @@ static ID3D11Texture2D* s_xfbTex = nullptr;
 static ID3D11RenderTargetView* s_xfbRTV = nullptr;
 static ID3D11ShaderResourceView* s_xfbSRV = nullptr;
 int g_screenshotEvery = 0;   // frames between automatic screenshots (0 = off)
+uint32_t g_screenshotStart = 0;
 
 static void SaveTextureBMP(ID3D11Texture2D* tex, const char* path)
 {
@@ -1376,7 +1403,7 @@ static void DoEFBCopy()
         g_ctx->CopySubresourceRegion(s_xfbTex, 0, 0, 0, 0, s_efbColor, 0, &box);
         Video_Present(s_xfbSRV, 0, 0, 1, 1);
         g_framesPresented++;
-        if (g_screenshotEvery && (g_framesPresented % g_screenshotEvery) == 0)
+        if (g_screenshotEvery && g_framesPresented >= g_screenshotStart && (g_framesPresented % g_screenshotEvery) == 0)
         {
             char path[64];
             snprintf(path, sizeof(path), "shot_%04u.bmp", g_framesPresented / g_screenshotEvery);
@@ -1433,6 +1460,7 @@ static void DoEFBCopy()
         static const uint32_t bppTable[16] = { 4, 8, 8, 16, 16, 16, 32, 8, 8, 8, 8, 16, 16, 16, 16, 16 };
         e.ramSize = std::max<uint32_t>(32, tw * th * bppTable[fmt & 15] / 8);
         e.ramHash = Hash64(PhysPtr(destAddr), e.ramSize);
+        e.hashedFrame = s_frame;
         e.efbCopy = true;
         e.lastFrame = s_frame;
         if (Capturing())

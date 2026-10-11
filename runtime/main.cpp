@@ -35,6 +35,7 @@ int main(int argc, char** argv)
     std::string root = ExeDir();
     std::string dataDir, isoPath;
     uint32_t watchAddr = 0;
+    int profStart = -1, profDur = 0;
     for (int i = 1; i < argc; i++)
     {
         std::string a = argv[i];
@@ -42,6 +43,9 @@ int main(int argc, char** argv)
         else if (a == "--iso" && i + 1 < argc) isoPath = argv[++i];
         else if (a == "--verbose") g_logLevel = 0;
         else if (a == "--60fps") g_cfgFrameRate = 60;
+        else if (a == "--profile" && i + 2 < argc) { profStart = atoi(argv[++i]); profDur = atoi(argv[++i]); }
+        else if (a == "--dump-audio") { extern FILE* g_audioDump; g_audioDump = fopen("audio_dump.raw", "wb"); }
+        else if (a == "--shots-start" && i + 1 < argc) { extern uint32_t g_screenshotStart; g_screenshotStart = (uint32_t)atoi(argv[++i]); }
         else if (a == "--dbg-nodepth") { extern int g_dbgNoDepth; g_dbgNoDepth = 1; }
         else if (a == "--dbg-nocull") { extern int g_dbgNoCull; g_dbgNoCull = 1; }
         else if (a == "--watch" && i + 1 < argc) watchAddr = (uint32_t)strtoul(argv[++i], nullptr, 16);
@@ -86,6 +90,7 @@ int main(int argc, char** argv)
     if (watchAddr) { extern void Crash_SetWatch(uint32_t); Crash_SetWatch(watchAddr); }
     if (!entry) FATAL("boot failed");
     Crash_StartWatchdog();
+    if (profStart >= 0) { extern void Crash_StartProfiler(int, int); Crash_StartProfiler(profStart, profDur); }
     Threads_RunMain(entry);
     return 0;
 }

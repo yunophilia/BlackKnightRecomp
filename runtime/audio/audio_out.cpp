@@ -19,6 +19,7 @@ static std::deque<std::vector<int16_t>> s_inFlight;   // buffers owned until pla
 static constexpr uint32_t BATCH_FRAMES_PER_SEC_DIV = 100;   // 10 ms batches
 float g_audioVolume = 1.0f;
 int g_audioPeak = 0;   // max |sample| since last status line
+FILE* g_audioDump = nullptr;   // --dump-audio: raw interleaved s16 stereo (host order)
 
 static void CreateVoice(uint32_t rate)
 {
@@ -77,6 +78,7 @@ void AudioOut_PushDSP(const uint8_t* data, uint32_t bytes, uint32_t sampleRate)
         g_audioPeak = std::max(g_audioPeak, std::max(std::abs((int)l), std::abs((int)r)));
         s_staging.push_back((int16_t)(l * g_audioVolume));
         s_staging.push_back((int16_t)(r * g_audioVolume));
+        if (g_audioDump) { int16_t lr[2] = { l, r }; fwrite(lr, 2, 2, g_audioDump); }
     }
     uint32_t batch = sampleRate / BATCH_FRAMES_PER_SEC_DIV;
     if (s_staging.size() / 2 < batch) return;

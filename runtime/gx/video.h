@@ -7,7 +7,7 @@ struct VideoConfig
     int windowWidth = 1280;
     int windowHeight = 720;
     int internalScale = 3;     // EFB resolution multiplier
-    bool vsync = true;
+    bool vsync = false;        // the game paces itself from VI interrupts
     bool widescreen = true;    // present 16:9
     bool fullscreen = false;
 };
