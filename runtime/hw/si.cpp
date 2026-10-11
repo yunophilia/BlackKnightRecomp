@@ -44,5 +44,11 @@ void SI_Write32(uint32_t off, uint32_t v)
 void SI_Init() {}
 
 // DI registers are owned by IOS on Wii; the PPC should never touch them.
-uint32_t DI_Read32(uint32_t off) { LOG_WARN("DI read {:02x}", off); return 0; }
+uint32_t DI_Read32(uint32_t off)
+{
+    // 0x24 = DICFG, probed by the OS at boot; the drive is driven through IOS instead
+    if (off == 0x24) LOG_DEBUG("DI read {:02x}", off);
+    else LOG_WARN("DI read {:02x}", off);
+    return 0;
+}
 void DI_Write32(uint32_t off, uint32_t v) { LOG_WARN("DI write {:02x} = {:08x}", off, v); }

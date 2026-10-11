@@ -36,7 +36,7 @@ struct Chan
     uint32_t samplingCb = 0;
     uint32_t connectCb = 0;
     uint32_t extensionCb = 0;
-    bool connectNotified = false;
+    bool reported = false;      // connection state last reported to the game
     bool extNotified = false;
     uint32_t dataFormat = 5;   // WPAD_FMT_FREESTYLE_ACC_DPD
     bool motor = false;
@@ -53,10 +53,10 @@ struct PendingCb
 };
 std::deque<PendingCb> s_pending;
 
+// Remote 1 is always present (keyboard works without a pad); 2-4 follow XInput pads.
 bool Connected(int chan)
 {
-    if (chan != 0) return false;
-    return true;   // always present: keyboard works even without a controller
+    return chan >= 0 && chan < 4 && Gamepad_IsConnected(chan);
 }
 
 void CallGuest(PPCContext& ctx, uint8_t* base, uint32_t func, uint32_t r3, uint32_t r4)
@@ -77,14 +77,15 @@ void WPAD_Pump(PPCContext& ctx, uint8_t* base)
     for (int c = 0; c < 4; c++)
     {
         Chan& ch = s_chan[c];
-        if (!Connected(c)) continue;
-        if (ch.connectCb && !ch.connectNotified)
+        bool conn = Connected(c);
+        if (ch.connectCb && conn != ch.reported)
         {
-            ch.connectNotified = true;
-            LOG_INFO("WPAD: reporting controller {} connected", c);
-            CallGuest(ctx, base, ch.connectCb, c, (uint32_t)WPAD_ERR_NONE);
+            ch.reported = conn;
+            LOG_INFO("WPAD: controller {} {}", c, conn ? "connected" : "disconnected");
+            if (!conn) ch.extNotified = false;
+            CallGuest(ctx, base, ch.connectCb, c, conn ? (uint32_t)WPAD_ERR_NONE : (uint32_t)WPAD_ERR_NO_CONTROLLER);
         }
-        if (ch.extensionCb && !ch.extNotified)
+        if (conn && ch.extensionCb && !ch.extNotified)
         {
             ch.extNotified = true;
             LOG_INFO("WPAD: reporting Nunchuk on controller {}", c);
@@ -160,7 +161,7 @@ PPC_FUNC(fn_803D4C6C)
     int chan = (int)ctx.r[3] & 3;
     uint32_t old = s_chan[chan].connectCb;
     s_chan[chan].connectCb = ctx.r[4];
-    s_chan[chan].connectNotified = false;
+    s_chan[chan].reported = false;
     ctx.r[3] = old;
 }
 

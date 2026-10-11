@@ -89,7 +89,8 @@ Dolphin (for `DolphinTool.exe` and its signature database).
 | Right stick (in menus) | Mouse | Pointer |
 | D-pad | Arrow keys | D-pad |
 
-The Wii Remote pointer follows the mouse when it moves inside the window, otherwise the
+Controllers 2-4 become Wii Remotes 2-4 (for Battle mode) while plugged in; the keyboard
+always drives player 1. The Wii Remote pointer follows the mouse when it moves inside the window, otherwise the
 right stick moves it. Choosing "Wii Menu" in the HOME menu quits; "Reset" restarts.
 F11 or Alt+Enter toggles fullscreen.
 

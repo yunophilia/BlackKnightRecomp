@@ -21,6 +21,21 @@ static bool Key(int vk)
     return (GetAsyncKeyState(vk) & 0x8000) != 0;
 }
 
+// Players 2-4 exist only while their XInput pad is plugged in. Querying an empty slot
+// is slow, so absent pads are re-checked at most once a second.
+bool Gamepad_IsConnected(int index)
+{
+    if (index == 0) return true;   // keyboard fallback
+    static DWORD lastCheck[4];
+    static bool connected[4];
+    DWORD now = GetTickCount();
+    if (!connected[index] && lastCheck[index] && now - lastCheck[index] < 1000) return false;
+    XINPUT_STATE st{};
+    connected[index] = XInputGetState(index, &st) == ERROR_SUCCESS;
+    lastCheck[index] = now;
+    return connected[index];
+}
+
 bool g_autoPress = false;   // test aid: tap A every few seconds
 
 // Test aid: timed input script. Each line: <start seconds> <duration> <BUTTONS|LX=v|LY=v ...>
@@ -101,7 +116,7 @@ void Gamepad_Poll(int index, GamepadState& out)
         out.connected = true;
     }
     XINPUT_STATE st{};
-    if (XInputGetState(index, &st) == ERROR_SUCCESS)
+    if ((index == 0 || Gamepad_IsConnected(index)) && XInputGetState(index, &st) == ERROR_SUCCESS)
     {
         out.connected = true;
         out.buttons |= st.Gamepad.wButtons & ~PAD_HOME;

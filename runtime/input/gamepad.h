@@ -21,3 +21,4 @@ enum : uint16_t
 };
 
 void Gamepad_Poll(int index, GamepadState& out);
+bool Gamepad_IsConnected(int index);
