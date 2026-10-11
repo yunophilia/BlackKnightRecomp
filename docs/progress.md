@@ -23,7 +23,11 @@
 - [x] Home Button Menu (`hbm_part.rso` runs in the interpreter; IR pointer from
       mouse/right stick; Wii Menu quits, Reset restarts)
 - [x] config.ini, 3x internal resolution, 16:9, 60 FPS option (holds 60 in stage 1)
-- [ ] Verify 60 FPS mode across cutscenes and all stage types
+- [x] GX on its own thread (dual-core style), disk shader cache, retrace-wait sleep
+- [x] Dolphin-format HD texture packs + texture dumping
+- [x] Wii Remote speaker audio, multiple controllers (Battle mode), button bindings
+- [x] 60 FPS mode keeps game time correct through menus, FMV and cutscenes
+- [ ] Verify 60 FPS mode in all stage types
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
 
 ## Performance notes
@@ -33,6 +37,20 @@
 - Texture validation is once per frame per texture; CI index data likewise, the
   palette on every use. Hash64 uses 4 independent lanes.
 - Remaining CPU cost is mostly the vertex loader (~20%) and the GX FIFO parser.
+
+## Threading notes
+
+- CPU thread appends write-gather bytes to a 32 MB lock-free ring; the GX thread copies
+  them into its FIFO buffer and runs `RunCommands` under `s_gpuLock`.
+- Sync points: CP status / FIFO pointer reads and EFB peeks call `GX_SyncGPU()`.
+- PE token/finish come from the GX thread: PE flags under `s_peMutex`, PI cause is atomic.
+
+## WPAD globals set by the real WPADInit
+
+Our WPADInit override skips the SDK's SYSCONF caching, so getters that read those
+r13 globals need HLE: speaker volume (0x803D6F40), motor enable (0x803D51C0/518C).
+Remote speaker: game streams 20-byte Yamaha ADPCM packets (6000 Hz) only after the
+ON command completes and an UNMUTE succeeds (state machine around 0x801355A0).
 
 ## KPAD pointer notes
 
