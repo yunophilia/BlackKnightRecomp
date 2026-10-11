@@ -50,6 +50,7 @@ public:
             if (!s_partitionOpen) return { DI_SECURITY_ERROR };
             if (r.outSize < len) return { DI_SECURITY_ERROR };
             Disc_ReadPartition(pos, len, PhysPtr(r.outAddr));
+            LOG_DEBUG("DI read disc {:x} len {:x} -> {:08x}", pos, len, r.outAddr);
             return { DI_SUCCESS, false, ReadTicks(len) };
         }
         case 0x79:   // wait for cover close

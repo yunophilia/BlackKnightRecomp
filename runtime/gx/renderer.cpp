@@ -581,9 +581,11 @@ static ID3D11BlendState* GetBlendState()
     return s;
 }
 
+int g_dbgNoDepth = 0, g_dbgNoCull = 0;
 static ID3D11DepthStencilState* GetDepthState()
 {
     uint32_t zm = BP(0x40) & 0x1F;
+    if (g_dbgNoDepth) zm &= ~1u;
     auto it = s_depthCache.find(zm);
     if (it != s_depthCache.end()) return it->second;
     D3D11_DEPTH_STENCIL_DESC d{};
@@ -617,7 +619,7 @@ static ID3D11RasterizerState* GetRasterState(uint32_t cull)
     d.FillMode = D3D11_FILL_SOLID;
     // GX: 1 = cull back (clockwise front), 2 = cull front
     d.CullMode = cull == 1 ? D3D11_CULL_BACK : cull == 2 ? D3D11_CULL_FRONT : D3D11_CULL_NONE;
-    d.FrontCounterClockwise = TRUE;
+    d.FrontCounterClockwise = FALSE;   // GX front faces are clockwise in screen space
     d.ScissorEnable = TRUE;
     d.DepthClipEnable = FALSE;
     ID3D11RasterizerState* s = nullptr;
@@ -666,6 +668,7 @@ static uint32_t TexReg(int map, uint32_t base03, uint32_t base47)
     return map < 4 ? BP(base03 + map) : BP(base47 + (map - 4));
 }
 
+static bool Capturing();
 static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* outH, bool* hasMips)
 {
     uint32_t img0 = TexReg(map, 0x88, 0xA8);
@@ -730,7 +733,7 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
 
     TexEntry& e = s_texCache[key];
     *hasMips = levels > 1;
-    if (e.srv && e.hash == hash)
+    if (e.srv && e.hash == hash && !Capturing())
     {
         e.lastFrame = s_frame;
         return e.srv;
@@ -749,6 +752,29 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
         lh = std::max(1u, lh / 2);
     }
     CreateTexture(e, w, h, levels, ptrs.data(), false);
+    if (Capturing())
+    {
+        char path[64];
+        snprintf(path, sizeof(path), "tex_%08x_f%u.bmp", addr, fmt);
+        FILE* f = fopen(path, "wb");
+        if (f)
+        {
+            uint32_t rowBytes = w * 4, img = rowBytes * h;
+            uint8_t hdr[54] = { 'B', 'M' };
+            auto put32 = [&](int o, uint32_t v) { memcpy(hdr + o, &v, 4); };
+            put32(2, 54 + img); put32(10, 54); put32(14, 40); put32(18, w); put32(22, h);
+            hdr[26] = 1; hdr[28] = 32; put32(34, img);
+            fwrite(hdr, 1, 54, f);
+            for (int y = (int)h - 1; y >= 0; y--)
+                for (uint32_t x = 0; x < w; x++)
+                {
+                    uint32_t c = lv[0][y * w + x];
+                    uint8_t px[4] = { (uint8_t)(c >> 16), (uint8_t)(c >> 8), (uint8_t)c, (uint8_t)(c >> 24) };
+                    fwrite(px, 1, 4, f);
+                }
+            fclose(f);
+        }
+    }
     {
         static int n = 0;
         if (n++ < 40) LOG_INFO("tex map{} addr={:08x} {}x{} fmt={} levels={} tlutfmt={}", map, addr, w, h, fmt, levels, tlutFmt);
@@ -857,19 +883,39 @@ static void FillPSConstants(PSConstants& c, const uint32_t* texW, const uint32_t
     c.fogColor[1] = (fcol >> 8) & 0xFF;
     c.fogColor[2] = fcol & 0xFF;
     uint32_t rangeBase = BP(0xE8);
-    c.fogF[2] = (float)((int32_t)(rangeBase & 0x3FF) - 342) / 320.0f - 1.0f;   // approximate center
-    c.fogF[3] = 2.0f * XFFloat(0x1000 + XF_VIEWPORT);
-    for (int i = 0; i < 10; i++)
+    float vpw = 2.0f * XFFloat(0x1000 + XF_VIEWPORT);
+    if ((rangeBase >> 10) & 1)
     {
-        uint32_t r = BP(0xE9 + i / 2);
-        uint32_t v = (i & 1) ? (r >> 12) & 0xFFF : r & 0xFFF;
-        c.fogRange[i / 4][i % 4] = (float)v / 256.0f;
+        int center = (int)(rangeBase & 0x3FF) - 342;
+        float ssc = vpw != 0.0f ? center / vpw : 0.5f;
+        c.fogF[2] = ssc * 2.0f - 1.0f;
+        c.fogF[3] = vpw * (float)s_scale;
+        for (int i = 0; i < 5; i++)
+        {
+            uint32_t r = BP(0xE9 + i);
+            c.fogRange[(2 * i) / 4][(2 * i) % 4] = (float)((r >> 12) & 0xFFF) / 256.0f * 4.0f;           // LO
+            c.fogRange[(2 * i + 1) / 4][(2 * i + 1) % 4] = (float)(r & 0xFFF) / 256.0f * 4.0f;           // HI
+        }
+    }
+    else
+    {
+        c.fogF[2] = 0.0f;
+        c.fogF[3] = 1.0f;
     }
     c.depthParams[0] = XFFloat(0x1000 + XF_VIEWPORT + 5);
     c.depthParams[1] = XFFloat(0x1000 + XF_VIEWPORT + 2);
 }
 
 int32_t g_tevKonst[4][4];
+uint32_t g_framesPresented = 0;
+uint32_t g_captureFrame = 0;     // frame number to log every draw of (0 = off)
+static FILE* s_capture = nullptr;
+static bool Capturing() { return g_captureFrame && g_framesPresented + 1 == g_captureFrame; }
+static void CaptureLog(const std::string& line)
+{
+    if (!s_capture) s_capture = fopen("capture.txt", "w");
+    if (s_capture) { fputs(line.c_str(), s_capture); fputc(10, s_capture); fflush(s_capture); }
+}
 
 template <typename T>
 static void UpdateCB(ID3D11Buffer* b, const T& data)
@@ -1036,10 +1082,24 @@ static void Flush()
     g_ctx->PSSetConstantBuffers(0, 1, &s_psCB);
     g_ctx->PSSetShaderResources(0, 8, srvs);
     g_ctx->PSSetSamplers(0, 8, samps);
-    g_ctx->RSSetState(GetRasterState(s_topo == Topo::Tri ? cull : 0));
+    g_ctx->RSSetState(GetRasterState(s_topo == Topo::Tri && !g_dbgNoCull ? cull : 0));
     g_ctx->OMSetBlendState(GetBlendState(), nullptr, 0xFFFFFFFF);
     g_ctx->OMSetDepthStencilState(GetDepthState(), 0);
     SetEFBTarget();
+    if (Capturing())
+    {
+        std::string t;
+        for (int m = 0; m < 8; m++)
+            if (usedMaps & (1 << m))
+            {
+                uint32_t img0 = TexReg(m, 0x88, 0xA8), img3 = TexReg(m, 0x94, 0xB4);
+                t += std::format(" t{}={:08x}:{}x{}f{}", m, (img3 & 0xFFFFFF) << 5, (img0 & 0x3FF) + 1, ((img0 >> 10) & 0x3FF) + 1, (img0 >> 20) & 15);
+            }
+        CaptureLog(std::format("draw idx={} topo={} vc={:x} tev={} gens={} ind={} blend={:06x} z={:02x} cull={} fog={:x} af={:x} pf={} cc0={:06x} ac0={:06x} cc1={:06x} ac1={:06x} vp=({},{},{},{}) proj={} chan={:x}/{:x}{}",
+            s_indices.size(), (int)s_topo, s_batchComponents, pk.numTevStages, pk.numTexGens, pk.numIndStages, BP(0x41) & 0xFFFF, BP(0x40) & 0x1F, cull,
+            pk.fogType, pk.alphaFunc, pk.pixelFormat, pk.colorComb[0], pk.alphaComb[0], pk.colorComb[1], pk.alphaComb[1], vx, vy, vw, vh,
+            g_gx.xfregs[XF_PROJECTION + 6], vk.chan[0], vk.chan[2], t));
+    }
     g_ctx->DrawIndexed((UINT)s_indices.size(), 0, 0);
     s_drawCalls++;
 
@@ -1226,7 +1286,6 @@ void Render_PresentXFB(ID3D11ShaderResourceView* srv, float u0, float v0, float 
 static ID3D11Texture2D* s_xfbTex = nullptr;
 static ID3D11RenderTargetView* s_xfbRTV = nullptr;
 static ID3D11ShaderResourceView* s_xfbSRV = nullptr;
-uint32_t g_framesPresented = 0;
 int g_screenshotEvery = 0;   // frames between automatic screenshots (0 = off)
 
 static void SaveTextureBMP(ID3D11Texture2D* tex, const char* path)
@@ -1292,6 +1351,8 @@ static void DoEFBCopy()
 
     float u0 = (float)sx / EFB_W, v0 = (float)sy / EFB_H, u1 = (float)(sx + sw) / EFB_W, v1 = (float)(sy + sh) / EFB_H;
 
+    if (Capturing())
+        CaptureLog(std::format("efbcopy ctl={:06x} src=({},{} {}x{}) dest={:08x} xfb={} clear={} pf={}", ctl, sx, sy, sw, sh, destAddr, toXFB, clear, PixelFormat()));
     if (toXFB)
     {
         uint32_t w = sw * s_scale, h = sh * s_scale;
@@ -1374,6 +1435,12 @@ static void DoEFBCopy()
         e.ramHash = Hash64(PhysPtr(destAddr), e.ramSize);
         e.efbCopy = true;
         e.lastFrame = s_frame;
+        if (Capturing())
+        {
+            char path[64];
+            snprintf(path, sizeof(path), "efb_%08x_f%u.bmp", destAddr, fmt);
+            SaveTextureBMP(e.tex, path);
+        }
         // also report actual texel dimensions (unscaled) through w/h used for texDim
         e.w = rw;
         e.h = rh;

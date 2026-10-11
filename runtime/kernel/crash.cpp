@@ -41,9 +41,53 @@ struct CrashJob { EXCEPTION_POINTERS* ep; void* frames[62]; USHORT n; };
 static CrashJob s_job;
 static DWORD WINAPI CrashThread(void*) { CrashReport(s_job.ep); return 0; }
 
+// ---------------------------------------------------------------- debug write watch
+static uint32_t s_watchAddr = 0;
+static int s_watchHits = 0;
+static void ProtectWatch(DWORD prot)
+{
+    uint32_t phys = s_watchAddr & 0x1FFFFFFF;
+    uint32_t views[3] = { 0x80000000 | phys, 0xC0000000 | phys, phys };
+    for (uint32_t v : views)
+    {
+        DWORD old;
+        VirtualProtect(g_base + (v & ~0xFFFu), 0x1000, prot, &old);
+    }
+}
+void Crash_SetWatch(uint32_t addr)
+{
+    s_watchAddr = addr;
+    ProtectWatch(PAGE_READONLY);
+    LOG_INFO("watching writes to guest page of {:08x}", addr);
+}
+
 static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS* ep)
 {
     DWORD c = ep->ExceptionRecord->ExceptionCode;
+    if (c == EXCEPTION_SINGLE_STEP && s_watchAddr)
+    {
+        ProtectWatch(PAGE_READONLY);
+        return EXCEPTION_CONTINUE_EXECUTION;
+    }
+    if (c == EXCEPTION_ACCESS_VIOLATION && s_watchAddr && ep->ExceptionRecord->ExceptionInformation[0] == 1)
+    {
+        uintptr_t fa = (uintptr_t)ep->ExceptionRecord->ExceptionInformation[1];
+        uint32_t ga = (uint32_t)(fa - (uintptr_t)g_base);
+        if ((ga & 0x1FFFF000) == (s_watchAddr & 0x1FFFF000))
+        {
+            uint32_t fn = Crash_GuestFunctionForHost((uintptr_t)ep->ContextRecord->Rip);
+            static uint32_t lastFn = 0, lastLr = 0;
+            uint32_t lr = g_curThread ? g_curThread->ctx.lr : 0;
+            if ((fn != lastFn || lr != lastLr) && s_watchHits++ < 40)
+                LOG_INFO("WATCH: write to {:08x} by ~fn_{:08X} lr={:08x} r3={:08x} r4={:08x} r5={:08x}", ga, fn, lr,
+                         g_curThread ? g_curThread->ctx.r[3] : 0, g_curThread ? g_curThread->ctx.r[4] : 0, g_curThread ? g_curThread->ctx.r[5] : 0);
+            lastFn = fn;
+            lastLr = lr;
+            ProtectWatch(PAGE_READWRITE);
+            ep->ContextRecord->EFlags |= 0x100;   // single-step, then re-arm
+            return EXCEPTION_CONTINUE_EXECUTION;
+        }
+    }
     if (c != EXCEPTION_ACCESS_VIOLATION && c != EXCEPTION_ILLEGAL_INSTRUCTION && c != EXCEPTION_INT_DIVIDE_BY_ZERO &&
         c != EXCEPTION_STACK_OVERFLOW && c != EXCEPTION_PRIV_INSTRUCTION)
         return EXCEPTION_CONTINUE_SEARCH;

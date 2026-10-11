@@ -34,6 +34,7 @@ int main(int argc, char** argv)
 {
     std::string root = ExeDir();
     std::string dataDir, isoPath;
+    uint32_t watchAddr = 0;
     for (int i = 1; i < argc; i++)
     {
         std::string a = argv[i];
@@ -41,6 +42,10 @@ int main(int argc, char** argv)
         else if (a == "--iso" && i + 1 < argc) isoPath = argv[++i];
         else if (a == "--verbose") g_logLevel = 0;
         else if (a == "--60fps") g_cfgFrameRate = 60;
+        else if (a == "--dbg-nodepth") { extern int g_dbgNoDepth; g_dbgNoDepth = 1; }
+        else if (a == "--dbg-nocull") { extern int g_dbgNoCull; g_dbgNoCull = 1; }
+        else if (a == "--watch" && i + 1 < argc) watchAddr = (uint32_t)strtoul(argv[++i], nullptr, 16);
+        else if (a == "--capture" && i + 1 < argc) { extern uint32_t g_captureFrame; g_captureFrame = (uint32_t)atoi(argv[++i]); }
         else if (a == "--nobox") g_noMessageBox = true;
         else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }
         else if (a == "--input-script" && i + 1 < argc) { extern void Gamepad_LoadScript(const char*); Gamepad_LoadScript(argv[++i]); }
@@ -78,6 +83,7 @@ int main(int argc, char** argv)
     NAND_InitSystemFiles();
 
     uint32_t entry = Boot_Setup(dataDir);
+    if (watchAddr) { extern void Crash_SetWatch(uint32_t); Crash_SetWatch(watchAddr); }
     if (!entry) FATAL("boot failed");
     Crash_StartWatchdog();
     Threads_RunMain(entry);
