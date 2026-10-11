@@ -288,6 +288,12 @@ PPC_FUNC(fn_803D5924)
 // BOOL WPADCanSendStreamData(s32 chan)
 PPC_FUNC(fn_803D70FC) { ctx.r[3] = Connected((int)ctx.r[3]) ? 1 : 0; }
 
+// BOOL WPADIsMotorEnabled(void) / void WPADEnableMotor(BOOL): the real WPADInit
+// caches SYSCONF BT.MOT (1)
+static bool s_motorEnabled = true;
+PPC_FUNC(fn_803D51C0) { ctx.r[3] = s_motorEnabled ? 1 : 0; }
+PPC_FUNC(fn_803D518C) { s_motorEnabled = ctx.r[3] != 0; }
+
 // u8 WPADGetSpeakerVolume(void): the real WPADInit caches SYSCONF BT.SPKV (0x58)
 PPC_FUNC(fn_803D6F40) { ctx.r[3] = 0x58; }
 
