@@ -38,6 +38,18 @@
   palette on every use. Hash64 uses 4 independent lanes.
 - Remaining CPU cost is mostly the vertex loader (~20%) and the GX FIFO parser.
 
+## Bugs found by random-input soak tests
+
+`out/soak*.txt` are generated scripts (menus, then ~12 minutes of random stick/button
+input); run them with `tools/run_test.ps1 -Seconds 900 -GameArgs "--nobox --input-script
+soak.txt --shots 1800 --shots-start 1800"`. The first one cleared mission 1 and found:
+
+- runtime display lists (GXBeginDisplayList redirects the CPU FIFO to RAM) were never
+  written to memory;
+- the HLSL depth clamp used a hex literal and became an unsigned clamp, so near-plane
+  pixels (2D UI) got max depth and full fog;
+- the VS/PS interface register of clipPos depended on the texgen count.
+
 ## Threading notes
 
 - CPU thread appends write-gather bytes to a 32 MB lock-free ring; the GX thread copies
