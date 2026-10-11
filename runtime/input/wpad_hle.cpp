@@ -61,18 +61,12 @@ bool Connected(int chan)
 
 void CallGuest(PPCContext& ctx, uint8_t* base, uint32_t func, uint32_t r3, uint32_t r4)
 {
-    PPCFunc f = ppc_lookup(func);
-    if (!f)
-    {
-        LOG_WARN("WPAD: callback {:08x} not found", func);
-        return;
-    }
     PPCContext saved = ctx;
     ctx.r[1] -= 0x100;
     ctx.r[3] = r3;
     ctx.r[4] = r4;
     ctx.lr = 0;
-    f(ctx, base);
+    ppc_call_indirect(ctx, base, func);   // may live in the interpreted HOME menu module
     ctx = saved;
 }
 }   // namespace

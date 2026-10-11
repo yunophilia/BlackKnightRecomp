@@ -29,7 +29,7 @@ bool g_autoPress = false;   // test aid: tap A every few seconds
 #include <sstream>
 #include <string>
 #include <vector>
-struct ScriptEvent { double t0, t1; uint16_t buttons; float lx, ly, rx, ry, rt; bool hasStick; };
+struct ScriptEvent { double t0, t1; uint16_t buttons; float lx, ly, rx, ry, rt; bool hasStick; float px = -1, py = -1; };
 static std::vector<ScriptEvent> s_script;
 static DWORD s_scriptStart = 0;
 
@@ -57,6 +57,8 @@ void Gamepad_LoadScript(const char* path)
                 {
                     float v = std::stof(tok.substr(eq + 1));
                     std::string k = tok.substr(0, eq);
+                    if (k == "PX") { e.px = v; continue; }
+                    if (k == "PY") { e.py = v; continue; }
                     e.hasStick = true;
                     if (k == "LX") e.lx = v; else if (k == "LY") e.ly = v; else if (k == "RX") e.rx = v; else if (k == "RY") e.ry = v; else if (k == "RT") e.rt = v;
                     continue;
@@ -64,7 +66,7 @@ void Gamepad_LoadScript(const char* path)
                 static const struct { const char* n; uint16_t b; } names[] = {
                     { "A", PAD_A }, { "B", PAD_B }, { "X", PAD_X }, { "Y", PAD_Y }, { "LB", PAD_LB }, { "RB", PAD_RB },
                     { "START", PAD_START }, { "BACK", PAD_BACK }, { "UP", PAD_DPAD_UP }, { "DOWN", PAD_DPAD_DOWN },
-                    { "LEFT", PAD_DPAD_LEFT }, { "RIGHT", PAD_DPAD_RIGHT },
+                    { "LEFT", PAD_DPAD_LEFT }, { "RIGHT", PAD_DPAD_RIGHT }, { "HOME", PAD_HOME },
                 };
                 for (auto& n : names) if (tok == n.n) e.buttons |= n.b;
             }
@@ -85,6 +87,8 @@ void Gamepad_Poll(int index, GamepadState& out)
             {
                 out.buttons |= e.buttons;
                 if (e.hasStick) { out.lx = e.lx; out.ly = e.ly; out.rx = e.rx; out.ry = e.ry; out.rt = e.rt; }
+                if (e.px >= 0) out.px = e.px;
+                if (e.py >= 0) out.py = e.py;
             }
         out.connected = true;
         // Script is authoritative; skip real devices so a script run is reproducible
@@ -100,7 +104,10 @@ void Gamepad_Poll(int index, GamepadState& out)
     if (XInputGetState(index, &st) == ERROR_SUCCESS)
     {
         out.connected = true;
-        out.buttons |= st.Gamepad.wButtons;
+        out.buttons |= st.Gamepad.wButtons & ~PAD_HOME;
+        // Back+Start together act as the Wii Remote HOME button
+        if ((out.buttons & (PAD_BACK | PAD_START)) == (PAD_BACK | PAD_START))
+            out.buttons = (out.buttons & ~(PAD_BACK | PAD_START)) | PAD_HOME;
         out.lx = Stick(st.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
         out.ly = Stick(st.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
         out.rx = Stick(st.Gamepad.sThumbRX, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
@@ -123,6 +130,7 @@ void Gamepad_Poll(int index, GamepadState& out)
     map('Q', PAD_LB);
     map(VK_RETURN, PAD_START);
     map(VK_BACK, PAD_BACK);
+    map('H', PAD_HOME);
     map(VK_UP, PAD_DPAD_UP);
     map(VK_DOWN, PAD_DPAD_DOWN);
     map(VK_LEFT, PAD_DPAD_LEFT);

@@ -80,10 +80,10 @@ static void WINAPI ThreadFiberProc(void* param)
     GuestThread* t = (GuestThread*)param;
     g_curThread = t;
     LOG_INFO("guest thread start: ctx={:08x} entry={:08x} sp={:08x}", t->osContext, t->entry, t->ctx.r[1]);
-    PPCFunc f = ppc_lookup(t->entry);
-    if (!f) FATAL("thread entry {:08x} is not a known function", t->entry);
     t->ctx.lr = t->exitLr;
-    f(t->ctx, g_base);
+    // entry may be outside the recompiled image (e.g. the HOME menu RSO module),
+    // in which case the interpreter runs it
+    ppc_call_indirect(t->ctx, g_base, t->entry);
     PPCFunc ex = ppc_lookup(t->exitLr);
     if (ex) ex(t->ctx, g_base);
     FATAL("guest thread {:08x} returned past its exit function", t->osContext);

@@ -5,6 +5,27 @@
 #include "../log.h"
 
 #include <vector>
+#include <windows.h>
+
+// The console is leaving the game: "Wii Menu" from the HOME menu (ES_LaunchTitle)
+// or power off simply quit; "Reset" (STM hot reset) restarts the executable.
+[[noreturn]] static void LeaveGame(bool restart)
+{
+    LOG_INFO("{}", restart ? "game requested reset: restarting" : "game requested exit");
+    if (restart)
+    {
+        STARTUPINFOW si{ sizeof(si) };
+        PROCESS_INFORMATION pi{};
+        wchar_t exe[MAX_PATH];
+        GetModuleFileNameW(nullptr, exe, MAX_PATH);
+        if (CreateProcessW(exe, GetCommandLineW(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi))
+        {
+            CloseHandle(pi.hThread);
+            CloseHandle(pi.hProcess);
+        }
+    }
+    ExitProcess(0);
+}
 
 static constexpr uint64_t TITLE_ID = 0x00010000'52454E45ull;   // RENE
 
@@ -34,6 +55,8 @@ public:
         auto out64 = [&](size_t i, uint64_t v) { if (r.io.size() > i && r.io[i].size >= 8) Write64(0x80000000 | r.io[i].addr, v); };
         switch (r.ioctl)
         {
+        case 0x08:   // LaunchTitle (return to the Wii Menu)
+            LeaveGame(false);
         case 0x07:   // GetDeviceID
             out32(0, 0x0403AC68);
             return { IPC_SUCCESS };
@@ -118,9 +141,10 @@ public:
     {
         switch (r.ioctl)
         {
-        case 0x1001: return { IPC_SUCCESS };   // release event hook
-        case 0x2001: case 0x2003: LOG_INFO("STM: shutdown/reboot requested ({:x})", r.ioctl); return { IPC_SUCCESS };
-        case 0x3001: return { IPC_SUCCESS };   // get state
+        case 0x2001: case 0x2002: LeaveGame(true);    // hot reset
+        case 0x2003: LeaveGame(false);                // shutdown
+        case 0x3001: return { IPC_SUCCESS };   // get idle mode
+        case 0x3002: return { IPC_SUCCESS };   // release event hook
         case 0x4001: return { IPC_SUCCESS };   // unk
         case 0x5001: return { IPC_SUCCESS };   // VI dimming
         case 0x6001: case 0x6002: return { IPC_SUCCESS };

@@ -40,6 +40,9 @@ struct State
     int lastSlashDir = 1;
     bool rstickArmed = true;
     float rtPrev = 0.0f;
+    float xHeld = 0.0f;     // seconds X has been held (auto-repeat slashes)
+    float ptrX = 0.5f, ptrY = 0.5f;   // pointer position 0..1 (right stick / mouse)
+    POINT lastMouse{ -1, -1 };
 };
 
 State s_state[4];
@@ -72,6 +75,18 @@ void Motion_Step(int chan, float dt)
 
     // X: slash, alternating direction, or follow the right stick if it is held
     bool xPressed = (p.buttons & PAD_X) && !(s.prevPad.buttons & PAD_X);
+    // holding X keeps slashing (one swing every 0.22 s after the first)
+    if (p.buttons & PAD_X)
+    {
+        s.xHeld += dt;
+        if (!xPressed && s.xHeld >= 0.22f && s.remote.t < 0.0f)
+        {
+            s.xHeld = 0.0f;
+            xPressed = true;
+        }
+    }
+    else
+        s.xHeld = 0.0f;
     float rmag = std::sqrt(p.rx * p.rx + p.ry * p.ry);
     if (xPressed)
     {
@@ -97,6 +112,28 @@ void Motion_Step(int chan, float dt)
     // Y: shake the Nunchuk
     if ((p.buttons & PAD_Y) && !(s.prevPad.buttons & PAD_Y)) StartPulse(s.nunchuk, 3.0f, 0.0f, 3.0f, 0.2f);
 
+    // Pointer: the right stick moves it; moving the mouse inside the window takes over.
+    s.ptrX = std::clamp(s.ptrX + p.rx * dt * 0.9f, 0.0f, 1.0f);
+    s.ptrY = std::clamp(s.ptrY - p.ry * dt * 0.9f, 0.0f, 1.0f);
+    if (chan == 0)
+    {
+        HWND hwnd = (HWND)Video_HWND();
+        POINT pt;
+        RECT rc;
+        if (hwnd && GetCursorPos(&pt) && (pt.x != s.lastMouse.x || pt.y != s.lastMouse.y))
+        {
+            s.lastMouse = pt;
+            if (ScreenToClient(hwnd, &pt) && GetClientRect(hwnd, &rc) && rc.right > 0 && rc.bottom > 0 && pt.x >= 0 && pt.y >= 0 &&
+                pt.x < rc.right && pt.y < rc.bottom)
+            {
+                s.ptrX = (float)pt.x / rc.right;
+                s.ptrY = (float)pt.y / rc.bottom;
+            }
+        }
+    }
+    if (p.px >= 0) s.ptrX = p.px;
+    if (p.py >= 0) s.ptrY = p.py;
+
     if (s.remote.t >= 0.0f) { s.remote.t += dt; if (s.remote.t > s.remote.dur) s.remote.t = -1.0f; }
     if (s.nunchuk.t >= 0.0f) { s.nunchuk.t += dt; if (s.nunchuk.t > s.nunchuk.dur) s.nunchuk.t = -1.0f; }
 }
@@ -121,6 +158,7 @@ void Motion_FillStatus(int chan, uint32_t st, bool connected)
     if (p.buttons & PAD_LB) b |= WPB_C;
     if (p.buttons & PAD_START) b |= WPB_PLUS;
     if (p.buttons & PAD_BACK) b |= WPB_MINUS;
+    if (p.buttons & PAD_HOME) b |= WPB_HOME;
     if (p.buttons & PAD_LTHUMB) b |= WPB_ONE;
     if (p.buttons & PAD_RTHUMB) b |= WPB_TWO;
     if (p.buttons & PAD_DPAD_UP) b |= WPB_UP;
@@ -139,21 +177,14 @@ void Motion_FillStatus(int chan, uint32_t st, bool connected)
 
     // IR: two sensor bar dots. The mouse (inside the window) aims the pointer;
     // the camera sees the bar move opposite to where the remote points.
-    float px = 0.5f, py = 0.5f;
-    {
-        HWND hwnd = (HWND)Video_HWND();
-        POINT pt;
-        RECT rc;
-        if (hwnd && GetCursorPos(&pt) && ScreenToClient(hwnd, &pt) && GetClientRect(hwnd, &rc) && rc.right > 0 && rc.bottom > 0 &&
-            pt.x >= 0 && pt.y >= 0 && pt.x < rc.right && pt.y < rc.bottom)
-        {
-            px = (float)pt.x / rc.right;
-            py = (float)pt.y / rc.bottom;
-        }
-    }
-    int cx = (int)(512 + (0.5f - px) * 700.0f);
-    int cy = (int)(384 + (0.5f - py) * 560.0f);
-    struct Dot { int x, y; } dots[2] = { { cx - 100, cy }, { cx + 100, cy } };
+    float px = s.ptrX, py = s.ptrY;
+    // Dot spacing sets KPAD's distance estimate (interval / spacing); the game
+    // only accepts roughly 0.52..1.0, so 360 counts (~0.74) keeps it in range.
+    // Calibrated against KPAD's output so the window maps onto pos -1..1
+    // (the +102 cancels KPAD's sensor-bar-above offset).
+    int cx = (int)(512 + (0.5f - px) * 460.0f);
+    int cy = (int)(486 + (0.5f - py) * 452.0f);
+    struct Dot { int x, y; } dots[2] = { { cx - 180, cy }, { cx + 180, cy } };
     for (int i = 0; i < 4; i++)
     {
         uint32_t o = st + 0x08 + i * 8;

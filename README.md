@@ -71,17 +71,40 @@ Dolphin (for `DolphinTool.exe` and its signature database).
 | Controller | Keyboard | Action |
 |---|---|---|
 | Left stick | WASD | Move |
-| A | Space | Jump |
-| X | J | Slash (sword swing) |
-| B | K | Wii Remote B |
-| RB | Left Shift | Guard (Z) |
+| A | Space | Jump / homing attack |
+| X (hold to repeat) | J | Slash (sword swing) |
+| Right stick flick | | Directional slash |
+| B, then X | K | Soul Surge (Wii Remote B) |
+| RB | Left Shift | Guard / talk (Z) |
+| LB | Q | Nunchuk C |
+| Y | L | Shake Nunchuk |
+| RT / LT | U / - | Thrust Remote forward / pull back |
 | Start | Enter | Pause (+) |
+| Back | Backspace | Minus (-) |
+| Back + Start | H | HOME menu |
+| Right stick (in menus) | Mouse | Pointer |
+| D-pad | Arrow keys | D-pad |
 
+The Wii Remote pointer follows the mouse when it moves inside the window, otherwise the
+right stick moves it. Choosing "Wii Menu" in the HOME menu quits; "Reset" restarts.
 F11 or Alt+Enter toggles fullscreen.
+
+## Settings
+
+`config.ini` is created next to the executable on first run:
+
+* `frame_rate`: `30` (original) or `60`. 60 fps works through the game's own frame-rate
+  setting, so game speed stays correct; treat it as experimental.
+* `internal_scale`: internal resolution multiplier (default 3, about 1080p).
+* `window_width`, `window_height`, `fullscreen`, `vsync`, `widescreen`.
+* `language`: english, german, french, spanish, italian, dutch, japanese.
+* `rumble`: controller vibration.
+* `data`, `iso`: game file locations, if they are not in `game/`.
 
 ## Status
 
-Early development. See `docs/progress.md`.
+The game is playable from boot to gameplay, with graphics, audio, saves and controller
+input working. See `docs/progress.md`.
 
 ## License
 
