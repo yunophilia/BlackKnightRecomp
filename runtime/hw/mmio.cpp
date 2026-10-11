@@ -1,4 +1,5 @@
 // Memory-mapped I/O dispatch for 0xC8000000-0xCDFFFFFF.
+#include <atomic>
 #include "hw.h"
 #include "../cpu/ppc_context.h"
 #include "../kernel/threads.h"
@@ -101,7 +102,7 @@ static uint32_t Read32Block(Block b, uint32_t off, uint32_t ea)
     case Block::DI: return DI_Read32(off);
     case Block::HLW: return HLW_Read32(off);
     case Block::HLW_DI: return DI_Read32(off);
-    case Block::EFB: return EFB_Read32(ea);
+    case Block::EFB: { auto lk = GX_SyncGPU(); return EFB_Read32(ea); }
     case Block::DSP: return DSP_Read32(off);
     default:
         LOG_WARN("MMIO read32 from unmapped {:08x}", ea);
@@ -120,7 +121,7 @@ static void Write32Block(Block b, uint32_t off, uint32_t v, uint32_t ea)
     case Block::DI: DI_Write32(off, v); break;
     case Block::HLW: HLW_Write32(off, v); break;
     case Block::HLW_DI: DI_Write32(off, v); break;
-    case Block::EFB: EFB_Write32(ea, v); break;
+    case Block::EFB: { auto lk = GX_SyncGPU(); EFB_Write32(ea, v); break; }
     case Block::DSP: DSP_Write32(off, v); break;
     case Block::GXFIFO: GPFifo_Write32(v); break;
     default:
@@ -205,7 +206,7 @@ extern "C" void mmio_write8(uint32_t ea, uint32_t v)
 }
 
 // ------------------------------------------------------------------ PI
-static uint32_t s_piCause = INT_CAUSE_RST_BUTTON;
+static std::atomic<uint32_t> s_piCause{ INT_CAUSE_RST_BUTTON };   // also set by the GX thread
 static uint32_t s_piMask = 0;
 static uint32_t s_piFifoBase, s_piFifoEnd, s_piFifoWptr;
 static uint32_t s_piResetCode = 0;
@@ -217,8 +218,8 @@ bool HW_PIInterruptPending()
 
 void PI_SetInterrupt(uint32_t cause, bool set)
 {
-    if (set) s_piCause |= cause;
-    else s_piCause &= ~cause;
+    if (set) s_piCause.fetch_or(cause);
+    else s_piCause.fetch_and(~cause);
     Irq_Update();
 }
 
@@ -248,7 +249,7 @@ void PI_Write32(uint32_t off, uint32_t v)
 {
     switch (off)
     {
-    case 0x00: s_piCause &= ~(v & 0xFFFF & ~INT_CAUSE_WII_IPC); Irq_Update(); break;
+    case 0x00: s_piCause.fetch_and(~(v & 0xFFFF & ~INT_CAUSE_WII_IPC)); Irq_Update(); break;
     case 0x04: s_piMask = v; Irq_Update(); break;
     case 0x0C: s_piFifoBase = v & 0x1FFFFFE0; break;
     case 0x10: s_piFifoEnd = v & 0x1FFFFFE0; break;

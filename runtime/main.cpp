@@ -38,6 +38,7 @@ int main(int argc, char** argv)
     Log_Open((root + "/BlackKnightRecomp.log").c_str());
     Config_Load(root + "/config.ini");
     g_cfgFrameRate = g_config.frameRate;
+    { extern bool g_gpuThread; g_gpuThread = g_config.gpuThread; }
     std::string dataDir = g_config.dataDir, isoPath = g_config.isoPath;
     uint32_t watchAddr = 0;
     int profStart = -1, profDur = 0;
@@ -56,6 +57,7 @@ int main(int argc, char** argv)
         else if (a == "--watch" && i + 1 < argc) watchAddr = (uint32_t)strtoul(argv[++i], nullptr, 16);
         else if (a == "--capture" && i + 1 < argc) { extern uint32_t g_captureFrame; g_captureFrame = (uint32_t)atoi(argv[++i]); }
         else if (a == "--nobox") g_noMessageBox = true;
+        else if (a == "--single-core") { extern bool g_gpuThread; g_gpuThread = false; }
         else if (a == "--dump-textures") { extern bool g_dumpTextures; g_dumpTextures = true; }
         else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }
         else if (a == "--input-script" && i + 1 < argc) { extern void Gamepad_LoadScript(const char*); Gamepad_LoadScript(argv[++i]); }
@@ -91,6 +93,7 @@ int main(int argc, char** argv)
     HW_Init();
     Renderer_Init();
     AudioOut_Init();
+    { extern bool g_gpuThread; if (g_gpuThread) GX_StartThread(); }
     if (!Disc_Open(dataDir, isoPath)) FATAL("cannot open disc data");
     std::string nand = root + "/nand";
     std::filesystem::create_directories(nand);

@@ -4,7 +4,12 @@
 #include "../kernel/memory.h"
 #include "../log.h"
 
+#include <atomic>
+#include <cstring>
+#include <mutex>
+#include <thread>
 #include <vector>
+#include <windows.h>
 
 GXState g_gx;
 
@@ -86,9 +91,12 @@ static uint16_t s_peRegs[0x40];
 static uint16_t s_peToken = 0;
 static bool s_peTokenInt = false, s_peFinishInt = false;
 static uint16_t s_peIntCtrl = 0;   // bit0 token enable, bit1 finish enable
+// PE flags are set by the GPU thread and acknowledged by the CPU thread
+static std::recursive_mutex s_peMutex;
 
 static void PE_UpdateInterrupts()
 {
+    std::lock_guard lk(s_peMutex);
     PI_SetInterrupt(INT_CAUSE_PE_TOKEN, s_peTokenInt && (s_peIntCtrl & 1));
     PI_SetInterrupt(INT_CAUSE_PE_FINISH, s_peFinishInt && (s_peIntCtrl & 2));
 }
@@ -112,11 +120,14 @@ void PE_Write16(uint32_t off, uint16_t v)
     switch (off)
     {
     case 0x0A:
+    {
+        std::lock_guard lk(s_peMutex);
         s_peIntCtrl = v & 3;
         if (v & 4) s_peTokenInt = false;
         if (v & 8) s_peFinishInt = false;
         PE_UpdateInterrupts();
         break;
+    }
     case 0x0E:
         s_peToken = v;
         break;
@@ -130,8 +141,12 @@ void PE_Write16(uint32_t off, uint16_t v)
 static uint16_t s_cpRegs[0x40];
 static uint32_t s_cpFifoBase, s_cpFifoEnd, s_cpHiWM, s_cpLoWM, s_cpRWDist, s_cpWptr, s_cpRptr, s_cpBreak;
 
+std::unique_lock<std::mutex> GX_SyncGPU();
+
 uint16_t CP_Read16(uint32_t off)
 {
+    // status and FIFO pointers describe GPU progress: let it catch up first
+    if (off == 0x00 || (off >= 0x30 && off <= 0x3A)) GX_SyncGPU();
     switch (off)
     {
     case 0x00:   // status: FIFO empty, GP idle for commands/reads
@@ -230,12 +245,14 @@ static void LoadIndexedXF(int array, uint32_t word)
 
 void GX_PE_Finish()
 {
+    std::lock_guard lk(s_peMutex);
     s_peFinishInt = true;
     PE_UpdateInterrupts();
 }
 
 void GX_PE_Token(uint16_t token, bool interrupt)
 {
+    std::lock_guard lk(s_peMutex);
     s_peToken = token;
     if (interrupt)
     {
@@ -402,17 +419,99 @@ static inline void AdvanceWptr(uint32_t bytes)
     PI_SetFifoWptr(w);
 }
 
+// ------------------------------------------------------------------ GPU thread
+// Like Dolphin's dual-core mode: the CPU thread only appends write-gather bytes to
+// a lock-free ring; a separate thread parses them and renders. The CPU waits for
+// the GPU only when it reads GPU state (CP status, EFB peeks) or the ring is full.
+// PE draw-done/token interrupts are raised from the GPU thread as on hardware.
+bool g_gpuThread = true;
+static constexpr size_t RING_SIZE = 32u << 20;
+static uint8_t* s_ring;
+static size_t s_localW = 0;                     // CPU: bytes written
+static std::atomic<size_t> s_ringW{ 0 };        // published to the GPU
+static std::atomic<size_t> s_ringR{ 0 };        // consumed by the GPU
+static std::atomic<bool> s_gpuSleeping{ false };
+static HANDLE s_gpuWake, s_cpuWake;
+static std::mutex s_gpuLock;                    // held while the GPU executes commands
+static bool s_threadStarted = false;
+
+static void GpuThread()
+{
+    SetThreadDescription(GetCurrentThread(), L"GX");
+    for (;;)
+    {
+        size_t r = s_ringR.load(std::memory_order_relaxed);
+        size_t w = s_ringW.load(std::memory_order_acquire);
+        if (w == r)
+        {
+            SetEvent(s_cpuWake);
+            // brief spin before sleeping: commands usually arrive in quick bursts
+            for (int i = 0; i < 2000 && s_ringW.load(std::memory_order_acquire) == r; i++) YieldProcessor();
+            if (s_ringW.load(std::memory_order_acquire) == r)
+            {
+                s_gpuSleeping.store(true);
+                if (s_ringW.load(std::memory_order_acquire) == r) WaitForSingleObject(s_gpuWake, 2);
+                s_gpuSleeping.store(false);
+            }
+            continue;
+        }
+        std::lock_guard lk(s_gpuLock);
+        size_t n = w - r;
+        size_t off = r % RING_SIZE;
+        size_t first = std::min(n, RING_SIZE - off);
+        s_fifo.insert(s_fifo.end(), s_ring + off, s_ring + off + first);
+        if (first < n) s_fifo.insert(s_fifo.end(), s_ring, s_ring + (n - first));
+        s_ringR.store(w, std::memory_order_release);
+        ProcessFifo();
+    }
+}
+
+static inline void Publish()
+{
+    s_ringW.store(s_localW, std::memory_order_release);
+    if (s_gpuSleeping.load()) SetEvent(s_gpuWake);
+}
+
+// Blocks until the GPU thread has executed everything written so far. The returned
+// lock keeps it idle, so the caller may touch renderer state (EFB peeks).
+std::unique_lock<std::mutex> GX_SyncGPU()
+{
+    if (!s_threadStarted) return std::unique_lock<std::mutex>(s_gpuLock);
+    Publish();
+    while (s_ringR.load(std::memory_order_acquire) != s_localW)
+    {
+        SetEvent(s_gpuWake);
+        WaitForSingleObject(s_cpuWake, 1);
+    }
+    return std::unique_lock<std::mutex>(s_gpuLock);
+}
+
 static uint32_t s_gatherCount = 0;
 
 static inline void Gather(const uint8_t* b, int n)
 {
-    s_fifo.insert(s_fifo.end(), b, b + n);
+    if (s_threadStarted)
+    {
+        while (s_localW + n - s_ringR.load(std::memory_order_acquire) > RING_SIZE)
+        {
+            Publish();
+            SetEvent(s_gpuWake);
+            WaitForSingleObject(s_cpuWake, 1);
+        }
+        size_t off = s_localW % RING_SIZE;
+        if (off + n <= RING_SIZE) memcpy(s_ring + off, b, n);
+        else for (int i = 0; i < n; i++) s_ring[(s_localW + i) % RING_SIZE] = b[i];
+        s_localW += n;
+    }
+    else
+        s_fifo.insert(s_fifo.end(), b, b + n);
     s_gatherCount += n;
     if (s_gatherCount >= 32)
     {
         AdvanceWptr(s_gatherCount & ~31u);
         s_gatherCount &= 31;
-        ProcessFifo();
+        if (s_threadStarted) Publish();
+        else ProcessFifo();
     }
 }
 
@@ -424,7 +523,20 @@ void GPFifo_Write32(uint32_t v) { uint8_t b[4] = { (uint8_t)(v >> 24), (uint8_t)
 // presenting.
 void GX_FlushPipe()
 {
-    ProcessFifo();
+    if (s_threadStarted) Publish();
+    else ProcessFifo();
+}
+
+// Starts the GPU thread (after the renderer is initialised).
+void GX_StartThread()
+{
+    if (!g_gpuThread || s_threadStarted) return;
+    s_ring = (uint8_t*)VirtualAlloc(nullptr, RING_SIZE, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    s_gpuWake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    s_cpuWake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+    s_threadStarted = true;
+    std::thread(GpuThread).detach();
+    LOG_INFO("GX: running on a separate thread");
 }
 
 void GX_Init()

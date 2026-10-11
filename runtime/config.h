@@ -13,6 +13,7 @@ struct Config
     bool fullscreen = false;
     bool vsync = false;
     bool widescreen = true;
+    bool gpuThread = true;       // GX processing/rendering on its own thread
     bool texturePack = true;     // load Dolphin-format custom textures if present
     std::string texturePackDir;  // empty: <exe>/textures, game/textures, Dolphin's Load/Textures
     // [System]

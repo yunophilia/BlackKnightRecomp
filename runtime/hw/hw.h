@@ -59,6 +59,10 @@ void GPFifo_Write16(uint16_t v);
 void GPFifo_Write32(uint32_t v);
 
 // EFB peek/poke (0xC8000000)
+// Waits for the GX thread to drain; the lock keeps it idle while held.
+#include <mutex>
+std::unique_lock<std::mutex> GX_SyncGPU();
+void GX_StartThread();
 uint32_t EFB_Read32(uint32_t ea);
 void EFB_Write32(uint32_t ea, uint32_t v);
 
