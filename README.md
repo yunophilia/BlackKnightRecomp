@@ -91,10 +91,10 @@ Dolphin (for `DolphinTool.exe` and its signature database).
 |---|---|---|
 | Left stick | WASD | Move |
 | A | Space | Jump / homing attack |
-| X (hold to repeat) | J | Slash (sword swing) |
+| X (hold to repeat) | J / left click | Slash (sword swing) |
 | Right stick flick | | Directional slash |
 | B, then X | K | Soul Surge (Wii Remote B) |
-| RB | Left Shift | Guard / talk (Z) |
+| RB | Left Shift / right click | Guard / talk (Z) |
 | LB | Q | Nunchuk C |
 | Y | L | Shake Nunchuk |
 | RT / LT | U / - | Thrust Remote forward / pull back |

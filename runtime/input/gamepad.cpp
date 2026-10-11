@@ -185,6 +185,8 @@ void Gamepad_Poll(int index, GamepadState& out)
     map('L', PAD_Y);
     map(VK_LSHIFT, PAD_RB);    // guard
     map('Q', PAD_LB);
+    map(VK_LBUTTON, PAD_X);    // mouse: left click slashes, right click guards
+    map(VK_RBUTTON, PAD_RB);
     map(VK_RETURN, PAD_START);
     map(VK_BACK, PAD_BACK);
     map('H', PAD_HOME);
