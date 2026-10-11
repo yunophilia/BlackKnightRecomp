@@ -79,6 +79,9 @@ Dolphin (for `DolphinTool.exe` and its signature database).
    ```
    If the link step crashes with `LNK1000` (seen with VS2019 16.10 and the Windows SDK
    10.0.26100 import libraries), use `tools/dev_build.bat`, which links against 10.0.19041.
+   `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`; players
+   put their own `extracted/`, `.iso` (any name), `dsp_coef.bin` and optional
+   `textures/` into its `game/` folder.
 4. Run `build/Release/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
    repo root, or pass `--data <dir> --iso <file>`).
 

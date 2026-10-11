@@ -75,6 +75,20 @@ int main(int argc, char** argv)
     };
     pick(dataDir, "game/extracted/DATA");
     pick(isoPath, "game/RENE8P_Sonic_and_the_Black_Knight.iso");
+    if (isoPath.empty())
+    {
+        // any disc image in game/ next to the exe or the repo root
+        for (std::string b : { root, root + "/.." })
+        {
+            std::error_code ec;
+            for (auto& e : std::filesystem::directory_iterator(std::filesystem::path(b) / "game", ec))
+            {
+                auto ext = e.path().extension().string();
+                if (ext == ".iso" || ext == ".ISO") { isoPath = e.path().string(); break; }
+            }
+            if (!isoPath.empty()) break;
+        }
+    }
 
     g_videoConfig.internalScale = g_config.internalScale;
     g_videoConfig.windowWidth = g_config.windowWidth;

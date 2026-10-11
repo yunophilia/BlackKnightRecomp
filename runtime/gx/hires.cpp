@@ -205,6 +205,7 @@ void HiRes_Init(const std::string& configuredDir)
         GetModuleFileNameW(nullptr, buf, MAX_PATH);
         fs::path exe = fs::path(buf).parent_path();
         roots.push_back(exe / "textures");
+        roots.push_back(exe / "game" / "textures");
         roots.push_back(exe / ".." / "game" / "textures");
         if (const char* up = getenv("USERPROFILE"))
             roots.push_back(fs::path(up) / "Documents" / "Dolphin Emulator" / "Load" / "Textures");
