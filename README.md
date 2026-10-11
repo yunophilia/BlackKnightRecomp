@@ -113,8 +113,9 @@ F11 or Alt+Enter toggles fullscreen.
 
 `config.ini` is created next to the executable on first run:
 
-* `frame_rate`: `30` (original) or `60`. 60 fps works through the game's own frame-rate
-  setting, so game speed stays correct; treat it as experimental.
+* `frame_rate`: `30` (original) or `60`. 60 fps uses the game's own frame-rate setting:
+  game time, movement speed and stage progress match 30 fps (checked side by side at
+  equal in-game timer values in mission 1). Later stage types are not verified yet.
 * `internal_scale`: internal resolution multiplier (default 3, about 1080p).
 * `window_width`, `window_height`, `fullscreen`, `vsync`, `widescreen`.
 * `texture_pack`, `texture_pack_dir`: Dolphin-format HD texture packs (for example the one
