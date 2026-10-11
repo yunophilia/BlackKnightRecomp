@@ -49,8 +49,8 @@ static void GenLight(std::string& s, uint32_t chanReg, int light, bool alpha)
     std::string swz = alpha ? "a" : "rgb";
     std::string cmp = alpha ? "" : "3";
     std::string b = std::format("0x{:X}", 0x600 + light * 16);
-    // attn: 0 = specular, 1 = spot, 2/3 = none (directional)
-    if (attn == 0)
+    // attn (XF AttenuationFunc): 0 = none, 1 = specular, 2 = directional, 3 = spot
+    if (attn == 1)
     {
         W(s, std::format("\t\tldir = normalize(xf3({0} + 10) - pos.xyz);\n", b));
         W(s, std::format("\t\tattn = (dot(n, ldir) >= 0.0) ? max(0.0, dot(n, xf3({0} + 13))) : 0.0;\n", b));
@@ -58,7 +58,7 @@ static void GenLight(std::string& s, uint32_t chanReg, int light, bool alpha)
         W(s, std::format("\t\tdistAttn = {1}(xf3({0} + 7));\n", b, diffuse == 0 ? "" : "normalize"));
         W(s, "\t\tattn = max(0.0, dot(cosAttn, float3(1.0, attn, attn * attn))) / dot(distAttn, float3(1.0, attn, attn * attn));\n");
     }
-    else if (attn == 1)
+    else if (attn == 3)
     {
         W(s, std::format("\t\tldir = xf3({0} + 10) - pos.xyz;\n", b));
         W(s, "\t\tdist2 = dot(ldir, ldir); dist = sqrt(dist2); ldir = ldir / dist;\n");
