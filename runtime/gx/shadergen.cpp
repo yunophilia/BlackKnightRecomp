@@ -199,6 +199,8 @@ std::string GenerateVertexShader(const VSKey& k)
                              "dot(float4(xf[0x504+{0}],xf[0x505+{0}],xf[0x506+{0}],xf[0x507+{0}]), rp), "
                              "dot(float4(xf[0x508+{0}],xf[0x509+{0}],xf[0x50A+{0}],xf[0x50B+{0}]), rp));\n", base));
         }
+        // hardware special case when q is 0 (Dolphin: neheGX lesson 8, Rogue Squadron 3)
+        if (type == 0) W(s, "\t\tif (r.z == 0.0) r.xy = clamp(r.xy / 2.0, float2(-1.0, -1.0), float2(1.0, 1.0));\n");
         W(s, std::format("\t\to.tex{} = r;\n\t}}\n", i));
     }
 
