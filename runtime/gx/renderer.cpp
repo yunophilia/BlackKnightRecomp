@@ -1553,6 +1553,21 @@ static void DoEFBCopy()
             SaveTextureBMP(s_xfbTex, path);
         }
         s_frame++;
+        // evict textures and EFB copies unused for ~600 frames so VRAM stays bounded
+        if ((s_frame % 300) == 0)
+        {
+            for (auto* cache : { &s_texCache })
+                for (auto it = cache->begin(); it != cache->end();)
+                {
+                    if (s_frame - it->second.lastFrame > 600) { ReleaseTex(it->second); it = cache->erase(it); }
+                    else ++it;
+                }
+            for (auto it = s_efbCopies.begin(); it != s_efbCopies.end();)
+            {
+                if (s_frame - it->second.lastFrame > 600) { ReleaseTex(it->second); it = s_efbCopies.erase(it); }
+                else ++it;
+            }
+        }
         if ((g_framesPresented % 300) == 0)
             LOG_INFO("GX: {} frames, {} shaders (vs {} / ps {}), {} textures", g_framesPresented, s_vsCache.size() + s_psCache.size(),
                      s_vsCache.size(), s_psCache.size(), s_texCache.size());
