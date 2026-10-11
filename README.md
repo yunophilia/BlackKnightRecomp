@@ -32,13 +32,20 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 * **IOS** (`runtime/ios`): high-level `/dev/di` (served from the extracted disc files, so
   no decryption key is needed), `/dev/fs` (NAND in `nand/` next to the exe; saves land in
   `nand/title/00010000/52454e45/data`), `/dev/es`, `/dev/stm`.
-* **Graphics** (`runtime/gx`): the GX command FIFO is decoded and rendered with Direct3D 11.
+* **Graphics** (`runtime/gx`): the GX command FIFO is decoded and rendered with Direct3D 11
+  on a separate thread (the CPU thread only fills a ring buffer, like Dolphin's dual-core
+  mode).
   Vertex and pixel shaders are generated per GX state (transform/lighting/texgen and the
   integer-exact TEV combiner with indirect texturing, alpha test, fog, z-textures). EFB
-  copies become render-to-texture; XFB copies are presented. Renders at 3x internal
-  resolution, 16:9.
-* **Input** (`runtime/input`): XInput controllers (and keyboard) replace the Wii Remote and
-  Nunchuk.
+  copies become render-to-texture; XFB copies are presented; CPU EFB peeks are served from
+  a read-back snapshot. Renders at 3x internal resolution, 16:9. Compiled shaders are
+  cached in `shadercache/`, and Dolphin-format HD texture packs are supported.
+* **Input** (`runtime/input`): the WPAD library is replaced at the API level; KPAD runs
+  recompiled on top of it. XInput controllers (and the keyboard) become Wii Remotes with a
+  Nunchuk: sword swings are synthesised as accelerometer pulses, the IR pointer comes
+  from the mouse or right stick, and the remote speaker stream is decoded and played.
+* **Audio** (`runtime/audio`): the AX DSP microcode is replaced by a port of Dolphin's AX
+  HLE; output goes through XAudio2.
 
 ## Building
 
