@@ -1103,8 +1103,10 @@ static void SetEFBTarget()
 static uint32_t s_drawCalls = 0;
 
 void Render_Flush();
+static bool s_peekValid[2] = {};   // EFB peek snapshots (color, depth) match the EFB
 static void Flush()
 {
+    s_peekValid[0] = s_peekValid[1] = false;
     if (s_indices.empty() || !s_ready)
     {
         s_verts.clear();
@@ -1408,6 +1410,7 @@ static ID3D11DepthStencilState* s_clearDS[2];
 
 static void ClearEFB(int x0, int y0, int x1, int y1)
 {
+    s_peekValid[0] = s_peekValid[1] = false;
     bool colorUpd = (BP(0x41) >> 3) & 1;
     bool alphaUpd = ((BP(0x41) >> 4) & 1) && PixelFormat() == 1;
     bool zUpd = (BP(0x40) >> 4) & 1;
@@ -1619,11 +1622,77 @@ static void DoEFBCopy()
     SetEFBTarget();
 }
 
+// CPU EFB peeks (lens-flare occlusion tests etc.). The first peek after the EFB
+// changed reads the whole buffer back once; later peeks are served from that
+// native-resolution snapshot. Called with the GX thread idle (GX_SyncGPU).
+static std::vector<uint32_t> s_peekDepth, s_peekColor;
+
+static void SnapshotEFB(bool depth)
+{
+    const uint32_t W = EFB_W * s_scale, H = EFB_H * s_scale;
+    static ID3D11Texture2D* depthStage = nullptr;
+    static ID3D11Texture2D* colorStage = nullptr;
+    if (!depthStage)
+    {
+        D3D11_TEXTURE2D_DESC td{};
+        td.Width = W;
+        td.Height = H;
+        td.MipLevels = 1;
+        td.ArraySize = 1;
+        td.SampleDesc.Count = 1;
+        td.Usage = D3D11_USAGE_STAGING;
+        td.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        td.Format = DXGI_FORMAT_R32_TYPELESS;
+        g_device->CreateTexture2D(&td, nullptr, &depthStage);
+        td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        g_device->CreateTexture2D(&td, nullptr, &colorStage);
+    }
+    Flush();
+    D3D11_MAPPED_SUBRESOURCE m;
+    if (depth)
+    {
+        s_peekDepth.assign(EFB_W * EFB_H, 0xFFFFFF);
+        g_ctx->CopyResource(depthStage, s_efbDepth);
+    }
+    else
+    {
+        s_peekColor.assign(EFB_W * EFB_H, 0);
+        g_ctx->CopyResource(colorStage, s_efbColor);
+    }
+    if (depth && SUCCEEDED(g_ctx->Map(depthStage, 0, D3D11_MAP_READ, 0, &m)))
+    {
+        for (uint32_t y = 0; y < EFB_H; y++)
+        {
+            const float* row = (const float*)((const uint8_t*)m.pData + (size_t)(y * s_scale + s_scale / 2) * m.RowPitch);
+            for (uint32_t x = 0; x < EFB_W; x++)
+                s_peekDepth[y * EFB_W + x] = (uint32_t)std::clamp(row[x * s_scale + s_scale / 2] * 16777216.0f, 0.0f, 16777215.0f);
+        }
+        g_ctx->Unmap(depthStage, 0);
+    }
+    if (!depth && SUCCEEDED(g_ctx->Map(colorStage, 0, D3D11_MAP_READ, 0, &m)))
+    {
+        for (uint32_t y = 0; y < EFB_H; y++)
+        {
+            const uint32_t* row = (const uint32_t*)((const uint8_t*)m.pData + (size_t)(y * s_scale + s_scale / 2) * m.RowPitch);
+            for (uint32_t x = 0; x < EFB_W; x++) s_peekColor[y * EFB_W + x] = row[x * s_scale + s_scale / 2];
+        }
+        g_ctx->Unmap(colorStage, 0);
+    }
+    s_peekValid[depth] = true;
+}
+
 uint32_t EFB_Read32(uint32_t ea)
 {
-    // CPU EFB peeks (rare): report "far" depth / opaque black
-    if (ea & 0x00400000) return 0x00FFFFFF;
-    return 0xFF000000;
+    if (!s_ready) return 0;
+    uint32_t x = (ea >> 2) & 0x3FF, y = (ea >> 12) & 0x3FF;
+    if (x >= EFB_W || y >= EFB_H) return 0;
+    bool depth = (ea & 0x00400000) != 0;
+    if (!s_peekValid[depth]) SnapshotEFB(depth);
+    if (depth) return s_peekDepth[y * EFB_W + x];
+    uint32_t c = s_peekColor[y * EFB_W + x];   // R,G,B,A bytes
+    uint32_t r = c & 0xFF, g = (c >> 8) & 0xFF, b = (c >> 16) & 0xFF, a = c >> 24;
+    if (PixelFormat() != 1) a = 0xFF;
+    return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
 void EFB_Write32(uint32_t, uint32_t) {}
