@@ -35,6 +35,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_SIZE:
         s_resized = true;
         return 0;
+    case WM_SETCURSOR:
+        // the game draws its own Wii Remote pointer
+        if (LOWORD(lp) == HTCLIENT)
+        {
+            SetCursor(nullptr);
+            return TRUE;
+        }
+        break;
     case WM_KEYDOWN:
         if (wp == VK_F11 || (wp == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000)))
         {
