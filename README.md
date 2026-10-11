@@ -141,5 +141,12 @@ input working. See `docs/progress.md`.
 
 ## License
 
-The runtime contains code ported from the Dolphin emulator (GPL-2.0-or-later); the project
-as a whole is distributed under the GPL.
+BlackKnightRecomp is licensed under the GNU General Public License, version 2 only
+(GPL-2.0-only); see [LICENSE](LICENSE).
+
+Parts of the runtime are ported from or closely follow the
+[Dolphin emulator](https://github.com/dolphin-emu/dolphin) (GPL-2.0-or-later), notably the
+AX audio HLE, the TEV/lighting/fog shader formulas, VI timing and the DSP/IOS behaviour.
+Thanks to the Dolphin team.
+
+No game code or data is included; you need your own copy of the game.
