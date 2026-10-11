@@ -31,31 +31,43 @@ uint32_t VertexLoader_Components(const VertexLayout& l)
     return c;
 }
 
-typedef void (*CompReader)(const uint8_t* p, float* out, int n, float scale);
+// Readers for N components of one format, fully unrolled (N is a template parameter).
+typedef void (*CompReader)(const uint8_t* p, float* out, float scale);
 
 template <int FMT>
-static void ReadComps(const uint8_t* p, float* out, int n, float scale)
+static inline float ReadOne(const uint8_t* p, int i, float scale)
 {
-    for (int i = 0; i < n; i++)
-    {
-        if constexpr (FMT == 0) out[i] = (float)p[i] * scale;
-        else if constexpr (FMT == 1) out[i] = (float)(int8_t)p[i] * scale;
-        else if constexpr (FMT == 2) out[i] = (float)BE16(p + 2 * i) * scale;
-        else if constexpr (FMT == 3) out[i] = (float)(int16_t)BE16(p + 2 * i) * scale;
-        else out[i] = BEF(p + 4 * i);
-    }
+    if constexpr (FMT == 0) return (float)p[i] * scale;
+    else if constexpr (FMT == 1) return (float)(int8_t)p[i] * scale;
+    else if constexpr (FMT == 2) return (float)BE16(p + 2 * i) * scale;
+    else if constexpr (FMT == 3) return (float)(int16_t)BE16(p + 2 * i) * scale;
+    else return BEF(p + 4 * i);
 }
 
-static CompReader GetReader(uint32_t fmt)
+template <int FMT, int N>
+static void ReadComps(const uint8_t* p, float* out, float scale)
+{
+    out[0] = ReadOne<FMT>(p, 0, scale);
+    if constexpr (N > 1) out[1] = ReadOne<FMT>(p, 1, scale);
+    if constexpr (N > 2) out[2] = ReadOne<FMT>(p, 2, scale);
+}
+
+template <int N>
+static CompReader GetReaderN(uint32_t fmt)
 {
     switch (fmt)
     {
-    case 0: return ReadComps<0>;
-    case 1: return ReadComps<1>;
-    case 2: return ReadComps<2>;
-    case 3: return ReadComps<3>;
-    default: return ReadComps<4>;
+    case 0: return ReadComps<0, N>;
+    case 1: return ReadComps<1, N>;
+    case 2: return ReadComps<2, N>;
+    case 3: return ReadComps<3, N>;
+    default: return ReadComps<4, N>;
     }
+}
+
+static CompReader GetReader(uint32_t fmt, uint32_t n)
+{
+    return n == 1 ? GetReaderN<1>(fmt) : n == 2 ? GetReaderN<2>(fmt) : GetReaderN<3>(fmt);
 }
 
 static inline uint32_t ReadColor(const uint8_t* p, uint32_t fmt)
@@ -123,8 +135,8 @@ void VertexLoader_Decode(const VertexLayout& l, const uint8_t* src, uint32_t cou
     const uint32_t posN = l.posCnt ? 3 : 2;
     const uint32_t posSize = kCompSize[l.posFmt] * posN;
     const uint32_t nrmCompSize = kCompSize[l.nrmFmt];
-    const CompReader posRead = GetReader(l.posFmt);
-    const CompReader nrmRead = GetReader(l.nrmFmt);
+    const CompReader posRead = GetReader(l.posFmt, posN);
+    const CompReader nrmRead = GetReader(l.nrmFmt, 3);
     CompReader texRead[8];
     float texScale[8];
     uint32_t texN[8], texSize[8];
@@ -134,9 +146,9 @@ void VertexLoader_Decode(const VertexLayout& l, const uint8_t* src, uint32_t cou
     {
         if (!l.tex[t]) continue;
         texSlot[numTex++] = t;
-        texRead[t] = GetReader(l.texFmt[t]);
-        texScale[t] = (l.texFmt[t] < 4) ? 1.0f / (float)(1u << l.texShift[t]) : 1.0f;
         texN[t] = l.texCnt[t] ? 2 : 1;
+        texRead[t] = GetReader(l.texFmt[t], texN[t]);
+        texScale[t] = (l.texFmt[t] < 4) ? 1.0f / (float)(1u << l.texShift[t]) : 1.0f;
         texSize[t] = kCompSize[l.texFmt[t]] * texN[t];
     }
     const bool anyTexMtx = l.texMtxIdx[0] | l.texMtxIdx[1] | l.texMtxIdx[2] | l.texMtxIdx[3] | l.texMtxIdx[4] | l.texMtxIdx[5] | l.texMtxIdx[6] | l.texMtxIdx[7];
@@ -172,7 +184,7 @@ void VertexLoader_Decode(const VertexLayout& l, const uint8_t* src, uint32_t cou
         if (l.pos)
         {
             const uint8_t* p = Fetch(l.pos, s, arr[0], posSize, &nullIdx);
-            posRead(p, o.pos, posN, posScale);
+            posRead(p, o.pos, posScale);
             if (posN == 2) o.pos[2] = 0.0f;
             if (nullIdx && posIndexed) skip[v] = 1;
         }
@@ -183,11 +195,11 @@ void VertexLoader_Decode(const VertexLayout& l, const uint8_t* src, uint32_t cou
             {
                 const uint8_t* p = s;
                 s += nrmCompSize * (l.nrmCnt ? 9 : 3);
-                nrmRead(p, o.nrm, 3, nrmScale);
+                nrmRead(p, o.nrm, nrmScale);
                 if (l.nrmCnt)
                 {
-                    nrmRead(p + 3 * nrmCompSize, o.bin, 3, nrmScale);
-                    nrmRead(p + 6 * nrmCompSize, o.tan, 3, nrmScale);
+                    nrmRead(p + 3 * nrmCompSize, o.bin, nrmScale);
+                    nrmRead(p + 6 * nrmCompSize, o.tan, nrmScale);
                 }
             }
             else
@@ -201,18 +213,18 @@ void VertexLoader_Decode(const VertexLayout& l, const uint8_t* src, uint32_t cou
                 if (l.nrmCnt && l.nrmIndex3)
                 {
                     uint32_t i0 = idx(), i1 = idx(), i2 = idx();
-                    nrmRead(arr[1].base + i0 * arr[1].stride, o.nrm, 3, nrmScale);
-                    nrmRead(arr[1].base + i1 * arr[1].stride + 3 * nrmCompSize, o.bin, 3, nrmScale);
-                    nrmRead(arr[1].base + i2 * arr[1].stride + 6 * nrmCompSize, o.tan, 3, nrmScale);
+                    nrmRead(arr[1].base + i0 * arr[1].stride, o.nrm, nrmScale);
+                    nrmRead(arr[1].base + i1 * arr[1].stride + 3 * nrmCompSize, o.bin, nrmScale);
+                    nrmRead(arr[1].base + i2 * arr[1].stride + 6 * nrmCompSize, o.tan, nrmScale);
                 }
                 else
                 {
                     const uint8_t* p = arr[1].base + idx() * arr[1].stride;
-                    nrmRead(p, o.nrm, 3, nrmScale);
+                    nrmRead(p, o.nrm, nrmScale);
                     if (l.nrmCnt)
                     {
-                        nrmRead(p + 3 * nrmCompSize, o.bin, 3, nrmScale);
-                        nrmRead(p + 6 * nrmCompSize, o.tan, 3, nrmScale);
+                        nrmRead(p + 3 * nrmCompSize, o.bin, nrmScale);
+                        nrmRead(p + 6 * nrmCompSize, o.tan, nrmScale);
                     }
                 }
             }
@@ -235,7 +247,7 @@ void VertexLoader_Decode(const VertexLayout& l, const uint8_t* src, uint32_t cou
             int t = texSlot[k];
             bool dummy;
             const uint8_t* p = Fetch(l.tex[t], s, arr[4 + t], texSize[t], &dummy);
-            texRead[t](p, o.tex[t], texN[t], texScale[t]);
+            texRead[t](p, o.tex[t], texScale[t]);
             if (texN[t] == 1) o.tex[t][1] = 0.0f;
         }
     }

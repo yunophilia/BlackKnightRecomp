@@ -495,8 +495,12 @@ static void BuildPSKey(PSKey& k)
 
 static ID3D11VertexShader* GetVS(const VSKey& k)
 {
+    // consecutive draws usually share state: check the previous key before hashing
+    static VSKey lastKey;
+    static ID3D11VertexShader* lastVS = nullptr;
+    if (lastVS && memcmp(&k, &lastKey, sizeof(k)) == 0) return lastVS;
     auto it = s_vsCache.find(k);
-    if (it != s_vsCache.end()) return it->second;
+    if (it != s_vsCache.end()) { lastKey = k; lastVS = it->second; return it->second; }
     ID3D11VertexShader* vs = nullptr;
     ID3DBlob* b = CompileHLSL(GenerateVertexShader(k), "vs_5_0");
     if (b)
@@ -510,16 +514,13 @@ static ID3D11VertexShader* GetVS(const VSKey& k)
 
 static ID3D11PixelShader* GetPS(const PSKey& k)
 {
+    static PSKey lastKey;
+    static ID3D11PixelShader* lastPS = nullptr;
+    if (lastPS && memcmp(&k, &lastKey, sizeof(k)) == 0) return lastPS;
     auto it = s_psCache.find(k);
-    if (it != s_psCache.end()) return it->second;
+    if (it != s_psCache.end()) { lastKey = k; lastPS = it->second; return it->second; }
     ID3D11PixelShader* ps = nullptr;
     std::string src = GeneratePixelShader(k);
-    {
-        static int n = 0;
-        char name[64];
-        snprintf(name, sizeof(name), "ps_%03d.hlsl", n++);
-        if (n < 30) { FILE* f = fopen(name, "w"); if (f) { fputs(src.c_str(), f); fclose(f); } }
-    }
     ID3DBlob* b = CompileHLSL(src, "ps_5_0");
     if (b)
     {
@@ -1238,11 +1239,16 @@ void Render_Draw(int prim, int vat, uint32_t count, const uint8_t* data, const V
     s_verts.resize(base + count);
     VertexLoader_Decode(layout, data, count, s_verts.data() + base, s_skip);
     const bool checkSkip = !s_skip.empty();
+    // reserve the worst case and write indices through a pointer
+    size_t start = s_indices.size();
+    s_indices.resize(start + (size_t)count * 3 + 3);   // strips/fans: 3 * (count - 2) at most
+    uint32_t* out = s_indices.data() + start;
     auto tri = [&](uint32_t a, uint32_t b, uint32_t c) {
         if (checkSkip && (s_skip[a] || s_skip[b] || s_skip[c])) return;
-        s_indices.push_back(base + a);
-        s_indices.push_back(base + b);
-        s_indices.push_back(base + c);
+        out[0] = base + a;
+        out[1] = base + b;
+        out[2] = base + c;
+        out += 3;
     };
     switch (prim)
     {
@@ -1267,15 +1273,16 @@ void Render_Draw(int prim, int vat, uint32_t count, const uint8_t* data, const V
         for (uint32_t i = 1; i + 1 < count; i++) tri(0, i, i + 1);
         break;
     case 5:   // lines
-        for (uint32_t i = 0; i + 1 < count; i += 2) { s_indices.push_back(base + i); s_indices.push_back(base + i + 1); }
+        for (uint32_t i = 0; i + 1 < count; i += 2) { *out++ = base + i; *out++ = base + i + 1; }
         break;
     case 6:   // line strip
-        for (uint32_t i = 0; i + 1 < count; i++) { s_indices.push_back(base + i); s_indices.push_back(base + i + 1); }
+        for (uint32_t i = 0; i + 1 < count; i++) { *out++ = base + i; *out++ = base + i + 1; }
         break;
     case 7:   // points
-        for (uint32_t i = 0; i < count; i++) s_indices.push_back(base + i);
+        for (uint32_t i = 0; i < count; i++) *out++ = base + i;
         break;
     }
+    s_indices.resize(out - s_indices.data());
     if (s_verts.size() > 60000)
         Flush();
 }

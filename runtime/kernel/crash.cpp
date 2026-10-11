@@ -241,9 +241,13 @@ void Crash_DumpThreads()
 // ---------------------------------------------------------------- sampling profiler
 #include <map>
 #include <set>
+HANDLE g_gxThreadHandle = nullptr;
+bool g_profileGX = false;   // --profile-gx: sample the GX thread instead of the CPU thread
+
 static void ProfilerThread(int startSec, int durationSec)
 {
     Sleep(startSec * 1000);
+    HANDLE target = (g_profileGX && g_gxThreadHandle) ? g_gxThreadHandle : s_guestThread;
     std::map<uintptr_t, int> hits, stacks;
     std::vector<std::vector<uintptr_t>> stackSamples;
     int total = 0;
@@ -251,10 +255,10 @@ static void ProfilerThread(int startSec, int durationSec)
     DWORD end = GetTickCount() + durationSec * 1000;
     while (GetTickCount() < end)
     {
-        SuspendThread(s_guestThread);
+        SuspendThread(target);
         CONTEXT c{};
         c.ContextFlags = CONTEXT_FULL;
-        GetThreadContext(s_guestThread, &c);
+        GetThreadContext(target, &c);
         hits[(uintptr_t)c.Rip]++;
         // walk up to 24 frames for inclusive attribution
         uintptr_t frames[24];
@@ -269,7 +273,7 @@ static void ProfilerThread(int startSec, int durationSec)
             DWORD64 ef;
             RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, c.Rip, rf, &c, &hd, &ef, nullptr);
         }
-        ResumeThread(s_guestThread);
+        ResumeThread(target);
         for (int i = 0; i < nf; i++) stacks[frames[i]]++;
         stackSamples.push_back(std::vector<uintptr_t>(frames, frames + nf));
         total++;

@@ -57,6 +57,7 @@ int main(int argc, char** argv)
         else if (a == "--watch" && i + 1 < argc) watchAddr = (uint32_t)strtoul(argv[++i], nullptr, 16);
         else if (a == "--capture" && i + 1 < argc) { extern uint32_t g_captureFrame; g_captureFrame = (uint32_t)atoi(argv[++i]); }
         else if (a == "--nobox") g_noMessageBox = true;
+        else if (a == "--profile-gx") { extern bool g_profileGX; g_profileGX = true; }
         else if (a == "--single-core") { extern bool g_gpuThread; g_gpuThread = false; }
         else if (a == "--dump-textures") { extern bool g_dumpTextures; g_dumpTextures = true; }
         else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }

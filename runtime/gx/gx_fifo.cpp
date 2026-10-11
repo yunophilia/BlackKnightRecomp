@@ -431,6 +431,7 @@ static size_t s_localW = 0;                     // CPU: bytes written
 static std::atomic<size_t> s_ringW{ 0 };        // published to the GPU
 static std::atomic<size_t> s_ringR{ 0 };        // consumed by the GPU
 static std::atomic<bool> s_gpuSleeping{ false };
+static std::atomic<int> s_cpuWaiting{ 0 };      // CPU blocked on s_cpuWake
 static HANDLE s_gpuWake, s_cpuWake;
 static std::mutex s_gpuLock;                    // held while the GPU executes commands
 static bool s_threadStarted = false;
@@ -444,7 +445,7 @@ static void GpuThread()
         size_t w = s_ringW.load(std::memory_order_acquire);
         if (w == r)
         {
-            SetEvent(s_cpuWake);
+            if (s_cpuWaiting.load()) SetEvent(s_cpuWake);
             // brief spin before sleeping: commands usually arrive in quick bursts
             for (int i = 0; i < 2000 && s_ringW.load(std::memory_order_acquire) == r; i++) YieldProcessor();
             if (s_ringW.load(std::memory_order_acquire) == r)
@@ -478,11 +479,13 @@ std::unique_lock<std::mutex> GX_SyncGPU()
 {
     if (!s_threadStarted) return std::unique_lock<std::mutex>(s_gpuLock);
     Publish();
+    s_cpuWaiting++;
     while (s_ringR.load(std::memory_order_acquire) != s_localW)
     {
         SetEvent(s_gpuWake);
         WaitForSingleObject(s_cpuWake, 1);
     }
+    s_cpuWaiting--;
     return std::unique_lock<std::mutex>(s_gpuLock);
 }
 
@@ -496,7 +499,9 @@ static inline void Gather(const uint8_t* b, int n)
         {
             Publish();
             SetEvent(s_gpuWake);
+            s_cpuWaiting++;
             WaitForSingleObject(s_cpuWake, 1);
+            s_cpuWaiting--;
         }
         size_t off = s_localW % RING_SIZE;
         if (off + n <= RING_SIZE) memcpy(s_ring + off, b, n);
@@ -535,7 +540,10 @@ void GX_StartThread()
     s_gpuWake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
     s_cpuWake = CreateEventW(nullptr, FALSE, FALSE, nullptr);
     s_threadStarted = true;
-    std::thread(GpuThread).detach();
+    std::thread t(GpuThread);
+    extern HANDLE g_gxThreadHandle;
+    DuplicateHandle(GetCurrentProcess(), (HANDLE)t.native_handle(), GetCurrentProcess(), &g_gxThreadHandle, 0, FALSE, DUPLICATE_SAME_ACCESS);
+    t.detach();
     LOG_INFO("GX: running on a separate thread");
 }
 
