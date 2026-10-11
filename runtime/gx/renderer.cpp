@@ -4,6 +4,7 @@
 #include "texture_decode.h"
 #include "vertex_loader.h"
 #include "hires.h"
+#include <d3d11_1.h>
 #include <filesystem>
 #include "../config.h"
 #include "video.h"
@@ -611,26 +612,68 @@ static ID3D11BlendState* GetBlendState()
     }
     else if (logic)
     {
-        // approximate the common logic ops with blending
-        switch (logicMode)
+        // Native logic ops (D3D11.1, UNORM targets); otherwise Dolphin's approximation
+        static ID3D11Device1* dev1 = nullptr;
+        static bool queried = false;
+        if (!queried)
         {
-        case 0:   // clear
-            rt.BlendEnable = TRUE; rt.SrcBlend = rt.DestBlend = D3D11_BLEND_ZERO; rt.BlendOp = D3D11_BLEND_OP_ADD;
-            rt.SrcBlendAlpha = rt.DestBlendAlpha = D3D11_BLEND_ZERO; rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-            break;
-        case 5:   // noop
-            rt.RenderTargetWriteMask = 0;
-            break;
-        case 15:  // set
-            rt.BlendEnable = TRUE; rt.SrcBlend = rt.DestBlend = D3D11_BLEND_ONE; rt.BlendOp = D3D11_BLEND_OP_MAX;
-            rt.SrcBlendAlpha = rt.DestBlendAlpha = D3D11_BLEND_ONE; rt.BlendOpAlpha = D3D11_BLEND_OP_MAX;
-            break;
-        case 10: case 12:   // invert / copy inverted (approximate with 1 - dst)
-            rt.BlendEnable = TRUE; rt.SrcBlend = D3D11_BLEND_INV_DEST_COLOR; rt.DestBlend = D3D11_BLEND_ZERO; rt.BlendOp = D3D11_BLEND_OP_ADD;
-            rt.SrcBlendAlpha = D3D11_BLEND_INV_DEST_ALPHA; rt.DestBlendAlpha = D3D11_BLEND_ZERO; rt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
-            break;
-        default:  // copy and others
-            break;
+            queried = true;
+            D3D11_FEATURE_DATA_D3D11_OPTIONS opt{};
+            if (SUCCEEDED(g_device->CheckFeatureSupport(D3D11_FEATURE_D3D11_OPTIONS, &opt, sizeof(opt))) && opt.OutputMergerLogicOp)
+                g_device->QueryInterface(__uuidof(ID3D11Device1), (void**)&dev1);
+        }
+        if (dev1)
+        {
+            static const D3D11_LOGIC_OP kOps[16] = {
+                D3D11_LOGIC_OP_CLEAR, D3D11_LOGIC_OP_AND, D3D11_LOGIC_OP_AND_REVERSE, D3D11_LOGIC_OP_COPY,
+                D3D11_LOGIC_OP_AND_INVERTED, D3D11_LOGIC_OP_NOOP, D3D11_LOGIC_OP_XOR, D3D11_LOGIC_OP_OR,
+                D3D11_LOGIC_OP_NOR, D3D11_LOGIC_OP_EQUIV, D3D11_LOGIC_OP_INVERT, D3D11_LOGIC_OP_OR_REVERSE,
+                D3D11_LOGIC_OP_COPY_INVERTED, D3D11_LOGIC_OP_OR_INVERTED, D3D11_LOGIC_OP_NAND, D3D11_LOGIC_OP_SET,
+            };
+            D3D11_BLEND_DESC1 d1{};
+            auto& r1 = d1.RenderTarget[0];
+            r1.LogicOpEnable = TRUE;
+            r1.LogicOp = kOps[logicMode];
+            r1.SrcBlend = r1.SrcBlendAlpha = D3D11_BLEND_ONE;
+            r1.DestBlend = r1.DestBlendAlpha = D3D11_BLEND_ZERO;
+            r1.BlendOp = r1.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+            r1.RenderTargetWriteMask = rt.RenderTargetWriteMask;
+            ID3D11BlendState1* s1 = nullptr;
+            if (SUCCEEDED(dev1->CreateBlendState1(&d1, &s1)))
+            {
+                s_blendCache[key] = s1;
+                return s1;
+            }
+        }
+        struct Approx { bool enable, sub; D3D11_BLEND src, dst; };
+        static const Approx kApprox[16] = {
+            { false, false, D3D11_BLEND_ONE, D3D11_BLEND_ZERO },                       // clear
+            { true, false, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_ZERO },                 // and
+            { true, true, D3D11_BLEND_ONE, D3D11_BLEND_INV_SRC_COLOR },                // and reverse
+            { false, false, D3D11_BLEND_ONE, D3D11_BLEND_ZERO },                       // copy
+            { true, true, D3D11_BLEND_DEST_COLOR, D3D11_BLEND_ONE },                   // and inverted
+            { true, false, D3D11_BLEND_ZERO, D3D11_BLEND_ONE },                        // noop
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_INV_SRC_COLOR },    // xor
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_ONE },              // or
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_INV_SRC_COLOR },    // nor
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_ZERO },             // equiv
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_ZERO },             // invert
+            { true, false, D3D11_BLEND_ONE, D3D11_BLEND_INV_DEST_ALPHA },              // or reverse
+            { false, false, D3D11_BLEND_ONE, D3D11_BLEND_ZERO },                       // copy inverted
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_ONE },              // or inverted
+            { true, false, D3D11_BLEND_INV_DEST_COLOR, D3D11_BLEND_INV_SRC_COLOR },    // nand
+            { false, false, D3D11_BLEND_ONE, D3D11_BLEND_ZERO },                       // set
+        };
+        const Approx& ap = kApprox[logicMode];
+        if (ap.enable)
+        {
+            rt.BlendEnable = TRUE;
+            rt.SrcBlend = ap.src;
+            rt.DestBlend = ap.dst;
+            rt.BlendOp = ap.sub ? D3D11_BLEND_OP_REV_SUBTRACT : D3D11_BLEND_OP_ADD;
+            rt.SrcBlendAlpha = toAlpha(ap.src);
+            rt.DestBlendAlpha = toAlpha(ap.dst);
+            rt.BlendOpAlpha = rt.BlendOp;
         }
     }
     ID3D11BlendState* s = nullptr;
