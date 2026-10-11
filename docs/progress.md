@@ -91,3 +91,10 @@ ON command completes and an UNMUTE succeeds (state machine around 0x801355A0).
   10.0.26100 import libraries; link against 10.0.19041 (see `tools/dev_build.bat`).
 - `tools/dev_build.bat` recompiles only `runtime/` and relinks against the generated objects
   built by CMake (`cmake --build build --target ppcrecomp`).
+
+## Save file notes
+
+`game_N.sav` (49152 bytes): the first big-endian word is the negated 32-bit sum of all
+following bytes (`-(sum(b[4:])) & 0xFFFFFFFF`). Clearing missions changes a handful of
+bytes around 0x48F-0x600 (per-mission records start as 0xFFFF) and 0x163F-0x170B.
+Byte 0x48F is not the chapter/unlock flag.
