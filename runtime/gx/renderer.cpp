@@ -666,11 +666,12 @@ static ID3D11SamplerState* GetSampler(uint32_t mode0, uint32_t mode1, bool hasMi
     bool useMips = hasMips && (minF & 3) != 0;
     int f = (minLinear ? 0x10 : 0) | (magLinear ? 0x4 : 0) | (mipLinear ? 0x1 : 0);
     d.Filter = (D3D11_FILTER)f;
-    uint32_t aniso = (mode0 >> 19) & 3;
-    if (aniso && minLinear && magLinear)
+    uint32_t aniso = 1u << ((mode0 >> 19) & 3);
+    aniso = std::max<uint32_t>(aniso, (uint32_t)g_config.anisotropy);   // user override
+    if (aniso > 1 && minLinear && magLinear)
     {
         d.Filter = D3D11_FILTER_ANISOTROPIC;
-        d.MaxAnisotropy = 1u << aniso;
+        d.MaxAnisotropy = std::min(16u, aniso);
     }
     d.MipLODBias = (float)(int8_t)((mode0 >> 9) & 0xFF) / 32.0f;
     d.MinLOD = useMips ? (float)(mode1 & 0xFF) / 16.0f : 0.0f;

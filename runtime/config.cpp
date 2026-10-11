@@ -22,6 +22,8 @@ static const char* kDefaultIni =
     "fullscreen = false\n"
     "vsync = false\n"
     "widescreen = true\n"
+    "; force anisotropic texture filtering: 1 (off), 2, 4, 8, 16\n"
+    "anisotropy = 1\n"
     "; process graphics on a second CPU core (like Dolphin's dual core)\n"
     "gpu_thread = true\n"
     "; Dolphin-format HD texture packs: <dir>/RENE8P/**/tex1_*.png|dds. Empty dir searches\n"
@@ -111,6 +113,7 @@ void Config_Load(const std::string& path)
             else if (key == "widescreen") c.widescreen = ParseBool(val);
             else if (key == "texture_pack") c.texturePack = ParseBool(val);
             else if (key == "gpu_thread") c.gpuThread = ParseBool(val);
+            else if (key == "anisotropy") c.anisotropy = std::clamp(atoi(val.c_str()), 1, 16);
             else if (key == "texture_pack_dir") c.texturePackDir = val;
         }
         else if (section == "system")

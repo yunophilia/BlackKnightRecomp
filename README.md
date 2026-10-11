@@ -107,6 +107,7 @@ F11 or Alt+Enter toggles fullscreen.
   `textures/` next to the exe or in `game/textures/`; packs installed in Dolphin's
   `Load/Textures` are picked up too. PNG and DDS (BC1/2/3/7) are supported.
   `--dump-textures` writes the game's textures under Dolphin's names to `dump/textures`.
+* `anisotropy`: force anisotropic filtering (1, 2, 4, 8 or 16).
 * `gpu_thread`: run GX command processing and rendering on a second core (default on;
   `--single-core` turns it off for debugging).
 * `language`: english, german, french, spanish, italian, dutch, japanese.
