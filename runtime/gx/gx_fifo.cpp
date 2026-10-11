@@ -353,7 +353,20 @@ static size_t RunCommands(const uint8_t* p, size_t n, bool inDisplayList)
                 int vat = op & 7;
                 int prim = (op >> 3) & 7;
                 uint32_t count = BE16(c + 1);
-                GX_ComputeLayout(vat, layout);
+                {
+                    // layouts only change with VCD/VAT writes; cache per VAT slot
+                    struct Cached { uint32_t lo, hi, a, b, c; bool valid; VertexLayout l; };
+                    static Cached cache[8];
+                    Cached& ce = cache[vat];
+                    uint32_t lo = g_gx.cp[CP_VCD_LO], hi = g_gx.cp[CP_VCD_HI];
+                    uint32_t va = g_gx.cp[CP_VAT_A + vat], vb = g_gx.cp[CP_VAT_B + vat], vc = g_gx.cp[CP_VAT_C + vat];
+                    if (!ce.valid || ce.lo != lo || ce.hi != hi || ce.a != va || ce.b != vb || ce.c != vc)
+                    {
+                        GX_ComputeLayout(vat, ce.l);
+                        ce = { lo, hi, va, vb, vc, true, ce.l };
+                    }
+                    layout = ce.l;
+                }
                 need = 3 + (size_t)count * layout.size;
                 if (left < need) return pos;
                 if (count)

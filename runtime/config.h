@@ -1,0 +1,27 @@
+#pragma once
+#include <string>
+
+// User settings loaded from config.ini next to the executable (created with
+// defaults on first run). Command line options override them.
+struct Config
+{
+    // [Video]
+    int frameRate = 30;          // 30 (original) or 60
+    int internalScale = 3;       // EFB resolution multiplier (1 = 640x528)
+    int windowWidth = 1280;
+    int windowHeight = 720;
+    bool fullscreen = false;
+    bool vsync = false;
+    bool widescreen = true;
+    // [System]
+    int language = 1;            // Wii IPL.LNG: 0 ja, 1 en, 2 de, 3 fr, 4 es, 5 it, 6 nl
+    // [Input]
+    bool rumble = true;
+    // [Paths]
+    std::string dataDir;
+    std::string isoPath;
+};
+
+extern Config g_config;
+
+void Config_Load(const std::string& path);

@@ -1,4 +1,5 @@
 // /dev/fs and NAND file access, backed by a host directory.
+#include "../config.h"
 #include "ios.h"
 #include "../kernel/memory.h"
 #include "../log.h"
@@ -283,7 +284,7 @@ static std::vector<uint8_t> BuildSysconf()
     nick.resize(22);
     nick[21] = 6;
     e.push_back({ 2, "IPL.NIK", nick });
-    e.push_back({ 3, "IPL.LNG", { 1 } });   // English
+    e.push_back({ 3, "IPL.LNG", { (uint8_t)g_config.language } });
     std::vector<uint8_t> sadr(0x1007 + 1);
     sadr[0] = 0x6E;   // United Kingdom (PAL)
     e.push_back({ 1, "IPL.SADR", sadr });
@@ -291,7 +292,7 @@ static std::vector<uint8_t> BuildSysconf()
     pc[1] = 0x04; pc[2] = 0x14;
     e.push_back({ 2, "IPL.PC", pc });
     e.push_back({ 5, "IPL.CB", { 0, 0, 0, 0 } });
-    e.push_back({ 3, "IPL.AR", { 1 } });    // 16:9
+    e.push_back({ 3, "IPL.AR", { (uint8_t)(g_config.widescreen ? 1 : 0) } });
     e.push_back({ 3, "IPL.SSV", { 1 } });
     e.push_back({ 7, "IPL.CD", { 0 } });
     e.push_back({ 7, "IPL.CD2", { 0 } });
@@ -363,11 +364,10 @@ void NAND_InitSystemFiles()
     fs::create_directories(HostPath("/meta"), ec);
     fs::create_directories(HostPath("/sys"), ec);
     fs::path sc = HostPath("/shared2/sys/SYSCONF");
-    if (!fs::exists(sc, ec))
     {
+        // regenerated every boot so config.ini changes (language, aspect) apply
         auto b = BuildSysconf();
         std::ofstream(sc, std::ios::binary).write((const char*)b.data(), b.size());
-        LOG_INFO("NAND: created SYSCONF");
     }
     fs::path st = HostPath("/title/00000001/00000002/data/setting.txt");
     if (!fs::exists(st, ec))

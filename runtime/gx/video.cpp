@@ -79,6 +79,7 @@ static void WindowThread(std::atomic<int>* ready)
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
     s_hwnd = CreateWindowW(L"BlackKnightRecomp", L"Sonic and the Black Knight - Recompiled", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                            CW_USEDEFAULT, CW_USEDEFAULT, r.right - r.left, r.bottom - r.top, nullptr, nullptr, wc.hInstance, nullptr);
+    if (s_hwnd && g_videoConfig.fullscreen) SendMessageW(s_hwnd, WM_KEYDOWN, VK_F11, 0);
     *ready = s_hwnd ? 1 : -1;
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0)

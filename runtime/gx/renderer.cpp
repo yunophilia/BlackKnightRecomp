@@ -16,23 +16,36 @@ static constexpr int EFB_W = 640, EFB_H = 528;
 
 static uint64_t Hash64(const void* data, size_t n, uint64_t seed = 0x9E3779B97F4A7C15ull)
 {
-    // simple 64-bit FNV-1a variant over 8-byte words
+    // 4 independent multiply/xorshift lanes over 32-byte blocks, then a scalar tail
     const uint8_t* p = (const uint8_t*)data;
-    uint64_t h = seed ^ (n * 0xff51afd7ed558ccdull);
+    const uint64_t M = 0x9FB21C651E98DF25ull;
+    uint64_t h0 = seed ^ (n * 0xff51afd7ed558ccdull), h1 = h0 ^ 0x2545F4914F6CDD1Dull, h2 = h0 ^ 0x632BE59BD9B4E019ull, h3 = h0 ^ 0x85EBCA77C2B2AE63ull;
     size_t i = 0;
+    for (; i + 32 <= n; i += 32)
+    {
+        uint64_t v0, v1, v2, v3;
+        memcpy(&v0, p + i, 8);
+        memcpy(&v1, p + i + 8, 8);
+        memcpy(&v2, p + i + 16, 8);
+        memcpy(&v3, p + i + 24, 8);
+        h0 = (h0 ^ v0) * M; h0 ^= h0 >> 29;
+        h1 = (h1 ^ v1) * M; h1 ^= h1 >> 29;
+        h2 = (h2 ^ v2) * M; h2 ^= h2 >> 29;
+        h3 = (h3 ^ v3) * M; h3 ^= h3 >> 29;
+    }
+    uint64_t h = h0 ^ (h1 * 3) ^ (h2 * 5) ^ (h3 * 7);
     for (; i + 8 <= n; i += 8)
     {
         uint64_t v;
         memcpy(&v, p + i, 8);
-        h ^= v;
-        h *= 0x100000001B3ull;
+        h = (h ^ v) * M;
         h ^= h >> 29;
     }
     for (; i < n; i++)
-    {
-        h ^= p[i];
-        h *= 0x100000001B3ull;
-    }
+        h = (h ^ p[i]) * 0x100000001B3ull;
+    h ^= h >> 32;
+    h *= M;
+    h ^= h >> 29;
     return h;
 }
 
@@ -108,7 +121,9 @@ static uint8_t s_tmem[1024 * 1024];
 
 // ------------------------------------------------------------------ batch
 enum class Topo { Tri, Line, Point };
-static std::vector<HostVertex> s_verts;
+// default constructor leaves the vertex uninitialised so resize() does not zero it
+struct BatchVertex : HostVertex { BatchVertex() {} };
+static std::vector<BatchVertex> s_verts;
 static std::vector<uint32_t> s_indices;
 static Topo s_topo = Topo::Tri;
 static VertexLayout s_batchLayout;
@@ -128,6 +143,8 @@ struct TexEntry
     uint64_t ramHash = 0;    // RAM content hash when an EFB copy was made
     uint32_t hashedFrame = ~0u;   // frame in which `hash` was last verified
     uint32_t ramSize = 0;
+    uint64_t dataHash = 0;        // CI textures: hash of the index data alone
+    uint32_t dataHashFrame = ~0u;
 };
 static std::unordered_map<uint64_t, TexEntry> s_texCache;   // key: addr | fmt | w | h
 static std::unordered_map<uint32_t, TexEntry> s_efbCopies;   // key: dest address
@@ -738,11 +755,23 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
     uint32_t tlutFmt = (tlutReg >> 10) & 3;
     uint32_t palSize = fmt == TF_C4 ? 32 : fmt == TF_C8 ? 512 : 0x8000;
     const uint8_t* pal = s_tmem + (tlutOff & (sizeof(s_tmem) - 1));
-    uint64_t hash = Hash64(src, total);
+    TexEntry& e = s_texCache[key0];
+    // the index data is verified once per frame; the palette (small) on every use
+    uint64_t dataHash;
+    if (isCI && e.dataHashFrame == s_frame && !Capturing())
+        dataHash = e.dataHash;
+    else
+    {
+        dataHash = Hash64(src, total);
+        if (isCI)
+        {
+            e.dataHash = dataHash;
+            e.dataHashFrame = s_frame;
+        }
+    }
+    uint64_t hash = dataHash;
     if (isCI) hash = Hash64(pal, std::min<uint32_t>(palSize, (uint32_t)sizeof(s_tmem) - (tlutOff & (sizeof(s_tmem) - 1))), hash) ^ tlutFmt;
-    uint64_t key = (uint64_t)addr | ((uint64_t)fmt << 32) | ((uint64_t)w << 36) | ((uint64_t)h << 47) | ((uint64_t)(levels > 1) << 58) | ((uint64_t)isCI << 59);
 
-    TexEntry& e = s_texCache[key];
     *hasMips = levels > 1;
     if (e.srv && e.hash == hash && !Capturing())
     {

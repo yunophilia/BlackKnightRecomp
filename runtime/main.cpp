@@ -1,5 +1,7 @@
 // BlackKnightRecomp: statically recompiled Sonic and the Black Knight (RENE8P)
 #include "log.h"
+#include "config.h"
+#include "gx/video.h"
 #include "cpu/cpu.h"
 #include "kernel/memory.h"
 #include "kernel/boot.h"
@@ -33,7 +35,10 @@ static std::string ExeDir()
 int main(int argc, char** argv)
 {
     std::string root = ExeDir();
-    std::string dataDir, isoPath;
+    Log_Open((root + "/BlackKnightRecomp.log").c_str());
+    Config_Load(root + "/config.ini");
+    g_cfgFrameRate = g_config.frameRate;
+    std::string dataDir = g_config.dataDir, isoPath = g_config.isoPath;
     uint32_t watchAddr = 0;
     int profStart = -1, profDur = 0;
     for (int i = 1; i < argc; i++)
@@ -67,8 +72,13 @@ int main(int argc, char** argv)
     pick(dataDir, "game/extracted/DATA");
     pick(isoPath, "game/RENE8P_Sonic_and_the_Black_Knight.iso");
 
-    Log_Open((root + "/BlackKnightRecomp.log").c_str());
-    LOG_INFO("BlackKnightRecomp starting; data={} iso={}", dataDir, isoPath);
+    g_videoConfig.internalScale = g_config.internalScale;
+    g_videoConfig.windowWidth = g_config.windowWidth;
+    g_videoConfig.windowHeight = g_config.windowHeight;
+    g_videoConfig.fullscreen = g_config.fullscreen;
+    g_videoConfig.vsync = g_config.vsync;
+    g_videoConfig.widescreen = g_config.widescreen;
+    LOG_INFO("BlackKnightRecomp starting; data={} iso={} fps={} scale={}", dataDir, isoPath, g_cfgFrameRate, g_videoConfig.internalScale);
     if (dataDir.empty())
         FATAL("Game data not found. Extract the disc with DolphinTool into game/extracted (see README).");
 

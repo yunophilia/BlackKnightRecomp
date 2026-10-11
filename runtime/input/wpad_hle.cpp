@@ -3,6 +3,7 @@
 // The Bluetooth stack is never started. Instead the WPAD API functions that KPAD
 // and the game use are replaced: a Wii Remote + Nunchuk is reported on channel 0
 // and its samples are synthesised from the host gamepad (see motion.cpp).
+#include "../config.h"
 #include "gamepad.h"
 #include "motion.h"
 #include "../kernel/memory.h"
@@ -205,6 +206,7 @@ PPC_FUNC(fn_803D50C0)
     int chan = (int)ctx.r[3];
     bool on = ctx.r[4] != 0;
     if (chan < 0 || chan > 3) return;
+    if (!g_config.rumble) on = false;
     if (s_chan[chan].motor != on)
     {
         s_chan[chan].motor = on;
