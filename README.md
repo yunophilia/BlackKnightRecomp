@@ -112,6 +112,9 @@ F11 or Alt+Enter toggles fullscreen.
   `--single-core` turns it off for debugging).
 * `language`: english, german, french, spanish, italian, dutch, japanese.
 * `rumble`: controller vibration.
+* `jump`, `slash`, `wii_b`, `guard`, ...: controller button bindings (`A`, `B`, `X`, `Y`,
+  `LB`, `RB`, `LT`, `RT`, `START`, `BACK`, `LS`, `RS`, D-pad `UP`/`DOWN`/`LEFT`/`RIGHT`,
+  or `NONE`).
 * `data`, `iso`: game file locations, if they are not in `game/`.
 
 ## Status

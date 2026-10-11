@@ -8,6 +8,10 @@
 
 Config g_config;
 
+// order matches Config::bind
+const char* const kBindActions[12] = { "jump", "slash", "wii_b", "shake_nunchuk", "guard", "nunchuk_c",
+                                       "plus", "minus", "button_1", "button_2", "thrust", "pull_back" };
+
 static const char* kDefaultIni =
     "; BlackKnightRecomp settings\n"
     "\n"
@@ -37,6 +41,20 @@ static const char* kDefaultIni =
     "\n"
     "[Input]\n"
     "rumble = true\n"
+    "; controller bindings: A B X Y LB RB LT RT START BACK LS RS UP DOWN LEFT RIGHT NONE\n"
+    "; (Back+Start together is always HOME; the right stick also flicks slashes)\n"
+    "jump = A\n"
+    "slash = X\n"
+    "wii_b = B\n"
+    "shake_nunchuk = Y\n"
+    "guard = RB\n"
+    "nunchuk_c = LB\n"
+    "plus = START\n"
+    "minus = BACK\n"
+    "button_1 = LS\n"
+    "button_2 = RS\n"
+    "thrust = RT\n"
+    "pull_back = LT\n"
     "\n"
     "[Paths]\n"
     "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso)\n"
@@ -123,6 +141,8 @@ void Config_Load(const std::string& path)
         else if (section == "input")
         {
             if (key == "rumble") c.rumble = ParseBool(val);
+            for (int i = 0; i < 12; i++)
+                if (key == kBindActions[i]) c.bind[i] = val;
         }
         else if (section == "paths")
         {

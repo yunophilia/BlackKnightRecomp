@@ -1,5 +1,6 @@
 // XInput controllers with a keyboard fallback for player 1.
 #include "gamepad.h"
+#include "../config.h"
 
 #include <cmath>
 #include <windows.h>
@@ -34,6 +35,42 @@ bool Gamepad_IsConnected(int index)
     connected[index] = XInputGetState(index, &st) == ERROR_SUCCESS;
     lastCheck[index] = now;
     return connected[index];
+}
+
+// Button bindings from config.ini: physical controller buttons -> the logical layout
+// the rest of the input code uses (A jump, X slash, B Wii B, ...).
+static uint32_t PhysicalBit(const std::string& name)
+{
+    static const struct { const char* n; uint32_t b; } names[] = {
+        { "A", PAD_A }, { "B", PAD_B }, { "X", PAD_X }, { "Y", PAD_Y }, { "LB", PAD_LB }, { "RB", PAD_RB },
+        { "START", PAD_START }, { "BACK", PAD_BACK }, { "LS", PAD_LTHUMB }, { "RS", PAD_RTHUMB },
+        { "UP", PAD_DPAD_UP }, { "DOWN", PAD_DPAD_DOWN }, { "LEFT", PAD_DPAD_LEFT }, { "RIGHT", PAD_DPAD_RIGHT },
+        { "LT", 1u << 16 }, { "RT", 1u << 17 },
+    };
+    std::string u;
+    for (char c : name) u += (char)toupper((unsigned char)c);
+    for (auto& n : names)
+        if (u == n.n) return n.b;
+    return 0;
+}
+
+static void ApplyBindings(GamepadState& out, uint32_t phys, float lt, float rt)
+{
+    static uint32_t mask[12];
+    static bool init = false;
+    if (!init)
+    {
+        for (int i = 0; i < 12; i++) mask[i] = PhysicalBit(g_config.bind[i]);
+        init = true;
+    }
+    static const uint16_t logical[10] = { PAD_A, PAD_X, PAD_B, PAD_Y, PAD_RB, PAD_LB, PAD_START, PAD_BACK, PAD_LTHUMB, PAD_RTHUMB };
+    uint16_t b = (uint16_t)(phys & (PAD_DPAD_UP | PAD_DPAD_DOWN | PAD_DPAD_LEFT | PAD_DPAD_RIGHT));
+    for (int i = 0; i < 10; i++)
+        if (phys & mask[i]) b |= logical[i];
+    out.buttons |= b;
+    // analog triggers keep their value when bound to themselves
+    out.rt = mask[10] == (1u << 17) ? rt : ((phys & mask[10]) ? 1.0f : 0.0f);
+    out.lt = mask[11] == (1u << 16) ? lt : ((phys & mask[11]) ? 1.0f : 0.0f);
 }
 
 bool g_autoPress = false;   // test aid: tap A every few seconds
@@ -119,16 +156,21 @@ void Gamepad_Poll(int index, GamepadState& out)
     if ((index == 0 || Gamepad_IsConnected(index)) && XInputGetState(index, &st) == ERROR_SUCCESS)
     {
         out.connected = true;
-        out.buttons |= st.Gamepad.wButtons & ~PAD_HOME;
+        float lt = st.Gamepad.bLeftTrigger / 255.0f, rt = st.Gamepad.bRightTrigger / 255.0f;
+        uint32_t phys = st.Gamepad.wButtons & ~PAD_HOME;
+        if (lt > 0.6f) phys |= 1u << 16;
+        if (rt > 0.6f) phys |= 1u << 17;
         // Back+Start together act as the Wii Remote HOME button
-        if ((out.buttons & (PAD_BACK | PAD_START)) == (PAD_BACK | PAD_START))
-            out.buttons = (out.buttons & ~(PAD_BACK | PAD_START)) | PAD_HOME;
+        if ((phys & (PAD_BACK | PAD_START)) == (PAD_BACK | PAD_START))
+        {
+            phys &= ~(PAD_BACK | PAD_START);
+            out.buttons |= PAD_HOME;
+        }
+        ApplyBindings(out, phys, lt, rt);
         out.lx = Stick(st.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
         out.ly = Stick(st.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
         out.rx = Stick(st.Gamepad.sThumbRX, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
         out.ry = Stick(st.Gamepad.sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
-        out.lt = st.Gamepad.bLeftTrigger / 255.0f;
-        out.rt = st.Gamepad.bRightTrigger / 255.0f;
     }
     if (index != 0)
         return;
