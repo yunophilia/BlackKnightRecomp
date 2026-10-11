@@ -537,7 +537,7 @@ static ID3D11BlendState* GetBlendState()
     uint32_t bm = BP(0x41);
     {
         static std::unordered_map<uint32_t, int> seen;
-        if (seen.size() < 20 && !seen.count(bm)) { seen[bm] = 1; LOG_INFO("blend mode {:06x} zmode {:02x} pe {:x}", bm, BP(0x40), BP(0x43)); }
+        if (seen.size() < 20 && !seen.count(bm)) { seen[bm] = 1; LOG_DEBUG("blend mode {:06x} zmode {:02x} pe {:x}", bm, BP(0x40), BP(0x43)); }
     }
     uint32_t fmt = PixelFormat();
     bool hasAlpha = fmt == 1;   // RGBA6_Z24
@@ -880,7 +880,7 @@ static ID3D11ShaderResourceView* GetTexture(int map, uint32_t* outW, uint32_t* o
     }
     {
         static int n = 0;
-        if (n++ < 40) LOG_INFO("tex map{} addr={:08x} {}x{} fmt={} levels={} tlutfmt={}", map, addr, w, h, fmt, levels, tlutFmt);
+        if (n++ < 40) LOG_DEBUG("tex map{} addr={:08x} {}x{} fmt={} levels={} tlutfmt={}", map, addr, w, h, fmt, levels, tlutFmt);
     }
     e.hash = hash;
     e.lastFrame = s_frame;
@@ -1118,7 +1118,7 @@ static void Flush()
         {
             logged++;
             const uint32_t* pp = &g_gx.xfregs[XF_PROJECTION];
-            LOG_INFO("GX vp: wd={} ht={} xo={} yo={} so={:x} -> ({},{},{},{}) proj type={} p={} {} {} {} {} {}", wd, ht, xOrig, yOrig, so, vx, vy, vw, vh, pp[6],
+            LOG_DEBUG("GX vp: wd={} ht={} xo={} yo={} so={:x} -> ({},{},{},{}) proj type={} p={} {} {} {} {} {}", wd, ht, xOrig, yOrig, so, vx, vy, vw, vh, pp[6],
                      AsFloat(pp[0]), AsFloat(pp[1]), AsFloat(pp[2]), AsFloat(pp[3]), AsFloat(pp[4]), AsFloat(pp[5]));
         }
     }
