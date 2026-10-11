@@ -112,6 +112,8 @@ F11 or Alt+Enter toggles fullscreen.
   `--single-core` turns it off for debugging).
 * `language`: english, german, french, spanish, italian, dutch, japanese.
 * `rumble`: controller vibration.
+* `remote_speaker`: play the sounds the game sends to the Wii Remote speaker (decoded
+  from the remote's 4-bit ADPCM stream) through the PC's audio output.
 * `jump`, `slash`, `wii_b`, `guard`, ...: controller button bindings (`A`, `B`, `X`, `Y`,
   `LB`, `RB`, `LT`, `RT`, `START`, `BACK`, `LS`, `RS`, D-pad `UP`/`DOWN`/`LEFT`/`RIGHT`,
   or `NONE`).

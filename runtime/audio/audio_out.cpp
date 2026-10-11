@@ -100,3 +100,51 @@ void AudioOut_PushDSP(const uint8_t* data, uint32_t bytes, uint32_t sampleRate)
     xb.pAudioData = (const BYTE*)buf.data();
     s_voice->SubmitSourceBuffer(&xb);
 }
+
+// ---------------------------------------------------------------- Wii Remote speakers
+// The SDK configures the speaker for 4-bit ADPCM at 12 MHz / 2000 = 6000 Hz.
+static constexpr uint32_t SPEAKER_RATE = 6000;
+float g_speakerVolume = 0.6f;   // the remote speaker is quieter than the TV
+static IXAudio2SourceVoice* s_spkVoice[4];
+static std::vector<int16_t> s_spkStaging[4];
+static std::deque<std::vector<int16_t>> s_spkInFlight[4];
+
+void AudioOut_PushSpeaker(int chan, const int16_t* pcm, uint32_t samples)
+{
+    if (!s_xa || chan < 0 || chan > 3) return;
+    if (!s_spkVoice[chan])
+    {
+        WAVEFORMATEX wf{};
+        wf.wFormatTag = WAVE_FORMAT_PCM;
+        wf.nChannels = 1;
+        wf.nSamplesPerSec = SPEAKER_RATE;
+        wf.wBitsPerSample = 16;
+        wf.nBlockAlign = 2;
+        wf.nAvgBytesPerSec = SPEAKER_RATE * 2;
+        if (FAILED(s_xa->CreateSourceVoice(&s_spkVoice[chan], &wf))) return;
+        s_spkVoice[chan]->Start();
+    }
+    if (g_audioDump)
+    {
+        static FILE* f = fopen("speaker_dump.raw", "wb");
+        if (f) { fwrite(pcm, 2, samples, f); fflush(f); }
+    }
+    auto& st = s_spkStaging[chan];
+    for (uint32_t i = 0; i < samples; i++) st.push_back((int16_t)(pcm[i] * g_speakerVolume * g_audioVolume));
+    if (st.size() < SPEAKER_RATE / 50) return;   // 20 ms batches
+    XAUDIO2_VOICE_STATE vs;
+    s_spkVoice[chan]->GetState(&vs, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+    auto& fl = s_spkInFlight[chan];
+    while (fl.size() > vs.BuffersQueued) fl.pop_front();
+    if (vs.BuffersQueued > 6)
+    {
+        st.clear();
+        return;
+    }
+    fl.push_back(std::move(st));
+    st.clear();
+    XAUDIO2_BUFFER xb{};
+    xb.AudioBytes = (UINT32)(fl.back().size() * sizeof(int16_t));
+    xb.pAudioData = (const BYTE*)fl.back().data();
+    s_spkVoice[chan]->SubmitSourceBuffer(&xb);
+}

@@ -21,6 +21,7 @@ struct Config
     int language = 1;            // Wii IPL.LNG: 0 ja, 1 en, 2 de, 3 fr, 4 es, 5 it, 6 nl
     // [Input]
     bool rumble = true;
+    bool remoteSpeaker = true;   // play Wii Remote speaker sounds on the PC
     // button bindings, action -> controller button name (A, B, X, Y, LB, RB, LT, RT,
     // START, BACK, LS, RS, UP, DOWN, LEFT, RIGHT or NONE); see config.cpp for actions
     std::string bind[12] = { "A", "X", "B", "Y", "RB", "LB", "START", "BACK", "LS", "RS", "RT", "LT" };

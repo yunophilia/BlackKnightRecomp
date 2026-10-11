@@ -41,6 +41,8 @@ static const char* kDefaultIni =
     "\n"
     "[Input]\n"
     "rumble = true\n"
+    "; play sounds the game sends to the Wii Remote speaker\n"
+    "remote_speaker = true\n"
     "; controller bindings: A B X Y LB RB LT RT START BACK LS RS UP DOWN LEFT RIGHT NONE\n"
     "; (Back+Start together is always HOME; the right stick also flicks slashes)\n"
     "jump = A\n"
@@ -141,6 +143,7 @@ void Config_Load(const std::string& path)
         else if (section == "input")
         {
             if (key == "rumble") c.rumble = ParseBool(val);
+            if (key == "remote_speaker") c.remoteSpeaker = ParseBool(val);
             for (int i = 0; i < 12; i++)
                 if (key == kBindActions[i]) c.bind[i] = val;
         }

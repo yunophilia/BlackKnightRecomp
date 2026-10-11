@@ -4,6 +4,7 @@
 // and the game use are replaced: a Wii Remote + Nunchuk is reported on channel 0
 // and its samples are synthesised from the host gamepad (see motion.cpp).
 #include "../config.h"
+#include "../audio/audio_out.h"
 #include "gamepad.h"
 #include "motion.h"
 #include "../kernel/memory.h"
@@ -11,6 +12,7 @@
 #include "../log.h"
 #include "../../generated/ppc_recomp_shared.h"
 
+#include <algorithm>
 #include <deque>
 #include <windows.h>
 #include <Xinput.h>
@@ -40,6 +42,8 @@ struct Chan
     bool extNotified = false;
     uint32_t dataFormat = 5;   // WPAD_FMT_FREESTYLE_ACC_DPD
     bool motor = false;
+    bool speaker = false;       // WPADControlSpeaker ON .. OFF
+    int32_t adpcmPred = 0, adpcmStep = 127;
     uint64_t lastSampleTb = 0;
 };
 
@@ -50,6 +54,8 @@ struct PendingCb
 {
     uint32_t func;
     uint32_t r3, r4;
+    int speakerChan = -1;   // speaker command: channel whose state changes on completion
+    int speakerOn = -1;     // 1: speaker becomes enabled, 0: disabled
 };
 std::deque<PendingCb> s_pending;
 
@@ -96,7 +102,8 @@ void WPAD_Pump(PPCContext& ctx, uint8_t* base)
     {
         PendingCb p = s_pending.front();
         s_pending.pop_front();
-        CallGuest(ctx, base, p.func, p.r3, p.r4);
+        if (p.speakerChan >= 0 && p.speakerOn >= 0) s_chan[p.speakerChan].speaker = p.speakerOn != 0;
+        if (p.func) CallGuest(ctx, base, p.func, p.r3, p.r4);
     }
     // Real Wii Remotes report at ~200 Hz; deliver the samples that are due.
     uint64_t now = Timebase_Now();
@@ -255,18 +262,62 @@ PPC_FUNC(fn_803D4A0C)
 }
 
 // s32 WPADControlSpeaker(s32 chan, u32 command, WPADCallback cb)
+// Commands complete asynchronously, in order; the speaker only counts as enabled
+// (WPADIsSpeakerEnabled) once the ON command has completed, as with a real remote.
 PPC_FUNC(fn_803D5924)
 {
-    uint32_t chan = ctx.r[3], cb = ctx.r[5];
-    if (cb) s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE });
+    uint32_t chan = ctx.r[3], cmd = ctx.r[4], cb = ctx.r[5];
+    if (!Connected((int)chan))
+    {
+        ctx.r[3] = (uint32_t)WPAD_ERR_NO_CONTROLLER;
+        return;
+    }
+    Chan& ch = s_chan[chan];
+    int on = -1;
+    if (cmd == 0) on = 0;
+    else if (cmd == 1)
+    {
+        on = 1;
+        ch.adpcmPred = 0;
+        ch.adpcmStep = 127;
+    }
+    s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE, (int)chan, on });
     ctx.r[3] = WPAD_ERR_NONE;
 }
 
 // BOOL WPADCanSendStreamData(s32 chan)
-PPC_FUNC(fn_803D70FC) { ctx.r[3] = 0; }
+PPC_FUNC(fn_803D70FC) { ctx.r[3] = Connected((int)ctx.r[3]) ? 1 : 0; }
 
-// s32 WPADSendStreamData(s32 chan, void* p, u16 len)
-PPC_FUNC(fn_803D7180) { ctx.r[3] = WPAD_ERR_NONE; }
+// u8 WPADGetSpeakerVolume(void): the real WPADInit caches SYSCONF BT.SPKV (0x58)
+PPC_FUNC(fn_803D6F40) { ctx.r[3] = 0x58; }
+
+// BOOL WPADIsSpeakerEnabled(s32 chan)
+PPC_FUNC(fn_803D58E0) { ctx.r[3] = s_chan[ctx.r[3] & 3].speaker ? 1 : 0; }
+
+// s32 WPADSendStreamData(s32 chan, void* p, u16 len): Wii Remote speaker audio,
+// 4-bit Yamaha ADPCM (decoder as in Dolphin's WiimoteEmu speaker), played on the PC.
+PPC_FUNC(fn_803D7180)
+{
+    int chan = (int)ctx.r[3] & 3;
+    uint32_t p = ctx.r[4], len = ctx.r[5] & 0xFFFF;
+    Chan& ch = s_chan[chan];
+    static const int32_t kDiff[16] = { 1, 3, 5, 7, 9, 11, 13, 15, -1, -3, -5, -7, -9, -11, -13, -15 };
+    static const int32_t kScale[16] = { 230, 230, 230, 230, 307, 409, 512, 614, 230, 230, 230, 230, 307, 409, 512, 614 };
+    int16_t pcm[2 * 64];
+    uint32_t n = 0;
+    for (uint32_t i = 0; i < len && n + 2 <= std::size(pcm); i++)
+    {
+        uint8_t b = Read8(p + i);
+        for (uint8_t nib : { (uint8_t)(b >> 4), (uint8_t)(b & 15) })
+        {
+            ch.adpcmPred = std::clamp(ch.adpcmPred + ch.adpcmStep * kDiff[nib] / 8, -32768, 32767);
+            ch.adpcmStep = std::clamp((ch.adpcmStep * kScale[nib]) >> 8, 127, 24576);
+            pcm[n++] = (int16_t)ch.adpcmPred;
+        }
+    }
+    if (g_config.remoteSpeaker) AudioOut_PushSpeaker(chan, pcm, n);
+    ctx.r[3] = WPAD_ERR_NONE;
+}
 
 // u8 WPADGetRadioSensitivity(s32 chan)
 PPC_FUNC(fn_803D37D4) { ctx.r[3] = 100; }
@@ -304,3 +355,4 @@ PPC_FUNC(fn_803D8518)
     if (cb) s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE });
     ctx.r[3] = WPAD_ERR_NONE;
 }
+
