@@ -116,3 +116,20 @@ PPC_FUNC(fn_8054024C)
     std::string s = (const char*)GuestPtr(ctx.r[5]);
     FATAL("OSFatal (called from {:08x}): {}", ctx.lr, s);
 }
+
+// u32 VIGetRetraceCount(void). The game paces frames by spinning on this until enough
+// retraces have passed; once the value stops changing, sleep until the next interrupt
+// instead of burning a host core.
+#include "scheduler.h"
+PPC_FUNC(fn_80554C58)
+{
+    static uint32_t last = ~0u, repeats = 0;
+    fn_80554C58_impl(ctx, base);
+    if (ctx.r[3] != last)
+    {
+        last = ctx.r[3];
+        repeats = 0;
+    }
+    else if (++repeats > 64 && (ctx.msr & 0x8000))
+        Sched_IdleWait();
+}
