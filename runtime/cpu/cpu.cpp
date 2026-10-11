@@ -107,6 +107,22 @@ extern "C" void ppc_call_indirect(PPCContext& ctx, uint8_t* base, uint32_t addr)
                 if (FILE* f = fopen("mem2_dump.bin", "wb")) { fwrite(base + 0x90000000, 1, 0x100000, f); fclose(f); }
             }
         }
+        // Module import trampoline (stw r12,4(r1); lis/addi r12,target; mtctr r12;
+        // lwz r12,4(r1); bctr): jump straight to the (recompiled) target.
+        const uint8_t* p = base + addr;
+        auto w = [&](int i) { return _byteswap_ulong(*(const uint32_t*)(p + 4 * i)); };
+        if (w(0) == 0x91810004 && (w(1) >> 16) == 0x3D80 && (w(2) >> 16) == 0x398C && w(3) == 0x7D8903A6 && w(4) == 0x81810004 &&
+            w(5) == 0x4E800420)
+        {
+            uint32_t target = (w(1) << 16) + (uint32_t)(int32_t)(int16_t)(w(2) & 0xFFFF);
+            Write32(ctx.r[1] + 4, ctx.r[12]);
+            ctx.ctr = target;
+            if (ppc_lookup(target))
+            {
+                ppc_call_indirect(ctx, base, target);
+                return;
+            }
+        }
         static std::unordered_map<uint32_t, int> seen;
         if (seen[addr]++ == 0) LOG_INFO("interpreting non-recompiled code at {:08x} (lr={:08x})", addr, ctx.lr);
         Interp_Run(ctx, base, addr);

@@ -1,4 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
+
+# The VS2019 16.10 linker crashes (LNK1000) on the Windows SDK 10.0.26100 import
+# libraries; prefer 10.0.19041 when it is installed (override with -DCMAKE_SYSTEM_VERSION).
+if(WIN32 AND NOT CMAKE_SYSTEM_VERSION AND EXISTS "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.19041.0/um/x64")
+    set(CMAKE_SYSTEM_VERSION 10.0.19041.0)
+endif()
+
 project(BlackKnightRecomp LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
