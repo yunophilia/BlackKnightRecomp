@@ -135,6 +135,14 @@ F11 or Alt+Enter toggles fullscreen.
   or `NONE`).
 * `data`, `iso`: game file locations, if they are not in `game/`.
 
+## Testing
+
+* `tools/smoke_test.ps1 [-Fps60]`: boots into mission 1 with a scripted input run and
+  checks the log (no errors, expected milestones, frame rate) and screenshots.
+* `tools/gen_soak.py`: random-input scripts for long stability runs (see its header).
+* `--capture <frame>` writes a per-draw log, textures and EFB states for one frame;
+  `--profile <start> <seconds>` (plus `--profile-gx`) prints a sampling profile.
+
 ## Status
 
 The game is playable from boot to gameplay, with graphics, audio, saves and controller
