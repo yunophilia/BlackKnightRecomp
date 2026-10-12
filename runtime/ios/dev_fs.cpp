@@ -14,7 +14,7 @@ static fs::path HostPath(const std::string& nandPath)
 {
     std::string p = nandPath;
     while (!p.empty() && p[0] == '/') p.erase(0, 1);
-    return fs::path(IOS_NandRoot()) / fs::u8path(p);
+    return fs::path(IOS_NandRoot()) / fs::path(std::u8string(p.begin(), p.end()));
 }
 
 static bool ValidPath(const std::string& p)
