@@ -36,6 +36,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         // running DLL teardown while guest/GX/audio threads are mid-operation.
         s_closed = true;
         LOG_INFO("window closed, exiting");
+        { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
         TerminateProcess(GetCurrentProcess(), 0);
         return 0;
     case WM_SIZE:

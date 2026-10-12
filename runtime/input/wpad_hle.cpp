@@ -78,8 +78,10 @@ void CallGuest(PPCContext& ctx, uint8_t* base, uint32_t func, uint32_t r3, uint3
 }   // namespace
 
 // Runs pending connection callbacks and feeds samples to KPAD's sampling callback.
+void WPAD_CheckRumble();
 void WPAD_Pump(PPCContext& ctx, uint8_t* base)
 {
+    WPAD_CheckRumble();
     for (int c = 0; c < 4; c++)
     {
         Chan& ch = s_chan[c];
@@ -208,7 +210,12 @@ PPC_FUNC(fn_803D50C0)
     int chan = (int)ctx.r[3];
     bool on = ctx.r[4] != 0;
     if (chan < 0 || chan > 3) return;
-    if (!g_config.rumble) on = false;
+    if (on && (!g_config.rumble || !Gamepad_RumbleAllowed()))
+    {
+        static bool logged = false;
+        if (!logged) { logged = true; LOG_INFO("WPAD: rumble suppressed (disabled, automated input, or window not focused)"); }
+        on = false;
+    }
     if (s_chan[chan].motor != on)
     {
         s_chan[chan].motor = on;
@@ -216,6 +223,18 @@ PPC_FUNC(fn_803D50C0)
         v.wLeftMotorSpeed = on ? 30000 : 0;
         v.wRightMotorSpeed = on ? 20000 : 0;
         XInputSetState(chan, &v);
+    }
+}
+
+// Safety net: if the window loses focus while a motor runs, stop it (polled with input).
+void WPAD_CheckRumble()
+{
+    bool any = false;
+    for (auto& c : s_chan) any |= c.motor;
+    if (any && !Gamepad_RumbleAllowed())
+    {
+        for (auto& c : s_chan) c.motor = false;
+        Gamepad_StopRumble();
     }
 }
 

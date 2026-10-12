@@ -35,5 +35,6 @@ void Fatal(const std::string& s)
     Log_Write(3, "FATAL: " + s);
     fflush(stdout);
     if (!g_noMessageBox) MessageBoxA(nullptr, s.c_str(), "BlackKnightRecomp - fatal error", MB_ICONERROR);
+    { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
     ExitProcess(1);
 }

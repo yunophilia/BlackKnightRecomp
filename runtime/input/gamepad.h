@@ -22,3 +22,5 @@ enum : uint16_t
 
 void Gamepad_Poll(int index, GamepadState& out);
 bool Gamepad_IsConnected(int index);
+bool Gamepad_RumbleAllowed();   // a person is playing: no input script, window focused
+void Gamepad_StopRumble();      // all motors off

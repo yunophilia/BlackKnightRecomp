@@ -75,6 +75,10 @@ static void ApplyBindings(GamepadState& out, uint32_t phys, float lt, float rt)
 
 bool g_autoPress = false;   // test aid: tap A every few seconds
 
+// Rumble goes to the real controller, so it is only allowed when a person is playing:
+// not during scripted/automated input, and only while the game window has focus.
+bool Gamepad_RumbleAllowed();
+
 // Test aid: timed input script. Each line: <start seconds> <duration> <BUTTONS|LX=v|LY=v ...>
 // e.g. "12.0 0.2 A+B" or "30 2.0 LY=1.0"
 #include <fstream>
@@ -204,4 +208,18 @@ void Gamepad_Poll(int index, GamepadState& out)
     }
     if (Key('U')) { out.rt = 1.0f; any = true; }
     if (any) out.connected = true;
+}
+
+bool Gamepad_RumbleAllowed()
+{
+    if (!s_script.empty() || g_autoPress) return false;
+    HWND hwnd = (HWND)Video_HWND();
+    return hwnd && GetForegroundWindow() == hwnd;
+}
+
+// Stops all controller motors (called on focus loss and before exiting).
+void Gamepad_StopRumble()
+{
+    XINPUT_VIBRATION v{};
+    for (DWORD i = 0; i < 4; i++) XInputSetState(i, &v);
 }

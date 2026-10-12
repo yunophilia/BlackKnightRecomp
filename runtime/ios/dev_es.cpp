@@ -24,6 +24,7 @@
             CloseHandle(pi.hProcess);
         }
     }
+    { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
     ExitProcess(0);
 }
 

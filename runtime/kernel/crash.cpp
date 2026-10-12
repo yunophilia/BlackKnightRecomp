@@ -97,6 +97,7 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS* ep)
     s_job.n = RtlCaptureStackBackTrace(0, 62, s_job.frames, nullptr);
     HANDLE h = CreateThread(nullptr, 4 << 20, CrashThread, nullptr, 0, nullptr);
     WaitForSingleObject(h, 60000);
+    { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
     TerminateProcess(GetCurrentProcess(), 2);
     return EXCEPTION_CONTINUE_SEARCH;
 }
