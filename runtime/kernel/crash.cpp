@@ -5,6 +5,11 @@
 #include "../cpu/cpu.h"
 
 #include <algorithm>
+#include <atomic>
+#include <map>
+#include <mutex>
+#include <string>
+#include <thread>
 #include <vector>
 #include <windows.h>
 #include <dbghelp.h>
@@ -186,11 +191,12 @@ static void WatchdogThread()
             QueryPerformanceFrequency(&fq);
             double secs = lastQpc ? (double)(q.QuadPart - lastQpc) / fq.QuadPart : 3.0;
             lastQpc = q.QuadPart;
-            extern int g_audioUnderruns, g_audioDrops;
+            extern int g_audioUnderruns, g_audioDrops, g_audioRepeats;
             extern uint64_t g_audioFrames;
             static uint64_t lastAudio = 0;
-            LOG_INFO("status: {:.1f} fps, VI {:.2f} Hz, audio peak {} underruns {} drops {} rate {:.0f} Hz", (g_framesPresented - lastFrames) / secs,
-                     (g_viFieldCount - lastFields) / secs, g_audioPeak, g_audioUnderruns, g_audioDrops, (g_audioFrames - lastAudio) / secs);
+            LOG_INFO("status: {:.1f} fps, VI {:.2f} Hz, audio peak {} underruns {} drops {} repeats {} rate {:.0f} Hz", (g_framesPresented - lastFrames) / secs,
+                     (g_viFieldCount - lastFields) / secs, g_audioPeak, g_audioUnderruns, g_audioDrops, g_audioRepeats, (g_audioFrames - lastAudio) / secs);
+            g_audioRepeats = 0;
             lastAudio = g_audioFrames;
             g_audioUnderruns = g_audioDrops = 0;
             lastFields = g_viFieldCount;
@@ -221,8 +227,65 @@ static void WatchdogThread()
     }
 }
 
+// BKR_IRQ_STALLS=1: sample where the guest thread is when it has not polled interrupts
+// for more than 3 ms (finds code paths that starve interrupt delivery).
+static std::string Crash_SymbolName(uintptr_t rip)
+{
+    alignas(SYMBOL_INFO) char buf[sizeof(SYMBOL_INFO) + 256];
+    SYMBOL_INFO* si = (SYMBOL_INFO*)buf;
+    si->SizeOfStruct = sizeof(SYMBOL_INFO);
+    si->MaxNameLen = 255;
+    DWORD64 disp = 0;
+    return SymFromAddr(GetCurrentProcess(), rip, &disp, si) ? std::string(si->Name) : std::format("?{:x}", rip);
+}
+
+static void IrqStallSampler()
+{
+    SymInitialize(GetCurrentProcess(), nullptr, TRUE);
+    extern std::atomic<uint64_t> g_lastIrqCheckTb;
+    std::map<std::string, int> where;
+    int total = 0;
+    timeBeginPeriod(1);
+    for (int iter = 0;; iter++)
+    {
+        Sleep(1);
+        uint64_t last = g_lastIrqCheckTb.load(std::memory_order_relaxed);
+        if (last && Timebase_Now() - last > TB_FREQ * 3 / 1000)
+        {
+            SuspendThread(s_guestThread);
+            CONTEXT c{};
+            c.ContextFlags = CONTEXT_FULL;
+            GetThreadContext(s_guestThread, &c);
+            std::string chain;
+            for (int i = 0; i < 6 && c.Rip; i++)
+            {
+                std::string n = Crash_SymbolName((uintptr_t)c.Rip);
+                chain += n + " < ";
+                DWORD64 imageBase;
+                PRUNTIME_FUNCTION rf = RtlLookupFunctionEntry(c.Rip, &imageBase, nullptr);
+                if (!rf) break;
+                void* hd;
+                DWORD64 ef;
+                RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, c.Rip, rf, &c, &hd, &ef, nullptr);
+            }
+            ResumeThread(s_guestThread);
+            where[chain]++;
+            total++;
+        }
+        if (iter % 20000 == 19999 && total)
+        {
+            std::vector<std::pair<int, std::string>> v;
+            for (auto& [k, n] : where) v.push_back({ n, k });
+            std::sort(v.rbegin(), v.rend());
+            LOG_INFO("=== interrupt stalls (>3 ms without polling): {} samples ===", total);
+            for (size_t i = 0; i < v.size() && i < 12; i++) LOG_INFO("  {:4}  {}", v[i].first, v[i].second);
+        }
+    }
+}
+
 void Crash_StartWatchdog()
 {
+    if (getenv("BKR_IRQ_STALLS")) std::thread(IrqStallSampler).detach();
     DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &s_guestThread, 0, FALSE, DUPLICATE_SAME_ACCESS);
     std::thread(WatchdogThread).detach();
     // BKR_TEST_PAUSE=start,end (seconds): exercises the focus-loss pause without

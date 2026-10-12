@@ -4,6 +4,8 @@
 #include "texture_decode.h"
 #include "vertex_loader.h"
 #include "hires.h"
+#include <atomic>
+#include <mutex>
 #include <d3d11_1.h>
 #include <filesystem>
 #include "../config.h"
@@ -1104,10 +1106,8 @@ static void SetEFBTarget()
 static uint32_t s_drawCalls = 0;
 
 void Render_Flush();
-static bool s_peekValid[2] = {};   // EFB peek snapshots (color, depth) match the EFB
 static void Flush()
 {
-    s_peekValid[0] = s_peekValid[1] = false;
     if (s_indices.empty() || !s_ready)
     {
         s_verts.clear();
@@ -1392,6 +1392,7 @@ void Render_OnCP(uint32_t reg)
 }
 
 static void DoEFBCopy();
+static void EFBPeek_FrameEnd();
 
 void Render_OnBP(uint32_t reg, uint32_t oldValue, uint32_t newValue)
 {
@@ -1456,7 +1457,6 @@ static ID3D11DepthStencilState* s_clearDS[2];
 
 static void ClearEFB(int x0, int y0, int x1, int y1)
 {
-    s_peekValid[0] = s_peekValid[1] = false;
     bool colorUpd = (BP(0x41) >> 3) & 1;
     bool alphaUpd = ((BP(0x41) >> 4) & 1) && PixelFormat() == 1;
     bool zUpd = (BP(0x40) >> 4) & 1;
@@ -1590,6 +1590,7 @@ static void DoEFBCopy()
         }
         D3D11_BOX box{ (UINT)(sx * s_scale), (UINT)(sy * s_scale), 0, (UINT)((sx + sw) * s_scale), (UINT)((sy + sh) * s_scale), 1 };
         g_ctx->CopySubresourceRegion(s_xfbTex, 0, 0, 0, 0, s_efbColor, 0, &box);
+        EFBPeek_FrameEnd();
         Video_Present(s_xfbSRV, 0, 0, 1, 1);
         g_framesPresented++;
         if (g_screenshotEvery && g_framesPresented >= g_screenshotStart && (g_framesPresented % g_screenshotEvery) == 0)
@@ -1683,72 +1684,93 @@ static void DoEFBCopy()
     SetEFBTarget();
 }
 
-// CPU EFB peeks (lens-flare occlusion tests etc.). The first peek after the EFB
-// changed reads the whole buffer back once; later peeks are served from that
-// native-resolution snapshot. Called with the GX thread idle (GX_SyncGPU).
+// CPU EFB peeks (occlusion tests for flares and particles). Reading the EFB back on
+// demand blocks the game thread until the GPU has finished the frame (several ms during
+// effect-heavy scenes), which delayed interrupts and made the audio stutter. Instead,
+// the end of each frame starts an asynchronous copy into staging textures; a frame
+// later it is mapped without waiting and kept as a native-resolution snapshot. Peeks
+// read the latest snapshot (one frame old) and never touch the GPU.
+static std::mutex s_peekMutex;
 static std::vector<uint32_t> s_peekDepth, s_peekColor;
+static std::atomic<int> s_peekIdleFrames{ 1000 };   // frames since the last peek
+static ID3D11Texture2D* s_peekStage[2][2];          // [slot][0 color, 1 depth]
+static bool s_peekPending[2];
+static int s_peekSlot = 0;
 
-static void SnapshotEFB(bool depth)
+static bool PeekReadback(int slot)
 {
-    const uint32_t W = EFB_W * s_scale, H = EFB_H * s_scale;
-    static ID3D11Texture2D* depthStage = nullptr;
-    static ID3D11Texture2D* colorStage = nullptr;
-    if (!depthStage)
+    D3D11_MAPPED_SUBRESOURCE mc, md;
+    if (g_ctx->Map(s_peekStage[slot][0], 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &mc) != S_OK) return false;
+    if (g_ctx->Map(s_peekStage[slot][1], 0, D3D11_MAP_READ, D3D11_MAP_FLAG_DO_NOT_WAIT, &md) != S_OK)
+    {
+        g_ctx->Unmap(s_peekStage[slot][0], 0);
+        return false;
+    }
+    {
+        std::lock_guard lk(s_peekMutex);
+        s_peekDepth.resize(EFB_W * EFB_H);
+        s_peekColor.resize(EFB_W * EFB_H);
+        for (uint32_t y = 0; y < EFB_H; y++)
+        {
+            size_t sy = (size_t)(y * s_scale + s_scale / 2);
+            const uint32_t* crow = (const uint32_t*)((const uint8_t*)mc.pData + sy * mc.RowPitch);
+            const float* drow = (const float*)((const uint8_t*)md.pData + sy * md.RowPitch);
+            for (uint32_t x = 0; x < EFB_W; x++)
+            {
+                uint32_t sx = x * s_scale + s_scale / 2;
+                s_peekColor[y * EFB_W + x] = crow[sx];
+                s_peekDepth[y * EFB_W + x] = (uint32_t)std::clamp(drow[sx] * 16777216.0f, 0.0f, 16777215.0f);
+            }
+        }
+    }
+    g_ctx->Unmap(s_peekStage[slot][0], 0);
+    g_ctx->Unmap(s_peekStage[slot][1], 0);
+    return true;
+}
+
+// GX thread, at the end of a frame (before the XFB copy clears the EFB).
+static void EFBPeek_FrameEnd()
+{
+    if (s_peekIdleFrames.fetch_add(1) > 120) return;   // the game is not peeking: no cost
+    if (!s_peekStage[0][0])
     {
         D3D11_TEXTURE2D_DESC td{};
-        td.Width = W;
-        td.Height = H;
+        td.Width = EFB_W * s_scale;
+        td.Height = EFB_H * s_scale;
         td.MipLevels = 1;
         td.ArraySize = 1;
         td.SampleDesc.Count = 1;
         td.Usage = D3D11_USAGE_STAGING;
         td.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-        td.Format = DXGI_FORMAT_R32_TYPELESS;
-        g_device->CreateTexture2D(&td, nullptr, &depthStage);
-        td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        g_device->CreateTexture2D(&td, nullptr, &colorStage);
+        for (int i = 0; i < 2; i++)
+        {
+            td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            g_device->CreateTexture2D(&td, nullptr, &s_peekStage[i][0]);
+            td.Format = DXGI_FORMAT_R32_TYPELESS;
+            g_device->CreateTexture2D(&td, nullptr, &s_peekStage[i][1]);
+        }
     }
     Flush();
-    D3D11_MAPPED_SUBRESOURCE m;
-    if (depth)
+    int prev = s_peekSlot ^ 1;
+    if (s_peekPending[prev] && PeekReadback(prev)) s_peekPending[prev] = false;
+    if (!s_peekPending[s_peekSlot])
     {
-        s_peekDepth.assign(EFB_W * EFB_H, 0xFFFFFF);
-        g_ctx->CopyResource(depthStage, s_efbDepth);
+        g_ctx->CopyResource(s_peekStage[s_peekSlot][0], s_efbColor);
+        g_ctx->CopyResource(s_peekStage[s_peekSlot][1], s_efbDepth);
+        s_peekPending[s_peekSlot] = true;
     }
-    else
-    {
-        s_peekColor.assign(EFB_W * EFB_H, 0);
-        g_ctx->CopyResource(colorStage, s_efbColor);
-    }
-    if (depth && SUCCEEDED(g_ctx->Map(depthStage, 0, D3D11_MAP_READ, 0, &m)))
-    {
-        for (uint32_t y = 0; y < EFB_H; y++)
-        {
-            const float* row = (const float*)((const uint8_t*)m.pData + (size_t)(y * s_scale + s_scale / 2) * m.RowPitch);
-            for (uint32_t x = 0; x < EFB_W; x++)
-                s_peekDepth[y * EFB_W + x] = (uint32_t)std::clamp(row[x * s_scale + s_scale / 2] * 16777216.0f, 0.0f, 16777215.0f);
-        }
-        g_ctx->Unmap(depthStage, 0);
-    }
-    if (!depth && SUCCEEDED(g_ctx->Map(colorStage, 0, D3D11_MAP_READ, 0, &m)))
-    {
-        for (uint32_t y = 0; y < EFB_H; y++)
-        {
-            const uint32_t* row = (const uint32_t*)((const uint8_t*)m.pData + (size_t)(y * s_scale + s_scale / 2) * m.RowPitch);
-            for (uint32_t x = 0; x < EFB_W; x++) s_peekColor[y * EFB_W + x] = row[x * s_scale + s_scale / 2];
-        }
-        g_ctx->Unmap(colorStage, 0);
-    }
-    s_peekValid[depth] = true;
+    s_peekSlot ^= 1;
 }
 
+// Game thread (MMIO); no GPU access.
 uint32_t EFB_Read32(uint32_t ea)
 {
-    if (!s_ready) return 0;
+    s_peekIdleFrames = 0;
     uint32_t x = (ea >> 2) & 0x3FF, y = (ea >> 12) & 0x3FF;
     if (x >= EFB_W || y >= EFB_H) return 0;
     bool depth = (ea & 0x00400000) != 0;
-    if (!s_peekValid[depth]) SnapshotEFB(depth);
+    std::lock_guard lk(s_peekMutex);
+    if (s_peekDepth.empty()) return depth ? 0x00FFFFFF : 0xFF000000;   // no snapshot yet
     if (depth) return s_peekDepth[y * EFB_W + x];
     uint32_t c = s_peekColor[y * EFB_W + x];   // R,G,B,A bytes
     uint32_t r = c & 0xFF, g = (c >> 8) & 0xFF, b = (c >> 16) & 0xFF, a = c >> 24;

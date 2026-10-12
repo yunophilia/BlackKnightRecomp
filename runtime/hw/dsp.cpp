@@ -220,6 +220,19 @@ static void AIDmaEvent(uint64_t, int64_t)
         return;
     // One full buffer has been played; hand it to the mixer and restart.
     uint32_t len = (s_aiDmaCtrl & 0x7FFF) * 32;
+    {
+        // diagnostics: a block identical to the previous one means the DSP did not
+        // render new audio in time (the hardware would replay stale samples)
+        extern int g_audioRepeats;
+        static uint64_t lastHash = 0;
+        const uint8_t* p = PhysPtr(s_aiCurAddr);
+        uint64_t h = 1469598103934665603ull;
+        for (uint32_t i = 0; i < len; i += 4) h = (h ^ *(const uint32_t*)(p + i)) * 1099511628211ull;
+        bool silent = true;
+        for (uint32_t i = 0; i < len && silent; i++) silent = p[i] == 0;
+        if (h == lastHash && !silent) g_audioRepeats++;
+        lastHash = h;
+    }
     AudioOut_PushDSP(PhysPtr(s_aiCurAddr), len, s_aiSampleRate);
     s_aiCurAddr = s_aiDmaStart;
     s_aiDmaBlocksLeft = s_aiDmaCtrl & 0x7FFF;

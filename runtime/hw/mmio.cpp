@@ -102,7 +102,7 @@ static uint32_t Read32Block(Block b, uint32_t off, uint32_t ea)
     case Block::DI: return DI_Read32(off);
     case Block::HLW: return HLW_Read32(off);
     case Block::HLW_DI: return DI_Read32(off);
-    case Block::EFB: { auto lk = GX_SyncGPU(); return EFB_Read32(ea); }
+    case Block::EFB: return EFB_Read32(ea);   // served from a snapshot, no GPU sync
     case Block::DSP: return DSP_Read32(off);
     default:
         LOG_WARN("MMIO read32 from unmapped {:08x}", ea);
@@ -121,7 +121,7 @@ static void Write32Block(Block b, uint32_t off, uint32_t v, uint32_t ea)
     case Block::DI: DI_Write32(off, v); break;
     case Block::HLW: HLW_Write32(off, v); break;
     case Block::HLW_DI: DI_Write32(off, v); break;
-    case Block::EFB: { auto lk = GX_SyncGPU(); EFB_Write32(ea, v); break; }
+    case Block::EFB: EFB_Write32(ea, v); break;
     case Block::DSP: DSP_Write32(off, v); break;
     case Block::GXFIFO: GPFifo_Write32(v); break;
     default:

@@ -20,7 +20,8 @@ static constexpr uint32_t BATCH_FRAMES_PER_SEC_DIV = 100;   // 10 ms batches
 float g_audioVolume = 1.0f;
 int g_audioPeak = 0;
 int g_audioUnderruns = 0, g_audioDrops = 0;   // since last status line
-uint64_t g_audioFrames = 0;                    // stereo frames produced (total)   // max |sample| since last status line
+uint64_t g_audioFrames = 0;
+int g_audioRepeats = 0;                        // AI blocks identical to the previous one                    // stereo frames produced (total)   // max |sample| since last status line
 FILE* g_audioDump = nullptr;   // --dump-audio: raw interleaved s16 stereo (host order)
 
 static void CreateVoice(uint32_t rate)

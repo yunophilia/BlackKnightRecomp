@@ -34,6 +34,15 @@ static std::string ExeDir()
 
 int main(int argc, char** argv)
 {
+    // Keep full timer resolution and CPU speed even when the window is minimized or in
+    // the background (Windows 11 power throttling would coarsen all waits to ~15.6 ms).
+    {
+        PROCESS_POWER_THROTTLING_STATE pt{};
+        pt.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+        pt.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION;
+        pt.StateMask = 0;
+        SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &pt, sizeof(pt));
+    }
     std::string root = ExeDir();
     Log_Open((root + "/BlackKnightRecomp.log").c_str());
     Config_Load(root + "/config.ini");

@@ -3,6 +3,7 @@
 #include "../cpu/cpu.h"
 #include "../log.h"
 
+#include <algorithm>
 #include <atomic>
 #include <mutex>
 #include <thread>
@@ -114,10 +115,34 @@ void Sched_IdleWait()
     }
 }
 
+// Waits use a high-resolution waitable timer: plain Sleep/WaitForSingleObject follow
+// the system tick, which Windows 11 keeps at ~15.6 ms for minimized or throttled
+// processes regardless of timeBeginPeriod. Late events made the game's audio replay
+// stale buffers (stutter) and could delay VI interrupts.
+static HANDLE s_hrTimer = nullptr;
+
+static void WaitTicks(uint64_t ticks)
+{
+    if (s_hrTimer)
+    {
+        LARGE_INTEGER due;
+        due.QuadPart = -(LONGLONG)(ticks * 10000000ull / TB_FREQ);   // relative, 100 ns units
+        if (due.QuadPart > -1) due.QuadPart = -1;
+        SetWaitableTimerEx(s_hrTimer, &due, 0, nullptr, nullptr, nullptr, 0);
+        HANDLE hs[2] = { s_timerWake, s_hrTimer };
+        WaitForMultipleObjects(2, hs, FALSE, INFINITE);
+        CancelWaitableTimer(s_hrTimer);
+    }
+    else
+        WaitForSingleObject(s_timerWake, (DWORD)std::max<uint64_t>(1, ticks * 1000 / TB_FREQ));
+}
+
 static void TimerThread()
 {
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
     timeBeginPeriod(1);
+    s_hrTimer = CreateWaitableTimerExW(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    if (!s_hrTimer) LOG_WARN("scheduler: no high-resolution timer, timing may be coarse");
     for (;;)
     {
         uint64_t next = s_nextDeadline.load();
@@ -126,16 +151,11 @@ static void TimerThread()
         {
             g_ppcIrqPending = 1;
             SetEvent(s_idleWake);
-            // wait for the guest to consume (or a new earlier deadline)
-            WaitForSingleObject(s_timerWake, 1);
+            // wait for the guest to consume it (or a new earlier deadline)
+            WaitTicks(TB_FREQ / 2000);   // 0.5 ms
             continue;
         }
-        uint64_t ticks = next - now;
-        double ms = (double)ticks * 1000.0 / (double)TB_FREQ;
-        if (ms > 2.0)
-            WaitForSingleObject(s_timerWake, (DWORD)(ms - 1.0));
-        else
-            YieldProcessor(), Sleep(0);
+        WaitTicks(next - now);
     }
 }
 

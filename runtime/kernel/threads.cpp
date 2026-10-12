@@ -206,8 +206,10 @@ static void TakeException(PPCContext& ctx, uint8_t* base, uint32_t exc)
 }
 
 void Cpu_PauseIfRequested();
+std::atomic<uint64_t> g_lastIrqCheckTb{ 0 };   // last interrupt poll (BKR_IRQ_STALLS diagnostics)
 extern "C" void ppc_check_irq(PPCContext& ctx, uint8_t* base)
 {
+    g_lastIrqCheckTb.store(Timebase_Now(), std::memory_order_relaxed);
     Cpu_PauseIfRequested();
     for (;;)
     {
