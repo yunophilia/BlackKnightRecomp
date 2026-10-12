@@ -72,8 +72,13 @@ void Sched_Cancel(int event)
     Recompute();
 }
 
+// Hooks run on the game thread before due events (e.g. completions from I/O threads).
+static std::vector<void (*)()> s_pollHooks;
+void Sched_AddPollHook(void (*fn)()) { s_pollHooks.push_back(fn); }
+
 void Sched_RunDue()
 {
+    for (auto fn : s_pollHooks) fn();
     uint64_t now = Timebase_Now();
     for (;;)
     {
@@ -149,6 +154,18 @@ static void TimerThread()
         uint64_t now = Timebase_Now();
         if (next <= now)
         {
+            // BKR_SLOW_SAMPLE diagnostics: the game thread has not taken a due event for >3 ms
+            static const bool sample = getenv("BKR_SLOW_SAMPLE") != nullptr;
+            if (sample)
+            {
+                static uint64_t sampledFor = 0;
+                if (now - next > TB_FREQ * 3 / 1000 && sampledFor != next)
+                {
+                    sampledFor = next;
+                    void Crash_SampleSlowGuest();
+                    Crash_SampleSlowGuest();
+                }
+            }
             g_ppcIrqPending = 1;
             SetEvent(s_idleWake);
             // wait for the guest to consume it (or a new earlier deadline)

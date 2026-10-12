@@ -57,8 +57,11 @@ static void SaveCtxToGuest(const PPCContext& c, uint32_t oc, uint32_t srr0)
 }
 
 // ------------------------------------------------------------- fibers
+extern bool g_irqDeferred;
 static void SwitchTo(GuestThread* t)
 {
+    // the resumed thread may run with interrupts enabled: let it see deferred ones
+    if (g_irqDeferred) g_ppcIrqPending = 1;
     GuestThread* self = g_curThread;
     g_curThread = t;
     SwitchToFiber(t->fiber);
@@ -207,6 +210,7 @@ static void TakeException(PPCContext& ctx, uint8_t* base, uint32_t exc)
 
 void Cpu_PauseIfRequested();
 std::atomic<uint64_t> g_lastIrqCheckTb{ 0 };   // last interrupt poll (BKR_IRQ_STALLS diagnostics)
+bool g_irqDeferred = false;   // an interrupt arrived while MSR[EE] was off
 extern "C" void ppc_check_irq(PPCContext& ctx, uint8_t* base)
 {
     g_lastIrqCheckTb.store(Timebase_Now(), std::memory_order_relaxed);
@@ -217,8 +221,12 @@ extern "C" void ppc_check_irq(PPCContext& ctx, uint8_t* base)
         Sched_RunDue();
         if (!(ctx.msr & MSR_EE))
         {
+            // Interrupts are disabled: remember it and stop polling on every loop
+            // back-edge (a cache-flush loop inside a disc-completion handler spent
+            // milliseconds here, delaying audio). Re-enabling interrupts (mtmsr) or a
+            // thread switch delivers it; the timer thread re-raises for new events.
             if (Dec_Expired() || HW_PIInterruptPending())
-                g_ppcIrqPending = 1;
+                g_irqDeferred = true;
             return;
         }
         if (HW_PIInterruptPending())

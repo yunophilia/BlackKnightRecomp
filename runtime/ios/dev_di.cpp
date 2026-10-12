@@ -3,6 +3,14 @@
 #include "disc.h"
 #include "../kernel/memory.h"
 #include "../log.h"
+#include "../kernel/scheduler.h"
+#include "../cpu/ppc_context.h"
+#include "../cpu/cpu.h"
+#include <thread>
+#include <mutex>
+#include <deque>
+#include <condition_variable>
+#include <atomic>
 
 #include <vector>
 
@@ -23,6 +31,78 @@ static uint64_t ReadTicks(uint32_t len)
     // ~10 MB/s plus fixed latency: keeps loading sequences in a realistic order
     return 6000 + (uint64_t)len * 6;
 }
+
+// Disc reads run on an I/O thread so the game thread never blocks on host file I/O
+// (synchronous reads stalled it for milliseconds while streamed sounds refilled,
+// delaying audio interrupts: stutter). Completions are handed back to the game thread
+// and replied after the same modelled drive latency as before. A single worker keeps
+// reads in order.
+namespace
+{
+struct ReadJob { uint32_t replyAddr; uint64_t pos; uint32_t len; uint32_t outAddr; bool raw; uint64_t readyTb; };
+struct ReadDone { uint32_t replyAddr; uint64_t readyTb; };
+std::mutex s_jobMutex;
+std::condition_variable s_jobCv;
+std::deque<ReadJob> s_jobs;
+std::mutex s_doneMutex;
+std::deque<ReadDone> s_done;
+std::atomic<bool> s_doneAvail{ false };
+bool s_workerStarted = false;
+
+void ReadWorker()
+{
+    for (;;)
+    {
+        ReadJob j;
+        {
+            std::unique_lock lk(s_jobMutex);
+            s_jobCv.wait(lk, [] { return !s_jobs.empty(); });
+            j = s_jobs.front();
+            s_jobs.pop_front();
+        }
+        if (j.raw) Disc_ReadRaw(j.pos, j.len, PhysPtr(j.outAddr));
+        else Disc_ReadPartition(j.pos, j.len, PhysPtr(j.outAddr));
+        {
+            std::lock_guard lk(s_doneMutex);
+            s_done.push_back({ j.replyAddr, j.readyTb });
+        }
+        s_doneAvail = true;
+        g_ppcIrqPending = 1;
+        Sched_WakeIdle();
+    }
+}
+
+// game thread (scheduler poll hook)
+void DeliverReadCompletions()
+{
+    if (!s_doneAvail.exchange(false)) return;
+    std::deque<ReadDone> done;
+    {
+        std::lock_guard lk(s_doneMutex);
+        done.swap(s_done);
+    }
+    uint64_t now = Timebase_Now();
+    for (auto& d : done) IOS_SendDelayedReply(d.replyAddr, DI_SUCCESS, d.readyTb > now ? d.readyTb - now : 1);
+}
+
+IOSReply QueueRead(const IOSRequest& r, uint64_t pos, uint32_t len, bool raw)
+{
+    if (!s_workerStarted)
+    {
+        s_workerStarted = true;
+        Sched_AddPollHook(DeliverReadCompletions);
+        std::thread(ReadWorker).detach();
+    }
+    {
+        std::lock_guard lk(s_jobMutex);
+        s_jobs.push_back({ r.addr, pos, len, r.outAddr, raw, Timebase_Now() + ReadTicks(len) });
+    }
+    s_jobCv.notify_one();
+    IOSReply rep;
+    rep.pending = true;
+    return rep;
+}
+}   // namespace
 
 class DIDevice : public IOSDevice
 {
@@ -49,9 +129,8 @@ public:
             uint64_t pos = (uint64_t)Read32(in + 8) << 2;
             if (!s_partitionOpen) return { DI_SECURITY_ERROR };
             if (r.outSize < len) return { DI_SECURITY_ERROR };
-            Disc_ReadPartition(pos, len, PhysPtr(r.outAddr));
             LOG_DEBUG("DI read disc {:x} len {:x} -> {:08x}", pos, len, r.outAddr);
-            return { DI_SUCCESS, false, ReadTicks(len) };
+            return QueueRead(r, pos, len, false);
         }
         case 0x79:   // wait for cover close
             return { DI_COVER_CLOSED };
@@ -85,8 +164,7 @@ public:
                 return { DI_DRIVE_ERROR, false, 20000 };
             }
             uint64_t pos = (uint64_t)pos32 << 2;
-            Disc_ReadRaw(pos, len, PhysPtr(r.outAddr));
-            return { DI_SUCCESS, false, ReadTicks(len) };
+            return QueueRead(r, pos, len, true);
         }
         case 0x8E:   // enable DVD video
             return { DI_SUCCESS };

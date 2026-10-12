@@ -294,12 +294,16 @@ extern "C" void ppc_mtspr(PPCContext& ctx, uint8_t* base, uint32_t spr, uint32_t
     }
 }
 
+extern bool g_irqDeferred;   // threads.cpp: interrupt arrived while MSR[EE] was off
 extern "C" void ppc_mtmsr(PPCContext& ctx, uint8_t* base, uint32_t v)
 {
     uint32_t old = ctx.msr;
     ctx.msr = v;
-    if ((v & MSR_EE) && !(old & MSR_EE) && g_ppcIrqPending)
+    if ((v & MSR_EE) && !(old & MSR_EE) && (g_ppcIrqPending || g_irqDeferred))
+    {
+        g_irqDeferred = false;
         ppc_check_irq(ctx, base);
+    }
 }
 
 extern "C" void ppc_sc(PPCContext& ctx, uint8_t* base, uint32_t addr)

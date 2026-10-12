@@ -283,8 +283,55 @@ static void IrqStallSampler()
     }
 }
 
+// BKR_SLOW_SAMPLE=1: the scheduler's timer thread calls this when the game thread has
+// not reacted to a due event for >3 ms (it is awake anyway, so timing is unchanged).
+// Records where the game thread is; logged every 30 s.
+static std::mutex s_slowMutex;
+static std::map<std::string, int> s_slowWhere;
+void Crash_SampleSlowGuest()
+{
+    if (!s_guestThread) return;
+    static bool symInit = false;
+    if (!symInit) { symInit = true; SymInitialize(GetCurrentProcess(), nullptr, TRUE); }
+    SuspendThread(s_guestThread);
+    CONTEXT c{};
+    c.ContextFlags = CONTEXT_FULL;
+    GetThreadContext(s_guestThread, &c);
+    uintptr_t frames[10];
+    int nf = 0;
+    for (int i = 0; i < 10 && c.Rip; i++)
+    {
+        frames[nf++] = (uintptr_t)c.Rip;
+        DWORD64 imageBase;
+        PRUNTIME_FUNCTION rf = RtlLookupFunctionEntry(c.Rip, &imageBase, nullptr);
+        if (!rf) break;
+        void* hd;
+        DWORD64 ef;
+        RtlVirtualUnwind(UNW_FLAG_NHANDLER, imageBase, c.Rip, rf, &c, &hd, &ef, nullptr);
+    }
+    ResumeThread(s_guestThread);
+    std::string chain;
+    for (int i = 0; i < nf; i++) chain += Crash_SymbolName(frames[i]) + " < ";
+    std::lock_guard lk(s_slowMutex);
+    s_slowWhere[chain]++;
+}
+
+static void LogSlowGuest()
+{
+    std::lock_guard lk(s_slowMutex);
+    if (s_slowWhere.empty()) return;
+    std::vector<std::pair<int, std::string>> v;
+    for (auto& [k, n] : s_slowWhere) v.push_back({ n, k });
+    std::sort(v.rbegin(), v.rend());
+    LOG_INFO("=== game thread slow to take interrupts (>3 ms): where ===");
+    for (size_t i = 0; i < v.size() && i < 10; i++) LOG_INFO("  {:4}  {}", v[i].first, v[i].second);
+    s_slowWhere.clear();
+}
+
 void Crash_StartWatchdog()
 {
+    if (getenv("BKR_SLOW_SAMPLE"))
+        std::thread([] { for (;;) { Sleep(30000); LogSlowGuest(); } }).detach();
     if (getenv("BKR_IRQ_STALLS")) std::thread(IrqStallSampler).detach();
     DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &s_guestThread, 0, FALSE, DUPLICATE_SAME_ACCESS);
     std::thread(WatchdogThread).detach();

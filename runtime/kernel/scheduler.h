@@ -15,3 +15,5 @@ void Sched_Init();
 void Sched_Kick();
 void Sched_IdleWait();
 void Sched_WakeIdle();
+// Runs fn on the game thread at the start of every Sched_RunDue (I/O completions).
+void Sched_AddPollHook(void (*fn)());
