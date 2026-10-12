@@ -18,7 +18,9 @@ static std::vector<int16_t> s_staging;
 static std::deque<std::vector<int16_t>> s_inFlight;   // buffers owned until played
 static constexpr uint32_t BATCH_FRAMES_PER_SEC_DIV = 100;   // 10 ms batches
 float g_audioVolume = 1.0f;
-int g_audioPeak = 0;   // max |sample| since last status line
+int g_audioPeak = 0;
+int g_audioUnderruns = 0, g_audioDrops = 0;   // since last status line
+uint64_t g_audioFrames = 0;                    // stereo frames produced (total)   // max |sample| since last status line
 FILE* g_audioDump = nullptr;   // --dump-audio: raw interleaved s16 stereo (host order)
 
 static void CreateVoice(uint32_t rate)
@@ -70,6 +72,7 @@ void AudioOut_PushDSP(const uint8_t* data, uint32_t bytes, uint32_t sampleRate)
     if (!s_voice || s_rate != sampleRate) CreateVoice(sampleRate);
     if (!s_voice) return;
     uint32_t frames = bytes / 4;
+    g_audioFrames += frames;
     // DMA data is big-endian, right channel first
     for (uint32_t i = 0; i < frames; i++)
     {
@@ -86,8 +89,15 @@ void AudioOut_PushDSP(const uint8_t* data, uint32_t bytes, uint32_t sampleRate)
     XAUDIO2_VOICE_STATE st;
     s_voice->GetState(&st, XAUDIO2_VOICE_NOSAMPLESPLAYED);
     while (s_inFlight.size() > st.BuffersQueued) s_inFlight.pop_front();
+    if (st.BuffersQueued == 0)
+    {
+        // ran dry: rebuild a 30 ms cushion before resuming so jitter is absorbed
+        if (s_staging.size() / 2 < batch * 3) return;
+        g_audioUnderruns++;
+    }
     if (st.BuffersQueued > 8)
     {
+        g_audioDrops++;
         // too much latency: drop this batch
         s_staging.clear();
         return;

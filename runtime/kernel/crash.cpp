@@ -186,7 +186,13 @@ static void WatchdogThread()
             QueryPerformanceFrequency(&fq);
             double secs = lastQpc ? (double)(q.QuadPart - lastQpc) / fq.QuadPart : 3.0;
             lastQpc = q.QuadPart;
-            LOG_INFO("status: {:.1f} fps, VI {:.2f} Hz, audio peak {}", (g_framesPresented - lastFrames) / secs, (g_viFieldCount - lastFields) / secs, g_audioPeak);
+            extern int g_audioUnderruns, g_audioDrops;
+            extern uint64_t g_audioFrames;
+            static uint64_t lastAudio = 0;
+            LOG_INFO("status: {:.1f} fps, VI {:.2f} Hz, audio peak {} underruns {} drops {} rate {:.0f} Hz", (g_framesPresented - lastFrames) / secs,
+                     (g_viFieldCount - lastFields) / secs, g_audioPeak, g_audioUnderruns, g_audioDrops, (g_audioFrames - lastAudio) / secs);
+            lastAudio = g_audioFrames;
+            g_audioUnderruns = g_audioDrops = 0;
             lastFields = g_viFieldCount;
             g_audioPeak = 0;
         }

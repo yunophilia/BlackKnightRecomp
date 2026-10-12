@@ -212,6 +212,7 @@ static uint16_t s_aiDmaCtrl;       // bit15 enable, length in 32-byte blocks
 static uint32_t s_aiDmaBlocksLeft;
 static uint32_t s_aiCurAddr;
 static uint32_t s_aiSampleRate = 32000;
+static uint64_t s_aiNextTb = 0;   // deadline of the pending DMA completion
 
 static void AIDmaEvent(uint64_t, int64_t)
 {
@@ -225,7 +226,13 @@ static void AIDmaEvent(uint64_t, int64_t)
     s_control |= CTL_AID;
     UpdateInterrupts();
     uint64_t ticks = (uint64_t)len / 4 * TB_FREQ / s_aiSampleRate;
-    Sched_ScheduleIn(s_evtAIDma, ticks ? ticks : 1000);
+    // Schedule against the previous deadline, not "now": event delivery latency
+    // would otherwise accumulate and the game would produce audio ~6% slower than
+    // it is played (constant underruns = stutter). Resync after long stalls.
+    s_aiNextTb += ticks ? ticks : 1000;
+    uint64_t now = Timebase_Now();
+    if (s_aiNextTb + TB_FREQ / 10 < now) s_aiNextTb = now + ticks;
+    Sched_ScheduleAt(s_evtAIDma, s_aiNextTb);
 }
 
 static void DspIntEvent(uint64_t, int64_t)
@@ -329,7 +336,8 @@ void DSP_Write16(uint32_t off, uint16_t v)
             uint32_t len = (v & 0x7FFF) * 32;
             uint64_t ticks = (uint64_t)len / 4 * TB_FREQ / s_aiSampleRate;
             Sched_Cancel(s_evtAIDma);
-            Sched_ScheduleIn(s_evtAIDma, ticks ? ticks : 1000);
+            s_aiNextTb = Timebase_Now() + (ticks ? ticks : 1000);
+            Sched_ScheduleAt(s_evtAIDma, s_aiNextTb);
         }
         else if (!(v & 0x8000))
             Sched_Cancel(s_evtAIDma);
