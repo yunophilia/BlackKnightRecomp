@@ -38,6 +38,8 @@ static const char* kDefaultIni =
     "[System]\n"
     "; english, german, french, spanish, italian, dutch, japanese\n"
     "language = english\n"
+    "; freeze the game while its window is in the background\n"
+    "pause_on_focus_loss = false\n"
     "\n"
     "[Input]\n"
     "rumble = true\n"
@@ -139,6 +141,7 @@ void Config_Load(const std::string& path)
         else if (section == "system")
         {
             if (key == "language") c.language = ParseLanguage(val);
+            else if (key == "pause_on_focus_loss") c.pauseOnFocusLoss = ParseBool(val);
         }
         else if (section == "input")
         {

@@ -205,8 +205,10 @@ static void TakeException(PPCContext& ctx, uint8_t* base, uint32_t exc)
     ctx = saved;
 }
 
+void Cpu_PauseIfRequested();
 extern "C" void ppc_check_irq(PPCContext& ctx, uint8_t* base)
 {
+    Cpu_PauseIfRequested();
     for (;;)
     {
         g_ppcIrqPending = 0;

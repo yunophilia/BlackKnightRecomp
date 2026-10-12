@@ -6,6 +6,7 @@
 #include "../kernel/memory.h"
 #include "../kernel/threads.h"
 
+#include <atomic>
 #include <bit>
 #include <limits>
 #include <unordered_map>
@@ -150,6 +151,19 @@ uint64_t Timebase_Now()
     uint64_t hi = d / (uint64_t)s_qpcFreq.QuadPart;
     uint64_t lo = d % (uint64_t)s_qpcFreq.QuadPart;
     return s_tbOffset + hi * TB_FREQ + lo * TB_FREQ / (uint64_t)s_qpcFreq.QuadPart;
+}
+
+// Pause (window focus loss): the guest thread parks here; on resume the time base
+// continues from where it stopped, so game time and scheduled events do not jump.
+std::atomic<bool> g_pauseRequested{ false };
+void Cpu_PauseIfRequested()
+{
+    if (!g_pauseRequested.load(std::memory_order_relaxed)) return;
+    uint64_t tb = Timebase_Now();
+    LOG_INFO("paused");
+    while (g_pauseRequested.load()) Sleep(20);
+    Timebase_Set(tb);
+    LOG_INFO("resumed");
 }
 
 void Timebase_Set(uint64_t v)

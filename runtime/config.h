@@ -18,7 +18,8 @@ struct Config
     bool texturePack = true;     // load Dolphin-format custom textures if present
     std::string texturePackDir;  // empty: <exe>/textures, game/textures, Dolphin's Load/Textures
     // [System]
-    int language = 1;            // Wii IPL.LNG: 0 ja, 1 en, 2 de, 3 fr, 4 es, 5 it, 6 nl
+    int language = 1;
+    bool pauseOnFocusLoss = false;   // freeze the game while the window is in the background            // Wii IPL.LNG: 0 ja, 1 en, 2 de, 3 fr, 4 es, 5 it, 6 nl
     // [Input]
     bool rumble = true;
     bool remoteSpeaker = true;   // play Wii Remote speaker sounds on the PC

@@ -1,5 +1,6 @@
 // Window, D3D11 device and presentation.
 #include "video.h"
+#include "../config.h"
 #include "../log.h"
 
 #include <atomic>
@@ -40,6 +41,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_SIZE:
         s_resized = true;
         return 0;
+    case WM_ACTIVATEAPP:
+        if (g_config.pauseOnFocusLoss)
+        {
+            extern std::atomic<bool> g_pauseRequested;
+            g_pauseRequested = (wp == FALSE);
+        }
+        break;
     case WM_SETCURSOR:
         // the game draws its own Wii Remote pointer
         if (LOWORD(lp) == HTCLIENT)

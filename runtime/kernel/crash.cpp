@@ -218,6 +218,20 @@ void Crash_StartWatchdog()
 {
     DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &s_guestThread, 0, FALSE, DUPLICATE_SAME_ACCESS);
     std::thread(WatchdogThread).detach();
+    // BKR_TEST_PAUSE=start,end (seconds): exercises the focus-loss pause without
+    // touching window focus
+    if (const char* tp = getenv("BKR_TEST_PAUSE"))
+    {
+        int a = 0, b = 0;
+        if (sscanf(tp, "%d,%d", &a, &b) == 2 && b > a)
+            std::thread([a, b] {
+                extern std::atomic<bool> g_pauseRequested;
+                Sleep(a * 1000);
+                g_pauseRequested = true;
+                Sleep((b - a) * 1000);
+                g_pauseRequested = false;
+            }).detach();
+    }
 }
 
 // Walk the OS active thread queue and print each thread with a back-chain trace.

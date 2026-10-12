@@ -127,6 +127,7 @@ F11 or Alt+Enter toggles fullscreen.
 * `gpu_thread`: run GX command processing and rendering on a second core (default on;
   `--single-core` turns it off for debugging).
 * `language`: english, german, french, spanish, italian, dutch, japanese.
+* `pause_on_focus_loss`: freeze the game while its window is in the background.
 * `rumble`: controller vibration.
 * `remote_speaker`: play the sounds the game sends to the Wii Remote speaker (decoded
   from the remote's 4-bit ADPCM stream) through the PC's audio output.
