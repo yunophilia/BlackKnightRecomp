@@ -4,6 +4,10 @@
 #include "texture_decode.h"
 #include "vertex_loader.h"
 #include "hires.h"
+#include <type_traits>
+#include <thread>
+#include <deque>
+#include <condition_variable>
 #include <atomic>
 #include <mutex>
 #include <d3d11_1.h>
@@ -152,6 +156,9 @@ static int s_scale = 3;
 
 static std::unordered_map<VSKey, ID3D11VertexShader*, KeyHash<VSKey>> s_vsCache;
 static std::unordered_map<PSKey, ID3D11PixelShader*, KeyHash<PSKey>> s_psCache;
+extern bool g_asyncShaders;
+static void StartShaderWorkers();
+static void PreloadShaders();
 static std::unordered_map<uint64_t, ID3D11BlendState*> s_blendCache;
 static std::unordered_map<uint64_t, ID3D11DepthStencilState*> s_depthCache;
 static std::unordered_map<uint64_t, ID3D11RasterizerState*> s_rasterCache;
@@ -433,6 +440,9 @@ void Renderer_Init()
     if (!Video_Init()) FATAL("video init failed");
     if (!InitDevice()) FATAL("renderer init failed");
     if (g_config.texturePack) HiRes_Init(g_config.texturePackDir);
+    g_asyncShaders = g_config.asyncShaders;
+    StartShaderWorkers();
+    PreloadShaders();
     s_ready = true;
 }
 
@@ -496,22 +506,192 @@ static void BuildPSKey(PSKey& k)
     k.perPixelDepth = ((k.zTexType >> 2) & 3) != 0 && zEnable ? 1 : 0;
 }
 
+// ------------------------------------------------------------------ shader cache
+// New shaders compile on worker threads; until one is ready, draws that need it are
+// skipped (as Dolphin's asynchronous mode does) instead of stalling the GX thread for
+// tens of milliseconds per shader, which hitched the game and its audio when entering
+// new areas. Shaders already on disk load synchronously (fast), and every key ever
+// seen is remembered so the whole set is created at startup.
+static std::filesystem::path ShaderCacheDir()
+{
+    wchar_t buf[MAX_PATH];
+    GetModuleFileNameW(nullptr, buf, MAX_PATH);
+    return std::filesystem::path(buf).parent_path() / "shadercache";
+}
+
+static ID3DBlob* LoadCachedBlob(const std::string& src, const char* target)
+{
+    std::filesystem::path cachePath = ShaderCachePath(src, target);
+    ID3DBlob* blob = nullptr;
+    if (FILE* f = _wfopen(cachePath.c_str(), L"rb"))
+    {
+        fseek(f, 0, SEEK_END);
+        long n = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        if (n <= 0 || FAILED(D3DCreateBlob((SIZE_T)n, &blob)) || fread(blob->GetBufferPointer(), 1, n, f) != (size_t)n)
+        {
+            if (blob) blob->Release();
+            blob = nullptr;
+        }
+        fclose(f);
+    }
+    return blob;
+}
+
+template <typename K>
+static void RememberKey(const char* file, const K& k)
+{
+    std::filesystem::path p = ShaderCacheDir() / file;
+    if (FILE* f = _wfopen(p.c_str(), L"ab")) { fwrite(&k, sizeof(K), 1, f); fclose(f); }
+}
+
+struct CompileJob { bool vs; std::string src; std::vector<uint8_t> key; };
+struct CompileDone { bool vs; std::vector<uint8_t> key; ID3D11DeviceChild* shader; };
+static std::mutex s_compileMutex;
+static std::condition_variable s_compileCv;
+static std::deque<CompileJob> s_compileJobs;
+static std::vector<CompileDone> s_compileDone;
+static std::atomic<int> s_compilePending{ 0 };
+bool g_asyncShaders = true;
+
+static void CompileWorker()
+{
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    for (;;)
+    {
+        CompileJob j;
+        {
+            std::unique_lock lk(s_compileMutex);
+            s_compileCv.wait(lk, [] { return !s_compileJobs.empty(); });
+            j = std::move(s_compileJobs.front());
+            s_compileJobs.pop_front();
+        }
+        ID3D11DeviceChild* sh = nullptr;
+        if (ID3DBlob* b = CompileHLSL(j.src, j.vs ? "vs_5_0" : "ps_5_0"))
+        {
+            if (j.vs) { ID3D11VertexShader* v = nullptr; g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &v); sh = v; }
+            else { ID3D11PixelShader* ps = nullptr; g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &ps); sh = ps; }
+            b->Release();
+        }
+        std::lock_guard lk(s_compileMutex);
+        s_compileDone.push_back({ j.vs, std::move(j.key), sh });
+    }
+}
+
+static void CollectCompiledShaders()
+{
+    if (s_compilePending.load() == 0) return;
+    std::vector<CompileDone> done;
+    {
+        std::lock_guard lk(s_compileMutex);
+        done.swap(s_compileDone);
+    }
+    for (auto& d : done)
+    {
+        if (d.vs) { VSKey k; memcpy(&k, d.key.data(), sizeof(k)); s_vsCache[k] = (ID3D11VertexShader*)d.shader; }
+        else { PSKey k; memcpy(&k, d.key.data(), sizeof(k)); s_psCache[k] = (ID3D11PixelShader*)d.shader; }
+        s_compilePending--;
+    }
+}
+
+static void StartShaderWorkers()
+{
+    unsigned n = std::clamp<unsigned>(std::thread::hardware_concurrency() / 2, 1, 6);
+    for (unsigned i = 0; i < n; i++) std::thread(CompileWorker).detach();
+}
+
+template <typename S>
+static S* CreateFromBlob(ID3DBlob* b)
+{
+    S* sh = nullptr;
+    if constexpr (std::is_same_v<S, ID3D11VertexShader>) g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &sh);
+    else g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &sh);
+    return sh;
+}
+
+// Creates every shader recorded in shadercache/*_keys.bin whose compiled blob exists.
+template <typename K, typename S>
+static int PreloadKind(const char* file, std::unordered_map<K, S*, KeyHash<K>>& cache, std::string (*gen)(const K&), const char* target)
+{
+    std::filesystem::path p = ShaderCacheDir() / file;
+    FILE* f = _wfopen(p.c_str(), L"rb");
+    if (!f) return 0;
+    std::vector<K> keys;
+    K k;
+    while (fread(&k, sizeof(K), 1, f) == 1)
+        if (!cache.count(k)) { cache[k] = nullptr; keys.push_back(k); }
+    fclose(f);
+    int n = 0;
+    for (auto& key : keys)
+    {
+        ID3DBlob* b = LoadCachedBlob(gen(key), target);
+        if (!b) { cache.erase(key); continue; }
+        cache[key] = CreateFromBlob<S>(b);
+        b->Release();
+        n++;
+    }
+    if (FILE* o = _wfopen(p.c_str(), L"wb"))   // rewrite without duplicates
+    {
+        for (auto& kv : cache) if (kv.second) fwrite(&kv.first, sizeof(K), 1, o);
+        fclose(o);
+    }
+    return n;
+}
+
+static void PreloadShaders()
+{
+    int nv = PreloadKind("vs_keys.bin", s_vsCache, &GenerateVertexShader, "vs_5_0");
+    int np = PreloadKind("ps_keys.bin", s_psCache, &GeneratePixelShader, "ps_5_0");
+    if (nv || np) LOG_INFO("shader cache: preloaded {} vertex and {} pixel shaders", nv, np);
+}
+
+template <typename K, typename S>
+static S* GetShader(const K& k, std::unordered_map<K, S*, KeyHash<K>>& cache, std::string (*gen)(const K&), const char* target,
+                    const char* keyFile)
+{
+    auto it = cache.find(k);
+    if (it != cache.end()) return it->second;   // nullptr while compiling (or failed)
+    std::string src = gen(k);
+    RememberKey(keyFile, k);
+    if (ID3DBlob* b = LoadCachedBlob(src, target))
+    {
+        S* sh = CreateFromBlob<S>(b);
+        b->Release();
+        cache[k] = sh;
+        return sh;
+    }
+    if (!g_asyncShaders)
+    {
+        S* sh = nullptr;
+        if (ID3DBlob* b = CompileHLSL(src, target))
+        {
+            sh = CreateFromBlob<S>(b);
+            b->Release();
+        }
+        cache[k] = sh;
+        return sh;
+    }
+    cache[k] = nullptr;   // pending
+    CompileJob j{ std::is_same_v<S, ID3D11VertexShader>, std::move(src),
+                  std::vector<uint8_t>((const uint8_t*)&k, (const uint8_t*)&k + sizeof(K)) };
+    s_compilePending++;
+    {
+        std::lock_guard lk(s_compileMutex);
+        s_compileJobs.push_back(std::move(j));
+    }
+    s_compileCv.notify_one();
+    return nullptr;
+}
+
 static ID3D11VertexShader* GetVS(const VSKey& k)
 {
     // consecutive draws usually share state: check the previous key before hashing
     static VSKey lastKey;
     static ID3D11VertexShader* lastVS = nullptr;
     if (lastVS && memcmp(&k, &lastKey, sizeof(k)) == 0) return lastVS;
-    auto it = s_vsCache.find(k);
-    if (it != s_vsCache.end()) { lastKey = k; lastVS = it->second; return it->second; }
-    ID3D11VertexShader* vs = nullptr;
-    ID3DBlob* b = CompileHLSL(GenerateVertexShader(k), "vs_5_0");
-    if (b)
-    {
-        g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &vs);
-        b->Release();
-    }
-    s_vsCache[k] = vs;
+    CollectCompiledShaders();
+    ID3D11VertexShader* vs = GetShader(k, s_vsCache, &GenerateVertexShader, "vs_5_0", "vs_keys.bin");
+    if (vs) { lastKey = k; lastVS = vs; }
     return vs;
 }
 
@@ -520,17 +700,9 @@ static ID3D11PixelShader* GetPS(const PSKey& k)
     static PSKey lastKey;
     static ID3D11PixelShader* lastPS = nullptr;
     if (lastPS && memcmp(&k, &lastKey, sizeof(k)) == 0) return lastPS;
-    auto it = s_psCache.find(k);
-    if (it != s_psCache.end()) { lastKey = k; lastPS = it->second; return it->second; }
-    ID3D11PixelShader* ps = nullptr;
-    std::string src = GeneratePixelShader(k);
-    ID3DBlob* b = CompileHLSL(src, "ps_5_0");
-    if (b)
-    {
-        g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &ps);
-        b->Release();
-    }
-    s_psCache[k] = ps;
+    CollectCompiledShaders();
+    ID3D11PixelShader* ps = GetShader(k, s_psCache, &GeneratePixelShader, "ps_5_0", "ps_keys.bin");
+    if (ps) { lastKey = k; lastPS = ps; }
     return ps;
 }
 

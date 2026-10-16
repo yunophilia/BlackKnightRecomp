@@ -30,6 +30,8 @@ static const char* kDefaultIni =
     "anisotropy = 1\n"
     "; process graphics on a second CPU core (like Dolphin's dual core)\n"
     "gpu_thread = true\n"
+    "; compile new shaders in the background: no hitches, objects may appear a frame late\n"
+    "async_shaders = true\n"
     "; Dolphin-format HD texture packs: <dir>/RENE8P/**/tex1_*.png|dds. Empty dir searches\n"
     "; textures/ next to the exe, game/textures and Documents/Dolphin Emulator/Load/Textures\n"
     "texture_pack = true\n"
@@ -135,6 +137,7 @@ void Config_Load(const std::string& path)
             else if (key == "widescreen") c.widescreen = ParseBool(val);
             else if (key == "texture_pack") c.texturePack = ParseBool(val);
             else if (key == "gpu_thread") c.gpuThread = ParseBool(val);
+            else if (key == "async_shaders") c.asyncShaders = ParseBool(val);
             else if (key == "anisotropy") c.anisotropy = std::clamp(atoi(val.c_str()), 1, 16);
             else if (key == "texture_pack_dir") c.texturePackDir = val;
         }
