@@ -277,9 +277,9 @@ class FuncGen:
         if op in ('rlwinm', 'rlwimi', 'rlwnm'):
             m = mask32(i.mb, i.me)
             if op == 'rlwnm':
-                rot = f'_rotl({R(S)}, {R(B)} & 31)'
+                rot = f'ppc_rotl32({R(S)}, {R(B)} & 31)'
             else:
-                rot = f'_rotl({R(S)}, {i.sh})' if i.sh else R(S)
+                rot = f'ppc_rotl32({R(S)}, {i.sh})' if i.sh else R(S)
             if op == 'rlwimi':
                 e(f'{R(A)} = ({rot} & {h(m)}) | ({R(A)} & {h(~m & 0xFFFFFFFF)});')
             else:
@@ -570,13 +570,13 @@ class FuncGen:
         elif op == 'stb':
             e(self.st(1, 'ea', R(d), breg))
         elif op == 'lwbrx':
-            e(f'{R(d)} = _byteswap_ulong({self.ld(4, "ea", breg)});')
+            e(f'{R(d)} = ppc_bswap32({self.ld(4, "ea", breg)});')
         elif op == 'lhbrx':
-            e(f'{R(d)} = _byteswap_ushort((uint16_t){self.ld(2, "ea", breg)});')
+            e(f'{R(d)} = ppc_bswap16((uint16_t){self.ld(2, "ea", breg)});')
         elif op == 'stwbrx':
-            e(self.st(4, 'ea', f'_byteswap_ulong({R(d)})', breg))
+            e(self.st(4, 'ea', f'ppc_bswap32({R(d)})', breg))
         elif op == 'sthbrx':
-            e(self.st(2, 'ea', f'_byteswap_ushort((uint16_t){R(d)})', breg))
+            e(self.st(2, 'ea', f'ppc_bswap16((uint16_t){R(d)})', breg))
         elif op == 'lfs':
             e(f'{{ double v_ = (double)ldf32(base, ea); ctx.f[{d}].f64 = v_; ctx.f[{d}].ps1 = v_; }}')
         elif op == 'lfd':

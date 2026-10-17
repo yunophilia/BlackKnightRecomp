@@ -49,8 +49,12 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 
 ## Building
 
-Requirements: Windows 10+, Visual Studio 2019/2022 with C++, CMake 3.20+, Python 3.10+,
-Dolphin (for `DolphinTool.exe` and its signature database).
+Requirements: Windows 10+, Visual Studio 2019 or newer with the C++ workload (for its
+headers and the Windows SDK), [LLVM](https://github.com/llvm/llvm-project/releases)
+(clang-cl, lld-link), Ninja, CMake 3.21+, Python 3.10+, and Dolphin (for `DolphinTool.exe`
+and its signature database). LLVM and Ninja are also available through winget:
+`winget install LLVM.LLVM Ninja-build.Ninja` (or Visual Studio's "C++ Clang tools for
+Windows" component).
 
 1. Extract your disc into `game/`:
 
@@ -74,15 +78,17 @@ Dolphin (for `DolphinTool.exe` and its signature database).
 3. Build:
 
    ```
-   cmake -S . -B build -G "Visual Studio 16 2019" -A x64 -T host=x64
-   cmake --build build --config Release
+   cmake --preset windows-clang
+   cmake --build --preset windows-clang
    ```
-   CMake picks the Windows SDK 10.0.19041 when it is installed: VS2019 16.10's linker
-   crashes (`LNK1000`) on the 10.0.26100 import libraries.
+   The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
+   only the build command is needed (`tools/dev_build.bat` runs it). Other presets:
+   `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`,
+   which only builds the recompiled code until the runtime is ported off D3D11/XAudio2.
    `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`; players
    put their own `extracted/`, `.iso` (any name), `dsp_coef.bin` and optional
    `textures/` into its `game/` folder.
-4. Run `build/Release/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
+4. Run `out/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
    repo root, or pass `--data <dir> --iso <file>`).
 
 ## Controls (default)

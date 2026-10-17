@@ -3,11 +3,27 @@
 
 #include <cstdint>
 #include <cstring>
+#include <bit>
 #include <cmath>
-#include <intrin.h>
+#include <climits>
 #include <stdlib.h>
 
+// The recompiled code builds with MSVC, clang-cl, clang and GCC; the runtime itself
+// is Windows-only for now.
+#ifdef _MSC_VER
+#include <intrin.h>
 #define PPC_FORCEINLINE __forceinline
+#define ppc_bswap16 _byteswap_ushort
+#define ppc_bswap32 _byteswap_ulong
+#define ppc_bswap64 _byteswap_uint64
+#define ppc_rotl32 _rotl
+#else
+#define PPC_FORCEINLINE inline __attribute__((always_inline))
+#define ppc_bswap16 __builtin_bswap16
+#define ppc_bswap32 __builtin_bswap32
+#define ppc_bswap64 __builtin_bswap64
+inline uint32_t ppc_rotl32(uint32_t v, int n) { n &= 31; return n ? (v << n) | (v >> (32 - n)) : v; }
+#endif
 
 union PPCFPR
 {
@@ -95,11 +111,11 @@ double ppc_frsqrte(double v);
 PPC_FORCEINLINE bool ppc_is_mmio(uint32_t ea) { return (uint32_t)(ea - 0xC8000000u) < 0x06000000u; }
 
 PPC_FORCEINLINE uint32_t ld8n(uint8_t* base, uint32_t ea) { return base[ea]; }
-PPC_FORCEINLINE uint32_t ld16n(uint8_t* base, uint32_t ea) { return _byteswap_ushort(*(uint16_t*)(base + ea)); }
-PPC_FORCEINLINE uint32_t ld32n(uint8_t* base, uint32_t ea) { return _byteswap_ulong(*(uint32_t*)(base + ea)); }
+PPC_FORCEINLINE uint32_t ld16n(uint8_t* base, uint32_t ea) { return ppc_bswap16(*(uint16_t*)(base + ea)); }
+PPC_FORCEINLINE uint32_t ld32n(uint8_t* base, uint32_t ea) { return ppc_bswap32(*(uint32_t*)(base + ea)); }
 PPC_FORCEINLINE void st8n(uint8_t* base, uint32_t ea, uint32_t v) { base[ea] = (uint8_t)v; }
-PPC_FORCEINLINE void st16n(uint8_t* base, uint32_t ea, uint32_t v) { *(uint16_t*)(base + ea) = _byteswap_ushort((uint16_t)v); }
-PPC_FORCEINLINE void st32n(uint8_t* base, uint32_t ea, uint32_t v) { *(uint32_t*)(base + ea) = _byteswap_ulong(v); }
+PPC_FORCEINLINE void st16n(uint8_t* base, uint32_t ea, uint32_t v) { *(uint16_t*)(base + ea) = ppc_bswap16((uint16_t)v); }
+PPC_FORCEINLINE void st32n(uint8_t* base, uint32_t ea, uint32_t v) { *(uint32_t*)(base + ea) = ppc_bswap32(v); }
 
 PPC_FORCEINLINE uint32_t ld8(uint8_t* base, uint32_t ea)
 {
@@ -109,12 +125,12 @@ PPC_FORCEINLINE uint32_t ld8(uint8_t* base, uint32_t ea)
 PPC_FORCEINLINE uint32_t ld16(uint8_t* base, uint32_t ea)
 {
     if (ppc_is_mmio(ea)) [[unlikely]] return mmio_read16(ea);
-    return _byteswap_ushort(*(uint16_t*)(base + ea));
+    return ppc_bswap16(*(uint16_t*)(base + ea));
 }
 PPC_FORCEINLINE uint32_t ld32(uint8_t* base, uint32_t ea)
 {
     if (ppc_is_mmio(ea)) [[unlikely]] return mmio_read32(ea);
-    return _byteswap_ulong(*(uint32_t*)(base + ea));
+    return ppc_bswap32(*(uint32_t*)(base + ea));
 }
 PPC_FORCEINLINE void st8(uint8_t* base, uint32_t ea, uint32_t v)
 {
@@ -124,22 +140,22 @@ PPC_FORCEINLINE void st8(uint8_t* base, uint32_t ea, uint32_t v)
 PPC_FORCEINLINE void st16(uint8_t* base, uint32_t ea, uint32_t v)
 {
     if (ppc_is_mmio(ea)) [[unlikely]] { mmio_write16(ea, v); return; }
-    *(uint16_t*)(base + ea) = _byteswap_ushort((uint16_t)v);
+    *(uint16_t*)(base + ea) = ppc_bswap16((uint16_t)v);
 }
 PPC_FORCEINLINE void st32(uint8_t* base, uint32_t ea, uint32_t v)
 {
     if (ppc_is_mmio(ea)) [[unlikely]] { mmio_write32(ea, v); return; }
-    *(uint32_t*)(base + ea) = _byteswap_ulong(v);
+    *(uint32_t*)(base + ea) = ppc_bswap32(v);
 }
 PPC_FORCEINLINE uint64_t ld64(uint8_t* base, uint32_t ea)
 {
     if (ppc_is_mmio(ea)) [[unlikely]] return ((uint64_t)mmio_read32(ea) << 32) | mmio_read32(ea + 4);
-    return _byteswap_uint64(*(uint64_t*)(base + ea));
+    return ppc_bswap64(*(uint64_t*)(base + ea));
 }
 PPC_FORCEINLINE void st64(uint8_t* base, uint32_t ea, uint64_t v)
 {
     if (ppc_is_mmio(ea)) [[unlikely]] { mmio_write32(ea, (uint32_t)(v >> 32)); mmio_write32(ea + 4, (uint32_t)v); return; }
-    *(uint64_t*)(base + ea) = _byteswap_uint64(v);
+    *(uint64_t*)(base + ea) = ppc_bswap64(v);
 }
 PPC_FORCEINLINE float ldf32(uint8_t* base, uint32_t ea)
 {
@@ -184,8 +200,7 @@ PPC_FORCEINLINE uint32_t ppc_divwu(uint32_t a, uint32_t b)
 }
 PPC_FORCEINLINE uint32_t ppc_cntlzw(uint32_t v)
 {
-    unsigned long idx;
-    return _BitScanReverse(&idx, v) ? 31 - idx : 32;
+    return (uint32_t)std::countl_zero(v);
 }
 PPC_FORCEINLINE uint32_t ppc_sraw(PPCContext& ctx, uint32_t s, uint32_t b)
 {

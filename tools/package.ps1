@@ -4,7 +4,7 @@
 $root = Split-Path $PSScriptRoot
 $dist = Join-Path $root "dist\BlackKnightRecomp"
 $exe = Join-Path $root "out\BlackKnightRecomp.exe"
-if (-not (Test-Path $exe)) { throw "build first (tools/dev_build.bat)" }
+if (-not (Test-Path $exe)) { throw "build first (cmake --build --preset windows-clang)" }
 New-Item -ItemType Directory -Force $dist | Out-Null
 New-Item -ItemType Directory -Force (Join-Path $dist "game") | Out-Null
 Copy-Item $exe $dist -Force

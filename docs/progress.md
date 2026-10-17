@@ -87,10 +87,14 @@ ON command completes and an UNMUTE succeeds (state machine around 0x801355A0).
 
 ## Build notes
 
+- Default toolchain: clang-cl + lld-link + Ninja (`windows-clang` preset), using Visual
+  Studio's headers and the Windows SDK. Full build 124 s (MSVC 2019: ~25-30 min); about
+  11% less CPU time than the MSVC build over the same scripted 60 fps run.
 - VS2019 16.10's linker crashes (`LNK1000` in `LIB::Search`) with the Windows SDK
-  10.0.26100 import libraries; link against 10.0.19041 (see `tools/dev_build.bat`).
-- `tools/dev_build.bat` recompiles only `runtime/` and relinks against the generated objects
-  built by CMake (`cmake --build build --target ppcrecomp`).
+  10.0.26100 import libraries; lld-link does not. The `windows-msvc` preset with VS2019
+  needs `vcvars64.bat 10.0.19041.0`.
+- Recompiled code avoids MSVC intrinsics (`ppc_bswap*`, `ppc_rotl32` in `ppc_context.h`)
+  so the `linux-clang` preset builds it (verified with clang 21 in WSL).
 
 ## Save file notes
 

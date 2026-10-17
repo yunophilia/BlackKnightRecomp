@@ -1,0 +1,48 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "windows-clang",
+            "displayName": "Windows (clang-cl)",
+            "description": "clang-cl + lld-link; finds Visual Studio's headers and the Windows SDK by itself",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "clang-cl",
+                "CMAKE_LINKER": "lld-link",
+                "CMAKE_MT": "llvm-mt"
+            },
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+        },
+        {
+            "name": "windows-msvc",
+            "displayName": "Windows (MSVC)",
+            "description": "cl + link; run from a Visual Studio x64 Developer prompt",
+            "inherits": "base",
+            "cacheVariables": { "CMAKE_CXX_COMPILER": "cl" },
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+        },
+        {
+            "name": "linux-clang",
+            "displayName": "Linux (clang)",
+            "description": "recompiled code only until the runtime is ported",
+            "inherits": "base",
+            "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++" },
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+        }
+    ],
+    "buildPresets": [
+        { "name": "windows-clang", "configurePreset": "windows-clang" },
+        { "name": "windows-msvc", "configurePreset": "windows-msvc" },
+        { "name": "linux-clang", "configurePreset": "linux-clang" }
+    ]
+}
