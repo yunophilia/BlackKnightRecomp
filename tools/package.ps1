@@ -31,7 +31,6 @@ if (Test-Path $srcCache) {
 Put your own game files here:
   extracted\DATA\...                        (DolphinTool extract -i RENE8P.iso -o extracted -g)
   RENE8P_Sonic_and_the_Black_Knight.iso     (used for raw disc reads)
-  dsp_coef.bin                              (optional, from Dolphin\Sys\GC; better audio resampling)
   textures\RENE8P\...                       (optional, Dolphin-format HD texture pack)
 "@ | Set-Content (Join-Path $dist "game\PUT_GAME_FILES_HERE.txt")
 "packaged to $dist"

@@ -2,6 +2,7 @@
 // (GPL-2.0-or-later).
 #include "ax.h"
 #include "../hw/dsp.h"
+#include "dsp_coef.h"
 #include "../kernel/memory.h"
 #include "../log.h"
 
@@ -237,9 +238,8 @@ uint16_t s_cmdlist[512];
 
 void LoadCoeffs()
 {
-    // Dolphin's free DSP ROM coefficient table (Dolphin/Sys/GC/dsp_coef.bin)
-    static const char* paths[] = { "dsp_coef.bin", "game/dsp_coef.bin", "../game/dsp_coef.bin",
-                                   "C:\\dolphin_emu\\Dolphin-x64\\Sys\\GC\\dsp_coef.bin" };
+    // An optional dsp_coef.bin (e.g. from a DSP ROM dump) overrides the built-in table
+    static const char* paths[] = { "dsp_coef.bin", "game/dsp_coef.bin", "../game/dsp_coef.bin" };
     for (const char* p : paths)
     {
         FILE* f = nullptr;
@@ -253,7 +253,9 @@ void LoadCoeffs()
         LOG_INFO("AX: using polyphase coefficients from {}", p);
         return;
     }
-    LOG_WARN("AX: dsp_coef.bin not found; using linear resampling");
+    // Dolphin's free DSP ROM coefficient table, generated
+    DSP_GenerateCoefs(s_coeffs.data());
+    s_haveCoeffs = true;
 }
 
 // ---------------------------------------------------------------- PB load/store

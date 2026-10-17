@@ -56,7 +56,9 @@ Requirements:
   development with C++" workload and the "C++ Clang Compiler for Windows" component
 - CMake 3.21+ and Ninja (both included with Visual Studio)
 - Python 3.10+
-- Dolphin (for `DolphinTool.exe` and its signature database)
+- `DolphinTool.exe` to extract the disc: it comes with every
+  [Dolphin](https://dolphin-emu.org/download/) build, and the portable zip is enough (nothing
+  needs to be installed). See [docs/dolphin-dependency.md](docs/dolphin-dependency.md)
 - Optional: a newer standalone [LLVM](https://github.com/llvm/llvm-project/releases)
   (`winget install LLVM.LLVM`); the presets use whichever `clang-cl` comes first on `PATH`
 
@@ -66,14 +68,16 @@ Requirements:
    DolphinTool extract -i RENE8P.iso -o game/extracted -g
    ```
 
-   (keep the `.iso` in `game/` as well; it is used for raw disc reads). Copy
-   `Dolphin/Sys/GC/dsp_coef.bin` into `game/` too: the audio resampler uses it (without it
-   audio falls back to linear resampling).
+   (keep the `.iso` in `game/` as well; it is used for raw disc reads).
 2. Generate the recompiled sources:
 
    ```
    python tools/build_generated.py
    ```
+   Optional: if Dolphin's signature database `totaldb.dsy` is found (`--dsy <file>`, the
+   `BKR_TOTALDB` environment variable or `game/totaldb.dsy`), the first analysis also names
+   the SDK functions in `out/functions.json` for `tools/xref.py`. The generated code is the
+   same either way.
    Optional: the HOME menu module (`hbm_part.rso`) runs in the built-in interpreter
    unless it is recompiled too. Run the game once with `BKR_DUMPMEM2=1` set (it writes
    `mem2_dump.bin` next to the exe when the module is first called; move it to `out/`),
@@ -91,7 +95,7 @@ Requirements:
    `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`,
    which only builds the recompiled code until the runtime is ported off D3D11/XAudio2.
    `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`; players
-   put their own `extracted/`, `.iso` (any name), `dsp_coef.bin` and optional
+   put their own `extracted/`, `.iso` (any name) and optional
    `textures/` into its `game/` folder.
 4. Run `out/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
    repo root, or pass `--data <dir> --iso <file>`).
