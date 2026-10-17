@@ -12,11 +12,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "" FORCE)
 endif()
 
-if(NOT EXISTS ${CMAKE_SOURCE_DIR}/generated/sources.cmake)
-    message(FATAL_ERROR "Run tools/build_generated.py first to generate the recompiled sources")
-endif()
-include(${CMAKE_SOURCE_DIR}/generated/sources.cmake)
-
 # BKR_CALL_COUNTS: instrumented build counting calls to every game function, for
 # frame-rate analysis with TAS scripts (docs/tas.md); the exe is BlackKnightRecomp_counts.
 option(BKR_CALL_COUNTS "Count calls to every recompiled function" OFF)
@@ -44,6 +39,50 @@ if(MSVC_FRONTEND)
     endif()
 endif()
 
+# ---------------------------------------------------------------- disc image installer
+# nod (https://github.com/encounter/nod, MIT OR Apache-2.0, used under MIT) reads the
+# user's disc image; the prebuilt package is downloaded at configure time.
+if(WIN32)
+    include(FetchContent)
+    set(NOD_VERSION v2.0.0-alpha.12)
+    FetchContent_Declare(nod_prebuilt
+        URL https://github.com/encounter/nod/releases/download/${NOD_VERSION}/libnod-windows-x86_64.tar.gz
+        URL_HASH SHA256=c9dfecf8e52066a5222f3cb1cad18d0740c958ce65bf60cb84e780a3856ed881
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+    FetchContent_MakeAvailable(nod_prebuilt)
+    find_package(nod REQUIRED CONFIG PATHS ${nod_prebuilt_SOURCE_DIR} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
+
+    add_library(bkr_installer STATIC runtime/install/install.cpp)
+    target_include_directories(bkr_installer PUBLIC runtime)
+    target_compile_definitions(bkr_installer PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+    target_link_libraries(bkr_installer PUBLIC nod::nod_static)
+    if(MSVC_FRONTEND)
+        target_compile_options(bkr_installer PRIVATE /EHsc /utf-8)
+        # nod's C dependencies are built against the DLL runtime; we link the static one
+        target_link_options(bkr_installer INTERFACE /NODEFAULTLIB:msvcrt /IGNORE:4217)
+    endif()
+
+    # bkr_install <image>: installs game/extracted/DATA before the first build_generated.py
+    add_executable(bkr_install tools/bkr_install/main.cpp)
+    target_link_libraries(bkr_install PRIVATE bkr_installer)
+    if(MSVC_FRONTEND)
+        target_compile_options(bkr_install PRIVATE /EHsc /utf-8)
+    endif()
+    set_target_properties(bkr_install PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
+                                                 RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
+                                                 RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
+endif()
+
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/generated/sources.cmake)
+    # Reconfigure by itself once tools/build_generated.py has filled generated/
+    file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/generated)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/generated)
+    message(WARNING "generated/ is empty: only bkr_install is built. Install the game data "
+                    "(out/bkr_install <disc image>), run tools/build_generated.py, then build again.")
+    return()
+endif()
+include(${CMAKE_SOURCE_DIR}/generated/sources.cmake)
+
 # ---------------------------------------------------------------- recompiled game code
 add_library(ppcrecomp OBJECT ${PPC_RECOMP_SOURCES})
 target_include_directories(ppcrecomp PUBLIC runtime/cpu generated)
@@ -66,10 +105,11 @@ endif()
 
 # ---------------------------------------------------------------- runtime
 file(GLOB_RECURSE RUNTIME_SOURCES CONFIGURE_DEPENDS runtime/*.cpp)
+list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "/runtime/install/")
 add_executable(BlackKnightRecomp ${RUNTIME_SOURCES})
 target_include_directories(BlackKnightRecomp PRIVATE runtime runtime/cpu generated)
 target_sources(BlackKnightRecomp PRIVATE $<TARGET_OBJECTS:ppcrecomp>)
-target_link_libraries(BlackKnightRecomp PRIVATE d3d11 dxgi d3dcompiler xinput winmm ole32 xaudio2 dbghelp)
+target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
 # the scripts in tools/ and the shader cache expect the game in out/
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out

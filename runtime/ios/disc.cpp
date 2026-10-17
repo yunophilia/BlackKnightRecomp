@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <filesystem>
 #include <map>
 #include <mutex>
 #include <vector>
@@ -17,7 +18,7 @@ struct Extent
 
 static std::vector<Extent> s_extents;   // sorted by offset
 static std::string s_dataDir;
-static std::string s_isoPath;
+static std::string s_rawPath;   // unencrypted disc area: disc/unencrypted.bin or the ISO
 static uint8_t s_header[0x440];
 static uint64_t s_partitionOffset = 0;
 static std::mutex s_mutex;
@@ -63,7 +64,10 @@ static void AddExtent(uint64_t off, uint64_t size, const std::string& path)
 bool Disc_Open(const std::string& dataDir, const std::string& isoPath)
 {
     s_dataDir = dataDir;
-    s_isoPath = isoPath;
+    // the installer saves the unencrypted area, so the ISO is only needed for older
+    // DolphinTool extractions
+    s_rawPath = dataDir + "/disc/unencrypted.bin";
+    if (!std::filesystem::exists(s_rawPath)) s_rawPath = isoPath;
     std::string sys = dataDir + "/sys/";
     std::vector<uint8_t> boot, fst;
     if (!ReadWhole(sys + "boot.bin", boot) || boot.size() < 0x440)
@@ -121,9 +125,9 @@ bool Disc_Open(const std::string& dataDir, const std::string& isoPath)
     }
     std::sort(s_extents.begin(), s_extents.end(), [](const Extent& a, const Extent& b) { return a.offset < b.offset; });
 
-    // Find the data partition offset in the raw ISO (partition table at 0x40000)
+    // Find the data partition offset (partition table at 0x40000)
     FILE* iso = nullptr;
-    if (!fopen_s(&iso, isoPath.c_str(), "rb") && iso)
+    if (!fopen_s(&iso, s_rawPath.c_str(), "rb") && iso)
     {
         uint8_t pt[0x20];
         _fseeki64(iso, 0x40000, SEEK_SET);
@@ -142,7 +146,7 @@ bool Disc_Open(const std::string& dataDir, const std::string& isoPath)
     }
     else
     {
-        LOG_WARN("ISO {} not available; raw disc reads will return zeros", isoPath);
+        LOG_WARN("no disc/unencrypted.bin and ISO {} not available; raw disc reads will return zeros", isoPath);
     }
     LOG_INFO("disc: {} extents, game id {:.6}, data partition at {:x}", s_extents.size(), (const char*)s_header, s_partitionOffset);
     return true;
@@ -178,7 +182,7 @@ bool Disc_ReadRaw(uint64_t offset, uint32_t length, uint8_t* out)
 {
     std::lock_guard<std::mutex> lk(s_mutex);
     memset(out, 0, length);
-    FILE* f = GetFile(s_isoPath);
+    FILE* f = GetFile(s_rawPath);
     if (!f) return false;
     _fseeki64(f, (int64_t)offset, SEEK_SET);
     fread(out, 1, length, f);

@@ -4,8 +4,9 @@
 
 // Virtual view of the game disc.
 //  * "partition" reads use the decrypted DATA partition, reconstructed from the
-//    files DolphinTool extracted (sys/ + files/) laid out according to the FST.
-//  * "raw" reads (unencrypted area, partition table) come straight from the ISO.
+//    installed files (sys/ + files/, see install/install.h) laid out according to the FST.
+//  * "raw" reads (unencrypted area, partition table) come from disc/unencrypted.bin, or
+//    from the ISO for data extracted with DolphinTool.
 bool Disc_Open(const std::string& extractedDataDir, const std::string& isoPath);
 bool Disc_ReadPartition(uint64_t offset, uint32_t length, uint8_t* out);
 bool Disc_ReadRaw(uint64_t offset, uint32_t length, uint8_t* out);

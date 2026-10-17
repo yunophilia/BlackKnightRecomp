@@ -114,7 +114,20 @@ int main(int argc, char** argv)
     g_videoConfig.widescreen = g_config.widescreen;
     LOG_INFO("BlackKnightRecomp starting; data={} iso={} fps={} scale={}", dataDir, isoPath, g_cfgFrameRate, g_videoConfig.internalScale);
     if (dataDir.empty())
-        FATAL("Game data not found. Extract the disc with DolphinTool into game/extracted (see README).");
+    {
+        // first run: install from the user's disc image into game/ next to the exe (or
+        // the repo's game/ when running from out/)
+        std::filesystem::path gameDir = std::filesystem::path(root) / "game";
+        if (!std::filesystem::exists(gameDir) && std::filesystem::exists(std::filesystem::path(root) / ".." / "game"))
+            gameDir = std::filesystem::weakly_canonical(std::filesystem::path(root) / ".." / "game");
+        std::filesystem::path dest = gameDir / "extracted" / "DATA";
+        if (g_noMessageBox)
+            FATAL("Game data not installed. Start the game once normally to install it from your disc image, "
+                  "or run bkr_install <disc image> (see README).");
+        extern bool InstallUI_Run(const std::filesystem::path&, const std::string&);
+        if (!InstallUI_Run(dest, isoPath)) return 1;
+        dataDir = dest.string();
+    }
 
     if (!Memory_Init()) FATAL("memory init failed");
     Crash_Init();

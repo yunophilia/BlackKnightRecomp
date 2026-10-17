@@ -1,8 +1,9 @@
 # Dependency on a local Dolphin install
 
-Status as of October 2026. Before this change the build expected a Dolphin install at
-`C:\dolphin_emu\Dolphin-x64`. This page lists every place that used Dolphin, the options for
-removing it, and what was done.
+Status as of October 2026. The build used to expect a Dolphin install at
+`C:\dolphin_emu\Dolphin-x64`, and the disc had to be extracted with DolphinTool. Neither is
+needed any more. This page lists every place that used Dolphin, the options considered, and
+what was done.
 
 ## Inventory
 
@@ -75,7 +76,7 @@ Verdict: much too heavy for what it buys.
   would need checking against what `disc.cpp` expects (`DATA/sys`, `DATA/files`, `tmd.bin`,
   `ticket.bin`). Wiimms ISO Tools (`wit extract`, GPL-2.0) is another option.
 
-## Recommendation (implemented)
+## What was done
 
 1. **dsp_coef.bin: generate it.** `runtime/audio/dsp_coef.cpp` ports Dolphin's
    `generate_coefs.py`. I checked the output against Dolphin's `Data/Sys/GC/dsp_coef.bin`
@@ -87,18 +88,35 @@ Verdict: much too heavy for what it buys.
    order: `--dsy <file>`, `BKR_TOTALDB`, `game/totaldb.dsy`, then
    `%ProgramFiles%\Dolphin\Sys\totaldb.dsy`. If none exists it skips signature matching and
    says so. It is not vendored, because it only affects developer tooling.
-3. **Extraction: keep DolphinTool for now, without installing Dolphin.** DolphinTool comes
-   with every Dolphin release, including the portable zip, so nothing has to be installed and
-   it handles every disc image format. The README now says so.
+3. **Extraction: our own installer, built on nod (UnleashedRecomp-style).** Dusklight
+   (TwilitRealm/dusklight) reads disc images with [nod](https://github.com/encounter/nod)
+   through encounter's Aurora/Borealis libraries, Wii discs included. We link nod directly:
+   - `runtime/install/install.cpp` opens the image (ISO, RVZ, WIA, WBFS, CISO, GCZ, NFS),
+     checks the game ID (`RENE8P`) and the SHA-1 of `main.dol` (the recompiled code only
+     matches that exact binary), and writes the same layout DolphinTool's `extract -g`
+     produces into `game/extracted/DATA`. It also writes `disc/unencrypted.bin`, the first
+     0x50000 bytes of the disc. Raw disc reads (`/dev/di` command 0x8D, which never go past
+     0x50000) and the partition table now come from that file, so the image is not needed
+     after installing. Output goes to `DATA.partial` and is renamed at the end, so an
+     interrupted install is never mistaken for a finished one.
+   - The game runs this on first start when no data is found: it offers a `.iso` found in
+     `game/` or opens a file picker, then shows a progress dialog
+     (`runtime/install_ui.cpp`). Scripted runs (`--nobox`: TAS, smoke tests) never show UI;
+     they stop with an error instead.
+   - `out/bkr_install <image>` does the same from the command line. Developers need it
+     before the first `build_generated.py`, because that reads `sys/main.dol`. CMake now
+     configures without `generated/` (it builds only `bkr_install`) and reconfigures by
+     itself once `build_generated.py` has filled it.
+   - nod comes from its prebuilt `libnod-windows-x86_64.tar.gz` release (v2.0.0-alpha.12,
+     pinned by SHA-256), downloaded at configure time, the same package Aurora uses. It is
+     linked statically. Its C dependencies were built against the DLL C runtime, so the
+     link adds `/NODEFAULTLIB:msvcrt /IGNORE:4217`. The Wii common key lives in nod, not
+     in this repository.
+   - Licence: nod is "MIT OR Apache-2.0" and is used under MIT, which is compatible with
+     GPL-2.0-only. Apache-2.0 alone would not be.
+   - I checked nod's output against the DolphinTool extraction: `boot.bin`, `bi2.bin`,
+     `apploader.img`, `main.dol`, `fst.bin`, `ticket.bin`, `tmd.bin`, `cert.bin`, `h3.bin`
+     and `BLACKKNIGHT.sel` are byte-identical, and so are the raw first 0x50000 bytes.
 
-With this, the build (`build_generated.py`, `cmake --preset windows-clang`,
-`cmake --build`) and the runtime no longer touch any Dolphin file. Only the one-off
-extraction step uses a Dolphin binary.
-
-### Possible next step (needs the owner's decision)
-
-To drop DolphinTool as well, read the ISO directly in the runtime (decrypting with BCrypt)
-and add a small `--extract` mode, or a separate tiny tool, that writes `main.dol` and
-`BLACKKNIGHT.sel` for analysis. This means committing the Wii common key, as Dolphin does,
-and it supports ISO only. The other route is to document `nodtool` as an alternative
-extractor once its output layout has been checked against `disc.cpp`.
+Data extracted earlier with DolphinTool keeps working. Without `disc/unencrypted.bin`, the
+runtime falls back to the ISO for raw reads, as before.

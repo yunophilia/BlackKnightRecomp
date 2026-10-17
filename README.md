@@ -29,8 +29,8 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
   decrementer exceptions are delivered at safe points.
 * **Hardware** (`runtime/hw`): memory-mapped VI, PI, CP/PE, DSP/AI, EXI (RTC/SRAM), SI and
   the Hollywood IPC registers, modelled on Dolphin's behaviour.
-* **IOS** (`runtime/ios`): high-level `/dev/di` (served from the extracted disc files, so
-  no decryption key is needed), `/dev/fs` (NAND in `nand/` next to the exe; saves land in
+* **IOS** (`runtime/ios`): high-level `/dev/di` (served from the installed disc files, which
+  the installer decrypts once with nod), `/dev/fs` (NAND in `nand/` next to the exe; saves land in
   `nand/title/00010000/52454e45/data`), `/dev/es`, `/dev/stm`.
 * **Graphics** (`runtime/gx`): the GX command FIFO is decoded and rendered with Direct3D 11
   on a separate thread (the CPU thread only fills a ring buffer, like Dolphin's dual-core
@@ -47,6 +47,13 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 * **Audio** (`runtime/audio`): the AX DSP microcode is replaced by a port of Dolphin's AX
   HLE; output goes through XAudio2.
 
+## Playing
+
+Run `BlackKnightRecomp.exe`. On first run it asks for your own disc image of the game (PAL,
+`RENE8P`; ISO, RVZ, WIA or WBFS) and installs the game data from it into `game/extracted/`
+next to the exe, which takes about a minute and 3.5 GB. After that the image is no longer
+needed. Mods can replace files under `game/extracted/DATA/files/`.
+
 ## Building
 
 Requirements:
@@ -56,20 +63,27 @@ Requirements:
   development with C++" workload and the "C++ Clang Compiler for Windows" component
 - CMake 3.21+ and Ninja (both included with Visual Studio)
 - Python 3.10+
-- `DolphinTool.exe` to extract the disc: it comes with every
-  [Dolphin](https://dolphin-emu.org/download/) build, and the portable zip is enough (nothing
-  needs to be installed). See [docs/dolphin-dependency.md](docs/dolphin-dependency.md)
+- An internet connection for the first configure: it downloads the prebuilt
+  [nod](https://github.com/encounter/nod) library that reads disc images
 - Optional: a newer standalone [LLVM](https://github.com/llvm/llvm-project/releases)
   (`winget install LLVM.LLVM`); the presets use whichever `clang-cl` comes first on `PATH`
 
-1. Extract your disc into `game/`:
+Run the commands from a "Developer PowerShell for VS", or use `tools/dev_build.bat` for the
+build steps, which sets that up.
+
+1. Configure and build the installer (before the game code is generated, only
+   `bkr_install` is built):
 
    ```
-   DolphinTool extract -i RENE8P.iso -o game/extracted -g
+   cmake --preset windows-clang
+   cmake --build --preset windows-clang
    ```
+2. Install the game data from your disc image into `game/extracted/DATA`:
 
-   (keep the `.iso` in `game/` as well; it is used for raw disc reads).
-2. Generate the recompiled sources:
+   ```
+   out/bkr_install path/to/your/disc.iso
+   ```
+3. Generate the recompiled sources:
 
    ```
    python tools/build_generated.py
@@ -83,22 +97,20 @@ Requirements:
    `mem2_dump.bin` next to the exe when the module is first called; move it to `out/`),
    then `python tools/rso.py` and rerun `python tools/build_generated.py`. The runtime
    only uses the recompiled module if the code in memory matches it exactly.
-3. Build:
+4. Build the game (CMake reconfigures by itself now that `generated/` exists):
 
    ```
-   cmake --preset windows-clang
    cmake --build --preset windows-clang
    ```
-   Run these from a "Developer PowerShell for VS" (or `tools/dev_build.bat`, which sets that
-   up). The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
+   The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
    only the build command is needed (`tools/dev_build.bat` runs it). Other presets:
    `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`,
    which only builds the recompiled code until the runtime is ported off D3D11/XAudio2.
-   `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`; players
-   put their own `extracted/`, `.iso` (any name) and optional
-   `textures/` into its `game/` folder.
-4. Run `out/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
-   repo root, or pass `--data <dir> --iso <file>`).
+   `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`.
+5. Run `out/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
+   repo root, or pass `--data <dir>`). Data extracted earlier with DolphinTool
+   (`DolphinTool extract -i RENE8P.iso -o game/extracted -g`) still works; keep the
+   `.iso` in `game/` in that case, it is used for raw disc reads.
 
 ## Controls (default)
 

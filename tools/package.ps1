@@ -1,6 +1,6 @@
 # Collects a playable build into dist/BlackKnightRecomp (no game data is included).
 #   powershell -ExecutionPolicy Bypass -File tools/package.ps1
-# The player copies their extracted disc into dist/BlackKnightRecomp/game/ (see README).
+# On first run the exe asks for the player's disc image and installs the data into game/.
 $root = Split-Path $PSScriptRoot
 $dist = Join-Path $root "dist\BlackKnightRecomp"
 $exe = Join-Path $root "out\BlackKnightRecomp.exe"
@@ -28,9 +28,8 @@ if (Test-Path $srcCache) {
     }
 }
 @"
-Put your own game files here:
-  extracted\DATA\...                        (DolphinTool extract -i RENE8P.iso -o extracted -g)
-  RENE8P_Sonic_and_the_Black_Knight.iso     (used for raw disc reads)
-  textures\RENE8P\...                       (optional, Dolphin-format HD texture pack)
+The game data is installed here on first run: start BlackKnightRecomp.exe and select your
+own disc image (PAL, RENE8P; ISO, RVZ, WIA or WBFS). Optional:
+  textures\RENE8P\...                       (Dolphin-format HD texture pack)
 "@ | Set-Content (Join-Path $dist "game\PUT_GAME_FILES_HERE.txt")
 "packaged to $dist"
