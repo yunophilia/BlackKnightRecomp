@@ -11,6 +11,7 @@
 #include "ios/disc.h"
 #include "ios/ios.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <windows.h>
@@ -51,6 +52,7 @@ int main(int argc, char** argv)
     std::string dataDir = g_config.dataDir, isoPath = g_config.isoPath;
     uint32_t watchAddr = 0;
     int profStart = -1, profDur = 0;
+    std::string nandDir;   // --nand: separate save data (test runs)
     for (int i = 1; i < argc; i++)
     {
         std::string a = argv[i];
@@ -71,6 +73,11 @@ int main(int argc, char** argv)
         else if (a == "--dump-textures") { extern bool g_dumpTextures; g_dumpTextures = true; }
         else if (a == "--autopress") { extern bool g_autoPress; g_autoPress = true; }
         else if (a == "--input-script" && i + 1 < argc) { extern void Gamepad_LoadScript(const char*); Gamepad_LoadScript(argv[++i]); }
+        else if (a == "--tas" && i + 1 < argc) { extern void Tas_Load(const char*); Tas_Load(argv[++i]); }
+        else if (a == "--telemetry" && i + 1 < argc) { extern void Tas_SetTelemetry(const char*); Tas_SetTelemetry(argv[++i]); }
+        else if (a == "--nand" && i + 1 < argc) nandDir = argv[++i];
+        else if (a == "--mute") { extern bool g_audioMute; g_audioMute = true; }
+        else if (a == "--scale" && i + 1 < argc) g_config.internalScale = std::clamp(atoi(argv[++i]), 1, 8);
         else if (a == "--shots" && i + 1 < argc) { extern int g_screenshotEvery; g_screenshotEvery = atoi(argv[++i]); }
     }
     // Default locations: <exe>/game/... or the repo layout
@@ -119,7 +126,7 @@ int main(int argc, char** argv)
     AudioOut_Init();
     { extern bool g_gpuThread; if (g_gpuThread) GX_StartThread(); }
     if (!Disc_Open(dataDir, isoPath)) FATAL("cannot open disc data");
-    std::string nand = root + "/nand";
+    std::string nand = nandDir.empty() ? root + "/nand" : nandDir;
     std::filesystem::create_directories(nand);
     IOS_Init(nand);
     NAND_InitSystemFiles();

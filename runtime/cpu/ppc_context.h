@@ -69,11 +69,20 @@ struct PPCFuncMapping
 #define PPC_FUNC_IMPL(x) extern "C" void x##_impl(PPCContext& __restrict ctx, uint8_t* __restrict base)
 #define PPC_FUNC(x) extern "C" void x(PPCContext& __restrict ctx, uint8_t* __restrict base)
 #define PPC_FUNC_PROLOGUE() uint32_t ea; (void)ea
+// Optional call counting for frame-rate analysis (BKR_CALL_COUNTS builds only):
+// one counter per main.dol function entry, indexed by address.
+#ifdef BKR_CALL_COUNTS
+extern "C" uint32_t g_callCounts[0x200000];
+#define PPC_COUNT_CALL(a) do { if ((a) - 0x80000000u < 0x00800000u) g_callCounts[((a) - 0x80000000u) >> 2]++; } while (0)
+#else
+#define PPC_COUNT_CALL(a) ((void)0)
+#endif
 #define PPC_NOP() ((void)0)
 
 // ------------------------------------------------------------------ runtime hooks
 extern "C" {
 extern volatile uint32_t g_ppcIrqPending;
+extern uint32_t g_tasProbe[16];   // read-only test probes (tools/recomp.py PROBES)
 PPCFunc ppc_lookup(uint32_t addr);
 void ppc_call_indirect(PPCContext& ctx, uint8_t* base, uint32_t addr);
 void ppc_check_irq(PPCContext& ctx, uint8_t* base);

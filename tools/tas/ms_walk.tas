@@ -1,0 +1,2063 @@
+# Boot to the menus with a save loaded, taking a screenshot after each step.
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+shot m01_title
+hold 0.3 START
+wait 3.7
+shot m02
+hold 0.3 START
+wait 3.7
+shot m03
+hold 0.3 A
+wait 3
+shot m04
+wait 0.5
+hold 0.8 PX=0.331+PY=0.217
+shot w_shrouded_loc
+hold 0.3 A+PX=0.331+PY=0.217
+wait 2.5
+shot w_shrouded_000
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_001
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_002
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_003
+tap UP 0.12
+wait 0.55
+shot w_shrouded_004
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_005
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_006
+tap UP 0.12
+wait 0.55
+shot w_shrouded_007
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_008
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_009
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_010
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_011
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_012
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_013
+tap UP 0.12
+wait 0.55
+shot w_shrouded_014
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_015
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_016
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_017
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_018
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_019
+tap UP 0.12
+wait 0.55
+shot w_shrouded_020
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_021
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_022
+tap UP 0.12
+wait 0.55
+shot w_shrouded_023
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_024
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_025
+tap UP 0.12
+wait 0.55
+shot w_shrouded_026
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_027
+tap UP 0.12
+wait 0.55
+shot w_shrouded_028
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_029
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_030
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_031
+tap DOWN 0.12
+wait 0.55
+shot w_shrouded_032
+tap UP 0.12
+wait 0.55
+shot w_shrouded_033
+tap UP 0.12
+wait 0.55
+shot w_shrouded_034
+tap UP 0.12
+wait 0.55
+shot w_shrouded_035
+tap UP 0.12
+wait 0.55
+shot w_shrouded_036
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_037
+tap UP 0.12
+wait 0.55
+shot w_shrouded_038
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_039
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_040
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_041
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_042
+tap UP 0.12
+wait 0.55
+shot w_shrouded_043
+tap UP 0.12
+wait 0.55
+shot w_shrouded_044
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_045
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_046
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_047
+tap LEFT 0.12
+wait 0.55
+shot w_shrouded_048
+tap RIGHT 0.12
+wait 0.55
+shot w_shrouded_049
+tap UP 0.12
+wait 0.55
+shot w_shrouded_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.559+PY=0.213
+shot w_titanic_loc
+hold 0.3 A+PX=0.559+PY=0.213
+wait 2.5
+shot w_titanic_000
+tap UP 0.12
+wait 0.55
+shot w_titanic_001
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_002
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_003
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_004
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_005
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_006
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_007
+tap UP 0.12
+wait 0.55
+shot w_titanic_008
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_009
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_010
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_011
+tap UP 0.12
+wait 0.55
+shot w_titanic_012
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_013
+tap UP 0.12
+wait 0.55
+shot w_titanic_014
+tap UP 0.12
+wait 0.55
+shot w_titanic_015
+tap UP 0.12
+wait 0.55
+shot w_titanic_016
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_017
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_018
+tap UP 0.12
+wait 0.55
+shot w_titanic_019
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_020
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_021
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_022
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_023
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_024
+tap UP 0.12
+wait 0.55
+shot w_titanic_025
+tap UP 0.12
+wait 0.55
+shot w_titanic_026
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_027
+tap UP 0.12
+wait 0.55
+shot w_titanic_028
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_029
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_030
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_031
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_032
+tap UP 0.12
+wait 0.55
+shot w_titanic_033
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_034
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_035
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_036
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_037
+tap UP 0.12
+wait 0.55
+shot w_titanic_038
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_039
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_040
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_041
+tap LEFT 0.12
+wait 0.55
+shot w_titanic_042
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_043
+tap UP 0.12
+wait 0.55
+shot w_titanic_044
+tap UP 0.12
+wait 0.55
+shot w_titanic_045
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_046
+tap UP 0.12
+wait 0.55
+shot w_titanic_047
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_048
+tap RIGHT 0.12
+wait 0.55
+shot w_titanic_049
+tap DOWN 0.12
+wait 0.55
+shot w_titanic_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.664+PY=0.167
+shot w_megalith_loc
+hold 0.3 A+PX=0.664+PY=0.167
+wait 2.5
+shot w_megalith_000
+tap UP 0.12
+wait 0.55
+shot w_megalith_001
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_002
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_003
+tap UP 0.12
+wait 0.55
+shot w_megalith_004
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_005
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_006
+tap UP 0.12
+wait 0.55
+shot w_megalith_007
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_008
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_009
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_010
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_011
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_012
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_013
+tap UP 0.12
+wait 0.55
+shot w_megalith_014
+tap UP 0.12
+wait 0.55
+shot w_megalith_015
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_016
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_017
+tap UP 0.12
+wait 0.55
+shot w_megalith_018
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_019
+tap UP 0.12
+wait 0.55
+shot w_megalith_020
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_021
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_022
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_023
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_024
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_025
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_026
+tap UP 0.12
+wait 0.55
+shot w_megalith_027
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_028
+tap LEFT 0.12
+wait 0.55
+shot w_megalith_029
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_030
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_031
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_032
+tap UP 0.12
+wait 0.55
+shot w_megalith_033
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_034
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_035
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_036
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_037
+tap UP 0.12
+wait 0.55
+shot w_megalith_038
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_039
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_040
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_041
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_042
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_043
+tap UP 0.12
+wait 0.55
+shot w_megalith_044
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_045
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_046
+tap DOWN 0.12
+wait 0.55
+shot w_megalith_047
+tap UP 0.12
+wait 0.55
+shot w_megalith_048
+tap UP 0.12
+wait 0.55
+shot w_megalith_049
+tap RIGHT 0.12
+wait 0.55
+shot w_megalith_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.220+PY=0.358
+shot w_deepwoods_loc
+hold 0.3 A+PX=0.220+PY=0.358
+wait 2.5
+shot w_deepwoods_000
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_001
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_002
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_003
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_004
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_005
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_006
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_007
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_008
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_009
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_010
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_011
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_012
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_013
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_014
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_015
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_016
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_017
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_018
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_019
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_020
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_021
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_022
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_023
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_024
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_025
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_026
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_027
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_028
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_029
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_030
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_031
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_032
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_033
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_034
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_035
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_036
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_037
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_038
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_039
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_040
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_041
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_042
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_043
+tap UP 0.12
+wait 0.55
+shot w_deepwoods_044
+tap LEFT 0.12
+wait 0.55
+shot w_deepwoods_045
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_046
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_047
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_048
+tap DOWN 0.12
+wait 0.55
+shot w_deepwoods_049
+tap RIGHT 0.12
+wait 0.55
+shot w_deepwoods_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.453+PY=0.396
+shot w_camelot_loc
+hold 0.3 A+PX=0.453+PY=0.396
+wait 2.5
+shot w_camelot_000
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_001
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_002
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_003
+tap UP 0.12
+wait 0.55
+shot w_camelot_004
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_005
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_006
+tap LEFT 0.12
+wait 0.55
+shot w_camelot_007
+tap LEFT 0.12
+wait 0.55
+shot w_camelot_008
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_009
+tap UP 0.12
+wait 0.55
+shot w_camelot_010
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_011
+tap UP 0.12
+wait 0.55
+shot w_camelot_012
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_013
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_014
+tap UP 0.12
+wait 0.55
+shot w_camelot_015
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_016
+tap UP 0.12
+wait 0.55
+shot w_camelot_017
+tap UP 0.12
+wait 0.55
+shot w_camelot_018
+tap UP 0.12
+wait 0.55
+shot w_camelot_019
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_020
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_021
+tap UP 0.12
+wait 0.55
+shot w_camelot_022
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_023
+tap UP 0.12
+wait 0.55
+shot w_camelot_024
+tap UP 0.12
+wait 0.55
+shot w_camelot_025
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_026
+tap UP 0.12
+wait 0.55
+shot w_camelot_027
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_028
+tap UP 0.12
+wait 0.55
+shot w_camelot_029
+tap UP 0.12
+wait 0.55
+shot w_camelot_030
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_031
+tap UP 0.12
+wait 0.55
+shot w_camelot_032
+tap UP 0.12
+wait 0.55
+shot w_camelot_033
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_034
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_035
+tap UP 0.12
+wait 0.55
+shot w_camelot_036
+tap LEFT 0.12
+wait 0.55
+shot w_camelot_037
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_038
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_039
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_040
+tap UP 0.12
+wait 0.55
+shot w_camelot_041
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_042
+tap RIGHT 0.12
+wait 0.55
+shot w_camelot_043
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_044
+tap DOWN 0.12
+wait 0.55
+shot w_camelot_045
+tap UP 0.12
+wait 0.55
+shot w_camelot_046
+tap UP 0.12
+wait 0.55
+shot w_camelot_047
+tap LEFT 0.12
+wait 0.55
+shot w_camelot_048
+tap UP 0.12
+wait 0.55
+shot w_camelot_049
+tap UP 0.12
+wait 0.55
+shot w_camelot_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.522+PY=0.371
+shot w_knights_loc
+hold 0.3 A+PX=0.522+PY=0.371
+wait 2.5
+shot w_knights_000
+tap UP 0.12
+wait 0.55
+shot w_knights_001
+tap LEFT 0.12
+wait 0.55
+shot w_knights_002
+tap LEFT 0.12
+wait 0.55
+shot w_knights_003
+tap LEFT 0.12
+wait 0.55
+shot w_knights_004
+tap UP 0.12
+wait 0.55
+shot w_knights_005
+tap UP 0.12
+wait 0.55
+shot w_knights_006
+tap UP 0.12
+wait 0.55
+shot w_knights_007
+tap UP 0.12
+wait 0.55
+shot w_knights_008
+tap UP 0.12
+wait 0.55
+shot w_knights_009
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_010
+tap DOWN 0.12
+wait 0.55
+shot w_knights_011
+tap DOWN 0.12
+wait 0.55
+shot w_knights_012
+tap DOWN 0.12
+wait 0.55
+shot w_knights_013
+tap DOWN 0.12
+wait 0.55
+shot w_knights_014
+tap UP 0.12
+wait 0.55
+shot w_knights_015
+tap UP 0.12
+wait 0.55
+shot w_knights_016
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_017
+tap UP 0.12
+wait 0.55
+shot w_knights_018
+tap LEFT 0.12
+wait 0.55
+shot w_knights_019
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_020
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_021
+tap LEFT 0.12
+wait 0.55
+shot w_knights_022
+tap LEFT 0.12
+wait 0.55
+shot w_knights_023
+tap DOWN 0.12
+wait 0.55
+shot w_knights_024
+tap LEFT 0.12
+wait 0.55
+shot w_knights_025
+tap DOWN 0.12
+wait 0.55
+shot w_knights_026
+tap UP 0.12
+wait 0.55
+shot w_knights_027
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_028
+tap LEFT 0.12
+wait 0.55
+shot w_knights_029
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_030
+tap DOWN 0.12
+wait 0.55
+shot w_knights_031
+tap DOWN 0.12
+wait 0.55
+shot w_knights_032
+tap UP 0.12
+wait 0.55
+shot w_knights_033
+tap UP 0.12
+wait 0.55
+shot w_knights_034
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_035
+tap DOWN 0.12
+wait 0.55
+shot w_knights_036
+tap LEFT 0.12
+wait 0.55
+shot w_knights_037
+tap LEFT 0.12
+wait 0.55
+shot w_knights_038
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_039
+tap UP 0.12
+wait 0.55
+shot w_knights_040
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_041
+tap LEFT 0.12
+wait 0.55
+shot w_knights_042
+tap DOWN 0.12
+wait 0.55
+shot w_knights_043
+tap LEFT 0.12
+wait 0.55
+shot w_knights_044
+tap DOWN 0.12
+wait 0.55
+shot w_knights_045
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_046
+tap RIGHT 0.12
+wait 0.55
+shot w_knights_047
+tap LEFT 0.12
+wait 0.55
+shot w_knights_048
+tap UP 0.12
+wait 0.55
+shot w_knights_049
+tap DOWN 0.12
+wait 0.55
+shot w_knights_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.500+PY=0.500
+shot w_darkhollow_loc
+hold 0.3 A+PX=0.500+PY=0.500
+wait 2.5
+shot w_darkhollow_000
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_001
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_002
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_003
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_004
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_005
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_006
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_007
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_008
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_009
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_010
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_011
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_012
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_013
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_014
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_015
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_016
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_017
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_018
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_019
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_020
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_021
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_022
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_023
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_024
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_025
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_026
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_027
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_028
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_029
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_030
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_031
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_032
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_033
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_034
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_035
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_036
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_037
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_038
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_039
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_040
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_041
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_042
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_043
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_044
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_045
+tap LEFT 0.12
+wait 0.55
+shot w_darkhollow_046
+tap UP 0.12
+wait 0.55
+shot w_darkhollow_047
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_048
+tap RIGHT 0.12
+wait 0.55
+shot w_darkhollow_049
+tap DOWN 0.12
+wait 0.55
+shot w_darkhollow_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.177+PY=0.483
+shot w_misty_loc
+hold 0.3 A+PX=0.177+PY=0.483
+wait 2.5
+shot w_misty_000
+tap LEFT 0.12
+wait 0.55
+shot w_misty_001
+tap LEFT 0.12
+wait 0.55
+shot w_misty_002
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_003
+tap DOWN 0.12
+wait 0.55
+shot w_misty_004
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_005
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_006
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_007
+tap LEFT 0.12
+wait 0.55
+shot w_misty_008
+tap UP 0.12
+wait 0.55
+shot w_misty_009
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_010
+tap DOWN 0.12
+wait 0.55
+shot w_misty_011
+tap LEFT 0.12
+wait 0.55
+shot w_misty_012
+tap DOWN 0.12
+wait 0.55
+shot w_misty_013
+tap DOWN 0.12
+wait 0.55
+shot w_misty_014
+tap UP 0.12
+wait 0.55
+shot w_misty_015
+tap DOWN 0.12
+wait 0.55
+shot w_misty_016
+tap LEFT 0.12
+wait 0.55
+shot w_misty_017
+tap UP 0.12
+wait 0.55
+shot w_misty_018
+tap DOWN 0.12
+wait 0.55
+shot w_misty_019
+tap DOWN 0.12
+wait 0.55
+shot w_misty_020
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_021
+tap UP 0.12
+wait 0.55
+shot w_misty_022
+tap DOWN 0.12
+wait 0.55
+shot w_misty_023
+tap DOWN 0.12
+wait 0.55
+shot w_misty_024
+tap DOWN 0.12
+wait 0.55
+shot w_misty_025
+tap DOWN 0.12
+wait 0.55
+shot w_misty_026
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_027
+tap UP 0.12
+wait 0.55
+shot w_misty_028
+tap UP 0.12
+wait 0.55
+shot w_misty_029
+tap DOWN 0.12
+wait 0.55
+shot w_misty_030
+tap UP 0.12
+wait 0.55
+shot w_misty_031
+tap UP 0.12
+wait 0.55
+shot w_misty_032
+tap UP 0.12
+wait 0.55
+shot w_misty_033
+tap DOWN 0.12
+wait 0.55
+shot w_misty_034
+tap UP 0.12
+wait 0.55
+shot w_misty_035
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_036
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_037
+tap UP 0.12
+wait 0.55
+shot w_misty_038
+tap LEFT 0.12
+wait 0.55
+shot w_misty_039
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_040
+tap DOWN 0.12
+wait 0.55
+shot w_misty_041
+tap DOWN 0.12
+wait 0.55
+shot w_misty_042
+tap UP 0.12
+wait 0.55
+shot w_misty_043
+tap UP 0.12
+wait 0.55
+shot w_misty_044
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_045
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_046
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_047
+tap UP 0.12
+wait 0.55
+shot w_misty_048
+tap UP 0.12
+wait 0.55
+shot w_misty_049
+tap RIGHT 0.12
+wait 0.55
+shot w_misty_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.745+PY=0.538
+shot w_crystal_loc
+hold 0.3 A+PX=0.745+PY=0.538
+wait 2.5
+shot w_crystal_000
+tap UP 0.12
+wait 0.55
+shot w_crystal_001
+tap UP 0.12
+wait 0.55
+shot w_crystal_002
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_003
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_004
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_005
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_006
+tap UP 0.12
+wait 0.55
+shot w_crystal_007
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_008
+tap UP 0.12
+wait 0.55
+shot w_crystal_009
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_010
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_011
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_012
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_013
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_014
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_015
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_016
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_017
+tap UP 0.12
+wait 0.55
+shot w_crystal_018
+tap UP 0.12
+wait 0.55
+shot w_crystal_019
+tap UP 0.12
+wait 0.55
+shot w_crystal_020
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_021
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_022
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_023
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_024
+tap UP 0.12
+wait 0.55
+shot w_crystal_025
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_026
+tap UP 0.12
+wait 0.55
+shot w_crystal_027
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_028
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_029
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_030
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_031
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_032
+tap UP 0.12
+wait 0.55
+shot w_crystal_033
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_034
+tap UP 0.12
+wait 0.55
+shot w_crystal_035
+tap UP 0.12
+wait 0.55
+shot w_crystal_036
+tap UP 0.12
+wait 0.55
+shot w_crystal_037
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_038
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_039
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_040
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_041
+tap UP 0.12
+wait 0.55
+shot w_crystal_042
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_043
+tap UP 0.12
+wait 0.55
+shot w_crystal_044
+tap RIGHT 0.12
+wait 0.55
+shot w_crystal_045
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_046
+tap UP 0.12
+wait 0.55
+shot w_crystal_047
+tap UP 0.12
+wait 0.55
+shot w_crystal_048
+tap DOWN 0.12
+wait 0.55
+shot w_crystal_049
+tap LEFT 0.12
+wait 0.55
+shot w_crystal_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.245+PY=0.625
+shot w_molten_loc
+hold 0.3 A+PX=0.245+PY=0.625
+wait 2.5
+shot w_molten_000
+tap DOWN 0.12
+wait 0.55
+shot w_molten_001
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_002
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_003
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_004
+tap DOWN 0.12
+wait 0.55
+shot w_molten_005
+tap LEFT 0.12
+wait 0.55
+shot w_molten_006
+tap LEFT 0.12
+wait 0.55
+shot w_molten_007
+tap DOWN 0.12
+wait 0.55
+shot w_molten_008
+tap DOWN 0.12
+wait 0.55
+shot w_molten_009
+tap DOWN 0.12
+wait 0.55
+shot w_molten_010
+tap DOWN 0.12
+wait 0.55
+shot w_molten_011
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_012
+tap UP 0.12
+wait 0.55
+shot w_molten_013
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_014
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_015
+tap UP 0.12
+wait 0.55
+shot w_molten_016
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_017
+tap UP 0.12
+wait 0.55
+shot w_molten_018
+tap LEFT 0.12
+wait 0.55
+shot w_molten_019
+tap LEFT 0.12
+wait 0.55
+shot w_molten_020
+tap UP 0.12
+wait 0.55
+shot w_molten_021
+tap LEFT 0.12
+wait 0.55
+shot w_molten_022
+tap UP 0.12
+wait 0.55
+shot w_molten_023
+tap DOWN 0.12
+wait 0.55
+shot w_molten_024
+tap DOWN 0.12
+wait 0.55
+shot w_molten_025
+tap UP 0.12
+wait 0.55
+shot w_molten_026
+tap DOWN 0.12
+wait 0.55
+shot w_molten_027
+tap DOWN 0.12
+wait 0.55
+shot w_molten_028
+tap LEFT 0.12
+wait 0.55
+shot w_molten_029
+tap LEFT 0.12
+wait 0.55
+shot w_molten_030
+tap DOWN 0.12
+wait 0.55
+shot w_molten_031
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_032
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_033
+tap LEFT 0.12
+wait 0.55
+shot w_molten_034
+tap UP 0.12
+wait 0.55
+shot w_molten_035
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_036
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_037
+tap UP 0.12
+wait 0.55
+shot w_molten_038
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_039
+tap DOWN 0.12
+wait 0.55
+shot w_molten_040
+tap DOWN 0.12
+wait 0.55
+shot w_molten_041
+tap LEFT 0.12
+wait 0.55
+shot w_molten_042
+tap DOWN 0.12
+wait 0.55
+shot w_molten_043
+tap LEFT 0.12
+wait 0.55
+shot w_molten_044
+tap UP 0.12
+wait 0.55
+shot w_molten_045
+tap RIGHT 0.12
+wait 0.55
+shot w_molten_046
+tap UP 0.12
+wait 0.55
+shot w_molten_047
+tap UP 0.12
+wait 0.55
+shot w_molten_048
+tap UP 0.12
+wait 0.55
+shot w_molten_049
+tap LEFT 0.12
+wait 0.55
+shot w_molten_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.544+PY=0.671
+shot w_faraway_loc
+hold 0.3 A+PX=0.544+PY=0.671
+wait 2.5
+shot w_faraway_000
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_001
+tap RIGHT 0.12
+wait 0.55
+shot w_faraway_002
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_003
+tap RIGHT 0.12
+wait 0.55
+shot w_faraway_004
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_005
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_006
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_007
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_008
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_009
+tap UP 0.12
+wait 0.55
+shot w_faraway_010
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_011
+tap UP 0.12
+wait 0.55
+shot w_faraway_012
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_013
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_014
+tap RIGHT 0.12
+wait 0.55
+shot w_faraway_015
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_016
+tap RIGHT 0.12
+wait 0.55
+shot w_faraway_017
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_018
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_019
+tap UP 0.12
+wait 0.55
+shot w_faraway_020
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_021
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_022
+tap UP 0.12
+wait 0.55
+shot w_faraway_023
+tap UP 0.12
+wait 0.55
+shot w_faraway_024
+tap UP 0.12
+wait 0.55
+shot w_faraway_025
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_026
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_027
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_028
+tap UP 0.12
+wait 0.55
+shot w_faraway_029
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_030
+tap UP 0.12
+wait 0.55
+shot w_faraway_031
+tap UP 0.12
+wait 0.55
+shot w_faraway_032
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_033
+tap RIGHT 0.12
+wait 0.55
+shot w_faraway_034
+tap UP 0.12
+wait 0.55
+shot w_faraway_035
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_036
+tap UP 0.12
+wait 0.55
+shot w_faraway_037
+tap UP 0.12
+wait 0.55
+shot w_faraway_038
+tap UP 0.12
+wait 0.55
+shot w_faraway_039
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_040
+tap UP 0.12
+wait 0.55
+shot w_faraway_041
+tap DOWN 0.12
+wait 0.55
+shot w_faraway_042
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_043
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_044
+tap UP 0.12
+wait 0.55
+shot w_faraway_045
+tap UP 0.12
+wait 0.55
+shot w_faraway_046
+tap RIGHT 0.12
+wait 0.55
+shot w_faraway_047
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_048
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_049
+tap LEFT 0.12
+wait 0.55
+shot w_faraway_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.689+PY=0.754
+shot w_dragons_loc
+hold 0.3 A+PX=0.689+PY=0.754
+wait 2.5
+shot w_dragons_000
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_001
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_002
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_003
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_004
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_005
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_006
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_007
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_008
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_009
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_010
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_011
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_012
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_013
+tap UP 0.12
+wait 0.55
+shot w_dragons_014
+tap UP 0.12
+wait 0.55
+shot w_dragons_015
+tap UP 0.12
+wait 0.55
+shot w_dragons_016
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_017
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_018
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_019
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_020
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_021
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_022
+tap UP 0.12
+wait 0.55
+shot w_dragons_023
+tap UP 0.12
+wait 0.55
+shot w_dragons_024
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_025
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_026
+tap UP 0.12
+wait 0.55
+shot w_dragons_027
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_028
+tap UP 0.12
+wait 0.55
+shot w_dragons_029
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_030
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_031
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_032
+tap UP 0.12
+wait 0.55
+shot w_dragons_033
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_034
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_035
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_036
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_037
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_038
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_039
+tap UP 0.12
+wait 0.55
+shot w_dragons_040
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_041
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_042
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_043
+tap UP 0.12
+wait 0.55
+shot w_dragons_044
+tap UP 0.12
+wait 0.55
+shot w_dragons_045
+tap DOWN 0.12
+wait 0.55
+shot w_dragons_046
+tap RIGHT 0.12
+wait 0.55
+shot w_dragons_047
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_048
+tap LEFT 0.12
+wait 0.55
+shot w_dragons_049
+tap UP 0.12
+wait 0.55
+shot w_dragons_050
+tap B 0.2
+wait 2
+hold 0.8 PX=0.358+PY=0.804
+shot w_cauldron_loc
+hold 0.3 A+PX=0.358+PY=0.804
+wait 2.5
+shot w_cauldron_000
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_001
+tap UP 0.12
+wait 0.55
+shot w_cauldron_002
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_003
+tap UP 0.12
+wait 0.55
+shot w_cauldron_004
+tap UP 0.12
+wait 0.55
+shot w_cauldron_005
+tap UP 0.12
+wait 0.55
+shot w_cauldron_006
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_007
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_008
+tap UP 0.12
+wait 0.55
+shot w_cauldron_009
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_010
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_011
+tap UP 0.12
+wait 0.55
+shot w_cauldron_012
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_013
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_014
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_015
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_016
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_017
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_018
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_019
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_020
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_021
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_022
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_023
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_024
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_025
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_026
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_027
+tap UP 0.12
+wait 0.55
+shot w_cauldron_028
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_029
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_030
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_031
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_032
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_033
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_034
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_035
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_036
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_037
+tap UP 0.12
+wait 0.55
+shot w_cauldron_038
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_039
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_040
+tap UP 0.12
+wait 0.55
+shot w_cauldron_041
+tap UP 0.12
+wait 0.55
+shot w_cauldron_042
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_043
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_044
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_045
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_046
+tap DOWN 0.12
+wait 0.55
+shot w_cauldron_047
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_048
+tap RIGHT 0.12
+wait 0.55
+shot w_cauldron_049
+tap LEFT 0.12
+wait 0.55
+shot w_cauldron_050
+tap B 0.2
+wait 2
+quit

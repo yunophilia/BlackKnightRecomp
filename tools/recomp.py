@@ -144,10 +144,13 @@ class FuncGen:
         macro = 'PPC_FUNC_IMPL' if self.start in self.rc.overrides else 'PPC_FUNC'
         if any(self.start <= pa < self.end for pa in PATCHES):
             hdr = 'extern "C" uint32_t g_cfgFrameRate;\n' + hdr
-        return hdr + f'{macro}(fn_{self.start:08X}) {{\n\tPPC_FUNC_PROLOGUE();\n' + '\n'.join(body) + '\n}\n'
+        return hdr + f'{macro}(fn_{self.start:08X}) {{\n\tPPC_FUNC_PROLOGUE(); PPC_COUNT_CALL(0x{self.start:08X});\n' + '\n'.join(body) + '\n}\n'
 
     def insn(self, a, i):
         """Emit one instruction. Returns True if control never falls through."""
+        if a in PROBES:
+            n, reg = PROBES[a]
+            self.emit(f'g_tasProbe[{n}] = ctx.r[{reg}];   // read-only test probe')
         if a in PATCHES:
             self.emit(PATCHES[a])
             return False
@@ -741,6 +744,18 @@ class FuncGen:
             e('PPC_CR1();')
         return False
 
+
+# Read-only test probes (address -> (slot, register)): record a register, usually an
+# object's address, into g_tasProbe[slot] before the instruction runs, for TAS-script
+# telemetry (docs/tas.md). They change no guest state.
+PROBES = {
+    0x800A68D0: (0, 3),   # stage timer update: r3 = timer {u8 ?, min, sec, csec; f32 frac}
+    0x800A723C: (1, 3),   # rings add: r3 = {s32 rings, ?, s32 max}
+    0x800A72B8: (1, 3),   # rings subtract
+    0x800A6860: (2, 3),   # score add: r3 = {?, s32 score}
+    0x800A716C: (3, 3),   # soul gauge add: r3 = {f32 value, f32 max}
+    0x800A71B4: (3, 3),   # soul gauge subtract
+}
 
 # Instruction replacements (address -> C++). Used for runtime-configurable tweaks.
 PATCHES = {

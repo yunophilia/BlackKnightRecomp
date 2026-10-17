@@ -1,0 +1,92 @@
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 5.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 0.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 11.7
+wait 1
+dump s0
+wait 0.5
+dump s0b
+hold 1.5 LY=1.0
+wait 1.5
+dump s1
+wait 0.5
+dump s1b
+hold 1.5 LX=1.0
+wait 1.5
+dump s2
+hold 0.4 A
+wait 0.2
+dump s3air
+wait 2
+dump s4
+quit

@@ -4,6 +4,7 @@
 #include "texture_decode.h"
 #include "vertex_loader.h"
 #include "hires.h"
+#include "../tas/tas.h"
 #include <type_traits>
 #include <thread>
 #include <deque>
@@ -1771,6 +1772,7 @@ static void DoEFBCopy()
             snprintf(path, sizeof(path), "shot_%04u.bmp", g_framesPresented / g_screenshotEvery);
             SaveTextureBMP(s_xfbTex, path);
         }
+        Tas_OnPresent([](const char* path) { SaveTextureBMP(s_xfbTex, path); });
         s_frame++;
         // evict textures and EFB copies unused for ~600 frames so VRAM stays bounded
         if ((s_frame % 300) == 0)

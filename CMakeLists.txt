@@ -17,6 +17,13 @@ if(NOT EXISTS ${CMAKE_SOURCE_DIR}/generated/sources.cmake)
 endif()
 include(${CMAKE_SOURCE_DIR}/generated/sources.cmake)
 
+# BKR_CALL_COUNTS: instrumented build counting calls to every game function, for
+# frame-rate analysis with TAS scripts (docs/tas.md); the exe is BlackKnightRecomp_counts.
+option(BKR_CALL_COUNTS "Count calls to every recompiled function" OFF)
+if(BKR_CALL_COUNTS)
+    add_compile_definitions(BKR_CALL_COUNTS)
+endif()
+
 # MSVC_FRONTEND: cl or clang-cl (MSVC-style flags); CLANG: clang-cl or clang
 set(MSVC_FRONTEND ${MSVC})
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -67,6 +74,9 @@ target_link_libraries(BlackKnightRecomp PRIVATE d3d11 dxgi d3dcompiler xinput wi
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
                                                    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
+if(BKR_CALL_COUNTS)
+    set_target_properties(BlackKnightRecomp PROPERTIES OUTPUT_NAME BlackKnightRecomp_counts)
+endif()
 target_compile_definitions(BlackKnightRecomp PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
 if(MSVC_FRONTEND)
     target_compile_options(BlackKnightRecomp PRIVATE /EHsc /std:c++latest /utf-8 $<$<CONFIG:RelWithDebInfo>:/Ob2>)

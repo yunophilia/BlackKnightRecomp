@@ -1,0 +1,134 @@
+# Boot to the menus with a save loaded, taking a screenshot after each step.
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+shot m01_title
+hold 0.3 START
+wait 3.7
+shot m02
+hold 0.3 START
+wait 3.7
+shot m03
+hold 0.3 A
+wait 3
+shot m04
+wait 0.5
+log loc shrouded
+hold 0.8 PX=0.331+PY=0.217
+shot loc_shrouded
+hold 0.3 A+PX=0.331+PY=0.217
+wait 2.5
+shot ms_shrouded
+tap B 0.2
+wait 2
+log loc titanic
+hold 0.8 PX=0.559+PY=0.213
+shot loc_titanic
+hold 0.3 A+PX=0.559+PY=0.213
+wait 2.5
+shot ms_titanic
+tap B 0.2
+wait 2
+log loc megalith
+hold 0.8 PX=0.664+PY=0.167
+shot loc_megalith
+hold 0.3 A+PX=0.664+PY=0.167
+wait 2.5
+shot ms_megalith
+tap B 0.2
+wait 2
+log loc deepwoods
+hold 0.8 PX=0.220+PY=0.358
+shot loc_deepwoods
+hold 0.3 A+PX=0.220+PY=0.358
+wait 2.5
+shot ms_deepwoods
+tap B 0.2
+wait 2
+log loc camelot
+hold 0.8 PX=0.453+PY=0.396
+shot loc_camelot
+hold 0.3 A+PX=0.453+PY=0.396
+wait 2.5
+shot ms_camelot
+tap B 0.2
+wait 2
+log loc knights
+hold 0.8 PX=0.522+PY=0.371
+shot loc_knights
+hold 0.3 A+PX=0.522+PY=0.371
+wait 2.5
+shot ms_knights
+tap B 0.2
+wait 2
+log loc darkhollow
+hold 0.8 PX=0.503+PY=0.440
+shot loc_darkhollow
+hold 0.3 A+PX=0.503+PY=0.440
+wait 2.5
+shot ms_darkhollow
+tap B 0.2
+wait 2
+log loc misty
+hold 0.8 PX=0.177+PY=0.483
+shot loc_misty
+hold 0.3 A+PX=0.177+PY=0.483
+wait 2.5
+shot ms_misty
+tap B 0.2
+wait 2
+log loc crystal
+hold 0.8 PX=0.745+PY=0.538
+shot loc_crystal
+hold 0.3 A+PX=0.745+PY=0.538
+wait 2.5
+shot ms_crystal
+tap B 0.2
+wait 2
+log loc molten
+hold 0.8 PX=0.245+PY=0.625
+shot loc_molten
+hold 0.3 A+PX=0.245+PY=0.625
+wait 2.5
+shot ms_molten
+tap B 0.2
+wait 2
+log loc faraway
+hold 0.8 PX=0.544+PY=0.671
+shot loc_faraway
+hold 0.3 A+PX=0.544+PY=0.671
+wait 2.5
+shot ms_faraway
+tap B 0.2
+wait 2
+log loc dragons
+hold 0.8 PX=0.689+PY=0.754
+shot loc_dragons
+hold 0.3 A+PX=0.689+PY=0.754
+wait 2.5
+shot ms_dragons
+tap B 0.2
+wait 2
+log loc cauldron
+hold 0.8 PX=0.358+PY=0.804
+shot loc_cauldron
+hold 0.3 A+PX=0.358+PY=0.804
+wait 2.5
+shot ms_cauldron
+tap B 0.2
+wait 2
+log loc avalon
+hold 0.8 PX=0.545+PY=0.625
+shot loc_avalon
+hold 0.3 A+PX=0.545+PY=0.625
+wait 2.5
+shot ms_avalon
+tap B 0.2
+wait 2
+quit

@@ -1,0 +1,935 @@
+watch sel u32 8081fe00
+# Boot to the menus with a save loaded, taking a screenshot after each step.
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+shot m01_title
+hold 0.3 START
+wait 3.7
+shot m02
+hold 0.3 START
+wait 3.7
+shot m03
+hold 0.3 A
+wait 3
+shot m04
+wait 1
+log p 0.04 0.05
+hold 0.25 PX=0.04+PY=0.05
+log p 0.08 0.05
+hold 0.25 PX=0.08+PY=0.05
+log p 0.12 0.05
+hold 0.25 PX=0.12+PY=0.05
+log p 0.16 0.05
+hold 0.25 PX=0.16+PY=0.05
+log p 0.20 0.05
+hold 0.25 PX=0.20+PY=0.05
+log p 0.24 0.05
+hold 0.25 PX=0.24+PY=0.05
+log p 0.28 0.05
+hold 0.25 PX=0.28+PY=0.05
+log p 0.32 0.05
+hold 0.25 PX=0.32+PY=0.05
+log p 0.36 0.05
+hold 0.25 PX=0.36+PY=0.05
+log p 0.40 0.05
+hold 0.25 PX=0.40+PY=0.05
+log p 0.44 0.05
+hold 0.25 PX=0.44+PY=0.05
+log p 0.48 0.05
+hold 0.25 PX=0.48+PY=0.05
+log p 0.52 0.05
+hold 0.25 PX=0.52+PY=0.05
+log p 0.56 0.05
+hold 0.25 PX=0.56+PY=0.05
+log p 0.60 0.05
+hold 0.25 PX=0.60+PY=0.05
+log p 0.64 0.05
+hold 0.25 PX=0.64+PY=0.05
+log p 0.68 0.05
+hold 0.25 PX=0.68+PY=0.05
+log p 0.72 0.05
+hold 0.25 PX=0.72+PY=0.05
+log p 0.76 0.05
+hold 0.25 PX=0.76+PY=0.05
+log p 0.80 0.05
+hold 0.25 PX=0.80+PY=0.05
+log p 0.84 0.05
+hold 0.25 PX=0.84+PY=0.05
+log p 0.88 0.05
+hold 0.25 PX=0.88+PY=0.05
+log p 0.92 0.05
+hold 0.25 PX=0.92+PY=0.05
+log p 0.96 0.05
+hold 0.25 PX=0.96+PY=0.05
+log p 0.04 0.10
+hold 0.25 PX=0.04+PY=0.10
+log p 0.08 0.10
+hold 0.25 PX=0.08+PY=0.10
+log p 0.12 0.10
+hold 0.25 PX=0.12+PY=0.10
+log p 0.16 0.10
+hold 0.25 PX=0.16+PY=0.10
+log p 0.20 0.10
+hold 0.25 PX=0.20+PY=0.10
+log p 0.24 0.10
+hold 0.25 PX=0.24+PY=0.10
+log p 0.28 0.10
+hold 0.25 PX=0.28+PY=0.10
+log p 0.32 0.10
+hold 0.25 PX=0.32+PY=0.10
+log p 0.36 0.10
+hold 0.25 PX=0.36+PY=0.10
+log p 0.40 0.10
+hold 0.25 PX=0.40+PY=0.10
+log p 0.44 0.10
+hold 0.25 PX=0.44+PY=0.10
+log p 0.48 0.10
+hold 0.25 PX=0.48+PY=0.10
+log p 0.52 0.10
+hold 0.25 PX=0.52+PY=0.10
+log p 0.56 0.10
+hold 0.25 PX=0.56+PY=0.10
+log p 0.60 0.10
+hold 0.25 PX=0.60+PY=0.10
+log p 0.64 0.10
+hold 0.25 PX=0.64+PY=0.10
+log p 0.68 0.10
+hold 0.25 PX=0.68+PY=0.10
+log p 0.72 0.10
+hold 0.25 PX=0.72+PY=0.10
+log p 0.76 0.10
+hold 0.25 PX=0.76+PY=0.10
+log p 0.80 0.10
+hold 0.25 PX=0.80+PY=0.10
+log p 0.84 0.10
+hold 0.25 PX=0.84+PY=0.10
+log p 0.88 0.10
+hold 0.25 PX=0.88+PY=0.10
+log p 0.92 0.10
+hold 0.25 PX=0.92+PY=0.10
+log p 0.96 0.10
+hold 0.25 PX=0.96+PY=0.10
+log p 0.04 0.15
+hold 0.25 PX=0.04+PY=0.15
+log p 0.08 0.15
+hold 0.25 PX=0.08+PY=0.15
+log p 0.12 0.15
+hold 0.25 PX=0.12+PY=0.15
+log p 0.16 0.15
+hold 0.25 PX=0.16+PY=0.15
+log p 0.20 0.15
+hold 0.25 PX=0.20+PY=0.15
+log p 0.24 0.15
+hold 0.25 PX=0.24+PY=0.15
+log p 0.28 0.15
+hold 0.25 PX=0.28+PY=0.15
+log p 0.32 0.15
+hold 0.25 PX=0.32+PY=0.15
+log p 0.36 0.15
+hold 0.25 PX=0.36+PY=0.15
+log p 0.40 0.15
+hold 0.25 PX=0.40+PY=0.15
+log p 0.44 0.15
+hold 0.25 PX=0.44+PY=0.15
+log p 0.48 0.15
+hold 0.25 PX=0.48+PY=0.15
+log p 0.52 0.15
+hold 0.25 PX=0.52+PY=0.15
+log p 0.56 0.15
+hold 0.25 PX=0.56+PY=0.15
+log p 0.60 0.15
+hold 0.25 PX=0.60+PY=0.15
+log p 0.64 0.15
+hold 0.25 PX=0.64+PY=0.15
+log p 0.68 0.15
+hold 0.25 PX=0.68+PY=0.15
+log p 0.72 0.15
+hold 0.25 PX=0.72+PY=0.15
+log p 0.76 0.15
+hold 0.25 PX=0.76+PY=0.15
+log p 0.80 0.15
+hold 0.25 PX=0.80+PY=0.15
+log p 0.84 0.15
+hold 0.25 PX=0.84+PY=0.15
+log p 0.88 0.15
+hold 0.25 PX=0.88+PY=0.15
+log p 0.92 0.15
+hold 0.25 PX=0.92+PY=0.15
+log p 0.96 0.15
+hold 0.25 PX=0.96+PY=0.15
+log p 0.04 0.20
+hold 0.25 PX=0.04+PY=0.20
+log p 0.08 0.20
+hold 0.25 PX=0.08+PY=0.20
+log p 0.12 0.20
+hold 0.25 PX=0.12+PY=0.20
+log p 0.16 0.20
+hold 0.25 PX=0.16+PY=0.20
+log p 0.20 0.20
+hold 0.25 PX=0.20+PY=0.20
+log p 0.24 0.20
+hold 0.25 PX=0.24+PY=0.20
+log p 0.28 0.20
+hold 0.25 PX=0.28+PY=0.20
+log p 0.32 0.20
+hold 0.25 PX=0.32+PY=0.20
+log p 0.36 0.20
+hold 0.25 PX=0.36+PY=0.20
+log p 0.40 0.20
+hold 0.25 PX=0.40+PY=0.20
+log p 0.44 0.20
+hold 0.25 PX=0.44+PY=0.20
+log p 0.48 0.20
+hold 0.25 PX=0.48+PY=0.20
+log p 0.52 0.20
+hold 0.25 PX=0.52+PY=0.20
+log p 0.56 0.20
+hold 0.25 PX=0.56+PY=0.20
+log p 0.60 0.20
+hold 0.25 PX=0.60+PY=0.20
+log p 0.64 0.20
+hold 0.25 PX=0.64+PY=0.20
+log p 0.68 0.20
+hold 0.25 PX=0.68+PY=0.20
+log p 0.72 0.20
+hold 0.25 PX=0.72+PY=0.20
+log p 0.76 0.20
+hold 0.25 PX=0.76+PY=0.20
+log p 0.80 0.20
+hold 0.25 PX=0.80+PY=0.20
+log p 0.84 0.20
+hold 0.25 PX=0.84+PY=0.20
+log p 0.88 0.20
+hold 0.25 PX=0.88+PY=0.20
+log p 0.92 0.20
+hold 0.25 PX=0.92+PY=0.20
+log p 0.96 0.20
+hold 0.25 PX=0.96+PY=0.20
+log p 0.04 0.25
+hold 0.25 PX=0.04+PY=0.25
+log p 0.08 0.25
+hold 0.25 PX=0.08+PY=0.25
+log p 0.12 0.25
+hold 0.25 PX=0.12+PY=0.25
+log p 0.16 0.25
+hold 0.25 PX=0.16+PY=0.25
+log p 0.20 0.25
+hold 0.25 PX=0.20+PY=0.25
+log p 0.24 0.25
+hold 0.25 PX=0.24+PY=0.25
+log p 0.28 0.25
+hold 0.25 PX=0.28+PY=0.25
+log p 0.32 0.25
+hold 0.25 PX=0.32+PY=0.25
+log p 0.36 0.25
+hold 0.25 PX=0.36+PY=0.25
+log p 0.40 0.25
+hold 0.25 PX=0.40+PY=0.25
+log p 0.44 0.25
+hold 0.25 PX=0.44+PY=0.25
+log p 0.48 0.25
+hold 0.25 PX=0.48+PY=0.25
+log p 0.52 0.25
+hold 0.25 PX=0.52+PY=0.25
+log p 0.56 0.25
+hold 0.25 PX=0.56+PY=0.25
+log p 0.60 0.25
+hold 0.25 PX=0.60+PY=0.25
+log p 0.64 0.25
+hold 0.25 PX=0.64+PY=0.25
+log p 0.68 0.25
+hold 0.25 PX=0.68+PY=0.25
+log p 0.72 0.25
+hold 0.25 PX=0.72+PY=0.25
+log p 0.76 0.25
+hold 0.25 PX=0.76+PY=0.25
+log p 0.80 0.25
+hold 0.25 PX=0.80+PY=0.25
+log p 0.84 0.25
+hold 0.25 PX=0.84+PY=0.25
+log p 0.88 0.25
+hold 0.25 PX=0.88+PY=0.25
+log p 0.92 0.25
+hold 0.25 PX=0.92+PY=0.25
+log p 0.96 0.25
+hold 0.25 PX=0.96+PY=0.25
+log p 0.04 0.30
+hold 0.25 PX=0.04+PY=0.30
+log p 0.08 0.30
+hold 0.25 PX=0.08+PY=0.30
+log p 0.12 0.30
+hold 0.25 PX=0.12+PY=0.30
+log p 0.16 0.30
+hold 0.25 PX=0.16+PY=0.30
+log p 0.20 0.30
+hold 0.25 PX=0.20+PY=0.30
+log p 0.24 0.30
+hold 0.25 PX=0.24+PY=0.30
+log p 0.28 0.30
+hold 0.25 PX=0.28+PY=0.30
+log p 0.32 0.30
+hold 0.25 PX=0.32+PY=0.30
+log p 0.36 0.30
+hold 0.25 PX=0.36+PY=0.30
+log p 0.40 0.30
+hold 0.25 PX=0.40+PY=0.30
+log p 0.44 0.30
+hold 0.25 PX=0.44+PY=0.30
+log p 0.48 0.30
+hold 0.25 PX=0.48+PY=0.30
+log p 0.52 0.30
+hold 0.25 PX=0.52+PY=0.30
+log p 0.56 0.30
+hold 0.25 PX=0.56+PY=0.30
+log p 0.60 0.30
+hold 0.25 PX=0.60+PY=0.30
+log p 0.64 0.30
+hold 0.25 PX=0.64+PY=0.30
+log p 0.68 0.30
+hold 0.25 PX=0.68+PY=0.30
+log p 0.72 0.30
+hold 0.25 PX=0.72+PY=0.30
+log p 0.76 0.30
+hold 0.25 PX=0.76+PY=0.30
+log p 0.80 0.30
+hold 0.25 PX=0.80+PY=0.30
+log p 0.84 0.30
+hold 0.25 PX=0.84+PY=0.30
+log p 0.88 0.30
+hold 0.25 PX=0.88+PY=0.30
+log p 0.92 0.30
+hold 0.25 PX=0.92+PY=0.30
+log p 0.96 0.30
+hold 0.25 PX=0.96+PY=0.30
+log p 0.04 0.35
+hold 0.25 PX=0.04+PY=0.35
+log p 0.08 0.35
+hold 0.25 PX=0.08+PY=0.35
+log p 0.12 0.35
+hold 0.25 PX=0.12+PY=0.35
+log p 0.16 0.35
+hold 0.25 PX=0.16+PY=0.35
+log p 0.20 0.35
+hold 0.25 PX=0.20+PY=0.35
+log p 0.24 0.35
+hold 0.25 PX=0.24+PY=0.35
+log p 0.28 0.35
+hold 0.25 PX=0.28+PY=0.35
+log p 0.32 0.35
+hold 0.25 PX=0.32+PY=0.35
+log p 0.36 0.35
+hold 0.25 PX=0.36+PY=0.35
+log p 0.40 0.35
+hold 0.25 PX=0.40+PY=0.35
+log p 0.44 0.35
+hold 0.25 PX=0.44+PY=0.35
+log p 0.48 0.35
+hold 0.25 PX=0.48+PY=0.35
+log p 0.52 0.35
+hold 0.25 PX=0.52+PY=0.35
+log p 0.56 0.35
+hold 0.25 PX=0.56+PY=0.35
+log p 0.60 0.35
+hold 0.25 PX=0.60+PY=0.35
+log p 0.64 0.35
+hold 0.25 PX=0.64+PY=0.35
+log p 0.68 0.35
+hold 0.25 PX=0.68+PY=0.35
+log p 0.72 0.35
+hold 0.25 PX=0.72+PY=0.35
+log p 0.76 0.35
+hold 0.25 PX=0.76+PY=0.35
+log p 0.80 0.35
+hold 0.25 PX=0.80+PY=0.35
+log p 0.84 0.35
+hold 0.25 PX=0.84+PY=0.35
+log p 0.88 0.35
+hold 0.25 PX=0.88+PY=0.35
+log p 0.92 0.35
+hold 0.25 PX=0.92+PY=0.35
+log p 0.96 0.35
+hold 0.25 PX=0.96+PY=0.35
+log p 0.04 0.40
+hold 0.25 PX=0.04+PY=0.40
+log p 0.08 0.40
+hold 0.25 PX=0.08+PY=0.40
+log p 0.12 0.40
+hold 0.25 PX=0.12+PY=0.40
+log p 0.16 0.40
+hold 0.25 PX=0.16+PY=0.40
+log p 0.20 0.40
+hold 0.25 PX=0.20+PY=0.40
+log p 0.24 0.40
+hold 0.25 PX=0.24+PY=0.40
+log p 0.28 0.40
+hold 0.25 PX=0.28+PY=0.40
+log p 0.32 0.40
+hold 0.25 PX=0.32+PY=0.40
+log p 0.36 0.40
+hold 0.25 PX=0.36+PY=0.40
+log p 0.40 0.40
+hold 0.25 PX=0.40+PY=0.40
+log p 0.44 0.40
+hold 0.25 PX=0.44+PY=0.40
+log p 0.48 0.40
+hold 0.25 PX=0.48+PY=0.40
+log p 0.52 0.40
+hold 0.25 PX=0.52+PY=0.40
+log p 0.56 0.40
+hold 0.25 PX=0.56+PY=0.40
+log p 0.60 0.40
+hold 0.25 PX=0.60+PY=0.40
+log p 0.64 0.40
+hold 0.25 PX=0.64+PY=0.40
+log p 0.68 0.40
+hold 0.25 PX=0.68+PY=0.40
+log p 0.72 0.40
+hold 0.25 PX=0.72+PY=0.40
+log p 0.76 0.40
+hold 0.25 PX=0.76+PY=0.40
+log p 0.80 0.40
+hold 0.25 PX=0.80+PY=0.40
+log p 0.84 0.40
+hold 0.25 PX=0.84+PY=0.40
+log p 0.88 0.40
+hold 0.25 PX=0.88+PY=0.40
+log p 0.92 0.40
+hold 0.25 PX=0.92+PY=0.40
+log p 0.96 0.40
+hold 0.25 PX=0.96+PY=0.40
+log p 0.04 0.45
+hold 0.25 PX=0.04+PY=0.45
+log p 0.08 0.45
+hold 0.25 PX=0.08+PY=0.45
+log p 0.12 0.45
+hold 0.25 PX=0.12+PY=0.45
+log p 0.16 0.45
+hold 0.25 PX=0.16+PY=0.45
+log p 0.20 0.45
+hold 0.25 PX=0.20+PY=0.45
+log p 0.24 0.45
+hold 0.25 PX=0.24+PY=0.45
+log p 0.28 0.45
+hold 0.25 PX=0.28+PY=0.45
+log p 0.32 0.45
+hold 0.25 PX=0.32+PY=0.45
+log p 0.36 0.45
+hold 0.25 PX=0.36+PY=0.45
+log p 0.40 0.45
+hold 0.25 PX=0.40+PY=0.45
+log p 0.44 0.45
+hold 0.25 PX=0.44+PY=0.45
+log p 0.48 0.45
+hold 0.25 PX=0.48+PY=0.45
+log p 0.52 0.45
+hold 0.25 PX=0.52+PY=0.45
+log p 0.56 0.45
+hold 0.25 PX=0.56+PY=0.45
+log p 0.60 0.45
+hold 0.25 PX=0.60+PY=0.45
+log p 0.64 0.45
+hold 0.25 PX=0.64+PY=0.45
+log p 0.68 0.45
+hold 0.25 PX=0.68+PY=0.45
+log p 0.72 0.45
+hold 0.25 PX=0.72+PY=0.45
+log p 0.76 0.45
+hold 0.25 PX=0.76+PY=0.45
+log p 0.80 0.45
+hold 0.25 PX=0.80+PY=0.45
+log p 0.84 0.45
+hold 0.25 PX=0.84+PY=0.45
+log p 0.88 0.45
+hold 0.25 PX=0.88+PY=0.45
+log p 0.92 0.45
+hold 0.25 PX=0.92+PY=0.45
+log p 0.96 0.45
+hold 0.25 PX=0.96+PY=0.45
+log p 0.04 0.50
+hold 0.25 PX=0.04+PY=0.50
+log p 0.08 0.50
+hold 0.25 PX=0.08+PY=0.50
+log p 0.12 0.50
+hold 0.25 PX=0.12+PY=0.50
+log p 0.16 0.50
+hold 0.25 PX=0.16+PY=0.50
+log p 0.20 0.50
+hold 0.25 PX=0.20+PY=0.50
+log p 0.24 0.50
+hold 0.25 PX=0.24+PY=0.50
+log p 0.28 0.50
+hold 0.25 PX=0.28+PY=0.50
+log p 0.32 0.50
+hold 0.25 PX=0.32+PY=0.50
+log p 0.36 0.50
+hold 0.25 PX=0.36+PY=0.50
+log p 0.40 0.50
+hold 0.25 PX=0.40+PY=0.50
+log p 0.44 0.50
+hold 0.25 PX=0.44+PY=0.50
+log p 0.48 0.50
+hold 0.25 PX=0.48+PY=0.50
+log p 0.52 0.50
+hold 0.25 PX=0.52+PY=0.50
+log p 0.56 0.50
+hold 0.25 PX=0.56+PY=0.50
+log p 0.60 0.50
+hold 0.25 PX=0.60+PY=0.50
+log p 0.64 0.50
+hold 0.25 PX=0.64+PY=0.50
+log p 0.68 0.50
+hold 0.25 PX=0.68+PY=0.50
+log p 0.72 0.50
+hold 0.25 PX=0.72+PY=0.50
+log p 0.76 0.50
+hold 0.25 PX=0.76+PY=0.50
+log p 0.80 0.50
+hold 0.25 PX=0.80+PY=0.50
+log p 0.84 0.50
+hold 0.25 PX=0.84+PY=0.50
+log p 0.88 0.50
+hold 0.25 PX=0.88+PY=0.50
+log p 0.92 0.50
+hold 0.25 PX=0.92+PY=0.50
+log p 0.96 0.50
+hold 0.25 PX=0.96+PY=0.50
+log p 0.04 0.55
+hold 0.25 PX=0.04+PY=0.55
+log p 0.08 0.55
+hold 0.25 PX=0.08+PY=0.55
+log p 0.12 0.55
+hold 0.25 PX=0.12+PY=0.55
+log p 0.16 0.55
+hold 0.25 PX=0.16+PY=0.55
+log p 0.20 0.55
+hold 0.25 PX=0.20+PY=0.55
+log p 0.24 0.55
+hold 0.25 PX=0.24+PY=0.55
+log p 0.28 0.55
+hold 0.25 PX=0.28+PY=0.55
+log p 0.32 0.55
+hold 0.25 PX=0.32+PY=0.55
+log p 0.36 0.55
+hold 0.25 PX=0.36+PY=0.55
+log p 0.40 0.55
+hold 0.25 PX=0.40+PY=0.55
+log p 0.44 0.55
+hold 0.25 PX=0.44+PY=0.55
+log p 0.48 0.55
+hold 0.25 PX=0.48+PY=0.55
+log p 0.52 0.55
+hold 0.25 PX=0.52+PY=0.55
+log p 0.56 0.55
+hold 0.25 PX=0.56+PY=0.55
+log p 0.60 0.55
+hold 0.25 PX=0.60+PY=0.55
+log p 0.64 0.55
+hold 0.25 PX=0.64+PY=0.55
+log p 0.68 0.55
+hold 0.25 PX=0.68+PY=0.55
+log p 0.72 0.55
+hold 0.25 PX=0.72+PY=0.55
+log p 0.76 0.55
+hold 0.25 PX=0.76+PY=0.55
+log p 0.80 0.55
+hold 0.25 PX=0.80+PY=0.55
+log p 0.84 0.55
+hold 0.25 PX=0.84+PY=0.55
+log p 0.88 0.55
+hold 0.25 PX=0.88+PY=0.55
+log p 0.92 0.55
+hold 0.25 PX=0.92+PY=0.55
+log p 0.96 0.55
+hold 0.25 PX=0.96+PY=0.55
+log p 0.04 0.60
+hold 0.25 PX=0.04+PY=0.60
+log p 0.08 0.60
+hold 0.25 PX=0.08+PY=0.60
+log p 0.12 0.60
+hold 0.25 PX=0.12+PY=0.60
+log p 0.16 0.60
+hold 0.25 PX=0.16+PY=0.60
+log p 0.20 0.60
+hold 0.25 PX=0.20+PY=0.60
+log p 0.24 0.60
+hold 0.25 PX=0.24+PY=0.60
+log p 0.28 0.60
+hold 0.25 PX=0.28+PY=0.60
+log p 0.32 0.60
+hold 0.25 PX=0.32+PY=0.60
+log p 0.36 0.60
+hold 0.25 PX=0.36+PY=0.60
+log p 0.40 0.60
+hold 0.25 PX=0.40+PY=0.60
+log p 0.44 0.60
+hold 0.25 PX=0.44+PY=0.60
+log p 0.48 0.60
+hold 0.25 PX=0.48+PY=0.60
+log p 0.52 0.60
+hold 0.25 PX=0.52+PY=0.60
+log p 0.56 0.60
+hold 0.25 PX=0.56+PY=0.60
+log p 0.60 0.60
+hold 0.25 PX=0.60+PY=0.60
+log p 0.64 0.60
+hold 0.25 PX=0.64+PY=0.60
+log p 0.68 0.60
+hold 0.25 PX=0.68+PY=0.60
+log p 0.72 0.60
+hold 0.25 PX=0.72+PY=0.60
+log p 0.76 0.60
+hold 0.25 PX=0.76+PY=0.60
+log p 0.80 0.60
+hold 0.25 PX=0.80+PY=0.60
+log p 0.84 0.60
+hold 0.25 PX=0.84+PY=0.60
+log p 0.88 0.60
+hold 0.25 PX=0.88+PY=0.60
+log p 0.92 0.60
+hold 0.25 PX=0.92+PY=0.60
+log p 0.96 0.60
+hold 0.25 PX=0.96+PY=0.60
+log p 0.04 0.65
+hold 0.25 PX=0.04+PY=0.65
+log p 0.08 0.65
+hold 0.25 PX=0.08+PY=0.65
+log p 0.12 0.65
+hold 0.25 PX=0.12+PY=0.65
+log p 0.16 0.65
+hold 0.25 PX=0.16+PY=0.65
+log p 0.20 0.65
+hold 0.25 PX=0.20+PY=0.65
+log p 0.24 0.65
+hold 0.25 PX=0.24+PY=0.65
+log p 0.28 0.65
+hold 0.25 PX=0.28+PY=0.65
+log p 0.32 0.65
+hold 0.25 PX=0.32+PY=0.65
+log p 0.36 0.65
+hold 0.25 PX=0.36+PY=0.65
+log p 0.40 0.65
+hold 0.25 PX=0.40+PY=0.65
+log p 0.44 0.65
+hold 0.25 PX=0.44+PY=0.65
+log p 0.48 0.65
+hold 0.25 PX=0.48+PY=0.65
+log p 0.52 0.65
+hold 0.25 PX=0.52+PY=0.65
+log p 0.56 0.65
+hold 0.25 PX=0.56+PY=0.65
+log p 0.60 0.65
+hold 0.25 PX=0.60+PY=0.65
+log p 0.64 0.65
+hold 0.25 PX=0.64+PY=0.65
+log p 0.68 0.65
+hold 0.25 PX=0.68+PY=0.65
+log p 0.72 0.65
+hold 0.25 PX=0.72+PY=0.65
+log p 0.76 0.65
+hold 0.25 PX=0.76+PY=0.65
+log p 0.80 0.65
+hold 0.25 PX=0.80+PY=0.65
+log p 0.84 0.65
+hold 0.25 PX=0.84+PY=0.65
+log p 0.88 0.65
+hold 0.25 PX=0.88+PY=0.65
+log p 0.92 0.65
+hold 0.25 PX=0.92+PY=0.65
+log p 0.96 0.65
+hold 0.25 PX=0.96+PY=0.65
+log p 0.04 0.70
+hold 0.25 PX=0.04+PY=0.70
+log p 0.08 0.70
+hold 0.25 PX=0.08+PY=0.70
+log p 0.12 0.70
+hold 0.25 PX=0.12+PY=0.70
+log p 0.16 0.70
+hold 0.25 PX=0.16+PY=0.70
+log p 0.20 0.70
+hold 0.25 PX=0.20+PY=0.70
+log p 0.24 0.70
+hold 0.25 PX=0.24+PY=0.70
+log p 0.28 0.70
+hold 0.25 PX=0.28+PY=0.70
+log p 0.32 0.70
+hold 0.25 PX=0.32+PY=0.70
+log p 0.36 0.70
+hold 0.25 PX=0.36+PY=0.70
+log p 0.40 0.70
+hold 0.25 PX=0.40+PY=0.70
+log p 0.44 0.70
+hold 0.25 PX=0.44+PY=0.70
+log p 0.48 0.70
+hold 0.25 PX=0.48+PY=0.70
+log p 0.52 0.70
+hold 0.25 PX=0.52+PY=0.70
+log p 0.56 0.70
+hold 0.25 PX=0.56+PY=0.70
+log p 0.60 0.70
+hold 0.25 PX=0.60+PY=0.70
+log p 0.64 0.70
+hold 0.25 PX=0.64+PY=0.70
+log p 0.68 0.70
+hold 0.25 PX=0.68+PY=0.70
+log p 0.72 0.70
+hold 0.25 PX=0.72+PY=0.70
+log p 0.76 0.70
+hold 0.25 PX=0.76+PY=0.70
+log p 0.80 0.70
+hold 0.25 PX=0.80+PY=0.70
+log p 0.84 0.70
+hold 0.25 PX=0.84+PY=0.70
+log p 0.88 0.70
+hold 0.25 PX=0.88+PY=0.70
+log p 0.92 0.70
+hold 0.25 PX=0.92+PY=0.70
+log p 0.96 0.70
+hold 0.25 PX=0.96+PY=0.70
+log p 0.04 0.75
+hold 0.25 PX=0.04+PY=0.75
+log p 0.08 0.75
+hold 0.25 PX=0.08+PY=0.75
+log p 0.12 0.75
+hold 0.25 PX=0.12+PY=0.75
+log p 0.16 0.75
+hold 0.25 PX=0.16+PY=0.75
+log p 0.20 0.75
+hold 0.25 PX=0.20+PY=0.75
+log p 0.24 0.75
+hold 0.25 PX=0.24+PY=0.75
+log p 0.28 0.75
+hold 0.25 PX=0.28+PY=0.75
+log p 0.32 0.75
+hold 0.25 PX=0.32+PY=0.75
+log p 0.36 0.75
+hold 0.25 PX=0.36+PY=0.75
+log p 0.40 0.75
+hold 0.25 PX=0.40+PY=0.75
+log p 0.44 0.75
+hold 0.25 PX=0.44+PY=0.75
+log p 0.48 0.75
+hold 0.25 PX=0.48+PY=0.75
+log p 0.52 0.75
+hold 0.25 PX=0.52+PY=0.75
+log p 0.56 0.75
+hold 0.25 PX=0.56+PY=0.75
+log p 0.60 0.75
+hold 0.25 PX=0.60+PY=0.75
+log p 0.64 0.75
+hold 0.25 PX=0.64+PY=0.75
+log p 0.68 0.75
+hold 0.25 PX=0.68+PY=0.75
+log p 0.72 0.75
+hold 0.25 PX=0.72+PY=0.75
+log p 0.76 0.75
+hold 0.25 PX=0.76+PY=0.75
+log p 0.80 0.75
+hold 0.25 PX=0.80+PY=0.75
+log p 0.84 0.75
+hold 0.25 PX=0.84+PY=0.75
+log p 0.88 0.75
+hold 0.25 PX=0.88+PY=0.75
+log p 0.92 0.75
+hold 0.25 PX=0.92+PY=0.75
+log p 0.96 0.75
+hold 0.25 PX=0.96+PY=0.75
+log p 0.04 0.80
+hold 0.25 PX=0.04+PY=0.80
+log p 0.08 0.80
+hold 0.25 PX=0.08+PY=0.80
+log p 0.12 0.80
+hold 0.25 PX=0.12+PY=0.80
+log p 0.16 0.80
+hold 0.25 PX=0.16+PY=0.80
+log p 0.20 0.80
+hold 0.25 PX=0.20+PY=0.80
+log p 0.24 0.80
+hold 0.25 PX=0.24+PY=0.80
+log p 0.28 0.80
+hold 0.25 PX=0.28+PY=0.80
+log p 0.32 0.80
+hold 0.25 PX=0.32+PY=0.80
+log p 0.36 0.80
+hold 0.25 PX=0.36+PY=0.80
+log p 0.40 0.80
+hold 0.25 PX=0.40+PY=0.80
+log p 0.44 0.80
+hold 0.25 PX=0.44+PY=0.80
+log p 0.48 0.80
+hold 0.25 PX=0.48+PY=0.80
+log p 0.52 0.80
+hold 0.25 PX=0.52+PY=0.80
+log p 0.56 0.80
+hold 0.25 PX=0.56+PY=0.80
+log p 0.60 0.80
+hold 0.25 PX=0.60+PY=0.80
+log p 0.64 0.80
+hold 0.25 PX=0.64+PY=0.80
+log p 0.68 0.80
+hold 0.25 PX=0.68+PY=0.80
+log p 0.72 0.80
+hold 0.25 PX=0.72+PY=0.80
+log p 0.76 0.80
+hold 0.25 PX=0.76+PY=0.80
+log p 0.80 0.80
+hold 0.25 PX=0.80+PY=0.80
+log p 0.84 0.80
+hold 0.25 PX=0.84+PY=0.80
+log p 0.88 0.80
+hold 0.25 PX=0.88+PY=0.80
+log p 0.92 0.80
+hold 0.25 PX=0.92+PY=0.80
+log p 0.96 0.80
+hold 0.25 PX=0.96+PY=0.80
+log p 0.04 0.85
+hold 0.25 PX=0.04+PY=0.85
+log p 0.08 0.85
+hold 0.25 PX=0.08+PY=0.85
+log p 0.12 0.85
+hold 0.25 PX=0.12+PY=0.85
+log p 0.16 0.85
+hold 0.25 PX=0.16+PY=0.85
+log p 0.20 0.85
+hold 0.25 PX=0.20+PY=0.85
+log p 0.24 0.85
+hold 0.25 PX=0.24+PY=0.85
+log p 0.28 0.85
+hold 0.25 PX=0.28+PY=0.85
+log p 0.32 0.85
+hold 0.25 PX=0.32+PY=0.85
+log p 0.36 0.85
+hold 0.25 PX=0.36+PY=0.85
+log p 0.40 0.85
+hold 0.25 PX=0.40+PY=0.85
+log p 0.44 0.85
+hold 0.25 PX=0.44+PY=0.85
+log p 0.48 0.85
+hold 0.25 PX=0.48+PY=0.85
+log p 0.52 0.85
+hold 0.25 PX=0.52+PY=0.85
+log p 0.56 0.85
+hold 0.25 PX=0.56+PY=0.85
+log p 0.60 0.85
+hold 0.25 PX=0.60+PY=0.85
+log p 0.64 0.85
+hold 0.25 PX=0.64+PY=0.85
+log p 0.68 0.85
+hold 0.25 PX=0.68+PY=0.85
+log p 0.72 0.85
+hold 0.25 PX=0.72+PY=0.85
+log p 0.76 0.85
+hold 0.25 PX=0.76+PY=0.85
+log p 0.80 0.85
+hold 0.25 PX=0.80+PY=0.85
+log p 0.84 0.85
+hold 0.25 PX=0.84+PY=0.85
+log p 0.88 0.85
+hold 0.25 PX=0.88+PY=0.85
+log p 0.92 0.85
+hold 0.25 PX=0.92+PY=0.85
+log p 0.96 0.85
+hold 0.25 PX=0.96+PY=0.85
+log p 0.04 0.90
+hold 0.25 PX=0.04+PY=0.90
+log p 0.08 0.90
+hold 0.25 PX=0.08+PY=0.90
+log p 0.12 0.90
+hold 0.25 PX=0.12+PY=0.90
+log p 0.16 0.90
+hold 0.25 PX=0.16+PY=0.90
+log p 0.20 0.90
+hold 0.25 PX=0.20+PY=0.90
+log p 0.24 0.90
+hold 0.25 PX=0.24+PY=0.90
+log p 0.28 0.90
+hold 0.25 PX=0.28+PY=0.90
+log p 0.32 0.90
+hold 0.25 PX=0.32+PY=0.90
+log p 0.36 0.90
+hold 0.25 PX=0.36+PY=0.90
+log p 0.40 0.90
+hold 0.25 PX=0.40+PY=0.90
+log p 0.44 0.90
+hold 0.25 PX=0.44+PY=0.90
+log p 0.48 0.90
+hold 0.25 PX=0.48+PY=0.90
+log p 0.52 0.90
+hold 0.25 PX=0.52+PY=0.90
+log p 0.56 0.90
+hold 0.25 PX=0.56+PY=0.90
+log p 0.60 0.90
+hold 0.25 PX=0.60+PY=0.90
+log p 0.64 0.90
+hold 0.25 PX=0.64+PY=0.90
+log p 0.68 0.90
+hold 0.25 PX=0.68+PY=0.90
+log p 0.72 0.90
+hold 0.25 PX=0.72+PY=0.90
+log p 0.76 0.90
+hold 0.25 PX=0.76+PY=0.90
+log p 0.80 0.90
+hold 0.25 PX=0.80+PY=0.90
+log p 0.84 0.90
+hold 0.25 PX=0.84+PY=0.90
+log p 0.88 0.90
+hold 0.25 PX=0.88+PY=0.90
+log p 0.92 0.90
+hold 0.25 PX=0.92+PY=0.90
+log p 0.96 0.90
+hold 0.25 PX=0.96+PY=0.90
+log p 0.04 0.95
+hold 0.25 PX=0.04+PY=0.95
+log p 0.08 0.95
+hold 0.25 PX=0.08+PY=0.95
+log p 0.12 0.95
+hold 0.25 PX=0.12+PY=0.95
+log p 0.16 0.95
+hold 0.25 PX=0.16+PY=0.95
+log p 0.20 0.95
+hold 0.25 PX=0.20+PY=0.95
+log p 0.24 0.95
+hold 0.25 PX=0.24+PY=0.95
+log p 0.28 0.95
+hold 0.25 PX=0.28+PY=0.95
+log p 0.32 0.95
+hold 0.25 PX=0.32+PY=0.95
+log p 0.36 0.95
+hold 0.25 PX=0.36+PY=0.95
+log p 0.40 0.95
+hold 0.25 PX=0.40+PY=0.95
+log p 0.44 0.95
+hold 0.25 PX=0.44+PY=0.95
+log p 0.48 0.95
+hold 0.25 PX=0.48+PY=0.95
+log p 0.52 0.95
+hold 0.25 PX=0.52+PY=0.95
+log p 0.56 0.95
+hold 0.25 PX=0.56+PY=0.95
+log p 0.60 0.95
+hold 0.25 PX=0.60+PY=0.95
+log p 0.64 0.95
+hold 0.25 PX=0.64+PY=0.95
+log p 0.68 0.95
+hold 0.25 PX=0.68+PY=0.95
+log p 0.72 0.95
+hold 0.25 PX=0.72+PY=0.95
+log p 0.76 0.95
+hold 0.25 PX=0.76+PY=0.95
+log p 0.80 0.95
+hold 0.25 PX=0.80+PY=0.95
+log p 0.84 0.95
+hold 0.25 PX=0.84+PY=0.95
+log p 0.88 0.95
+hold 0.25 PX=0.88+PY=0.95
+log p 0.92 0.95
+hold 0.25 PX=0.92+PY=0.95
+log p 0.96 0.95
+hold 0.25 PX=0.96+PY=0.95
+quit

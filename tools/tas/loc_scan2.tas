@@ -1,0 +1,126 @@
+# Boot to the menus with a save loaded, taking a screenshot after each step.
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+shot m01_title
+hold 0.3 START
+wait 3.7
+shot m02
+hold 0.3 START
+wait 3.7
+shot m03
+hold 0.3 A
+wait 3
+shot m04
+wait 0.5
+hold 0.8 PX=0.331+PY=0.217
+shot loc2_shrouded
+hold 0.3 A+PX=0.331+PY=0.217
+wait 2.5
+hold 0.8 PX=0.636+PY=0.198
+shot ms2_shrouded
+tap B 0.2
+wait 2
+hold 0.8 PX=0.559+PY=0.213
+shot loc2_titanic
+hold 0.3 A+PX=0.559+PY=0.213
+wait 2.5
+hold 0.8 PX=0.642+PY=0.269
+shot ms2_titanic
+tap B 0.2
+wait 2
+hold 0.8 PX=0.664+PY=0.167
+shot loc2_megalith
+hold 0.3 A+PX=0.664+PY=0.167
+wait 2.5
+hold 0.8 PX=0.718+PY=0.341
+shot ms2_megalith
+tap B 0.2
+wait 2
+hold 0.8 PX=0.220+PY=0.358
+shot loc2_deepwoods
+hold 0.3 A+PX=0.220+PY=0.358
+wait 2.5
+hold 0.8 PX=0.664+PY=0.227
+shot ms2_deepwoods
+tap B 0.2
+wait 2
+hold 0.8 PX=0.453+PY=0.396
+shot loc2_camelot
+hold 0.3 A+PX=0.453+PY=0.396
+wait 2.5
+hold 0.8 PX=0.587+PY=0.242
+shot ms2_camelot
+tap B 0.2
+wait 2
+hold 0.8 PX=0.522+PY=0.371
+shot loc2_knights
+hold 0.3 A+PX=0.522+PY=0.371
+wait 2.5
+hold 0.8 PX=0.659+PY=0.245
+shot ms2_knights
+tap B 0.2
+wait 2
+hold 0.8 PX=0.500+PY=0.500
+shot loc2_darkhollow
+hold 0.3 A+PX=0.500+PY=0.500
+wait 2.5
+wait 0.8
+shot ms2_darkhollow
+tap B 0.2
+wait 2
+hold 0.8 PX=0.177+PY=0.483
+shot loc2_misty
+hold 0.3 A+PX=0.177+PY=0.483
+wait 2.5
+hold 0.8 PX=0.716+PY=0.274
+shot ms2_misty
+tap B 0.2
+wait 2
+hold 0.8 PX=0.745+PY=0.538
+shot loc2_crystal
+hold 0.3 A+PX=0.745+PY=0.538
+wait 2.5
+hold 0.8 PX=0.595+PY=0.317
+shot ms2_crystal
+tap B 0.2
+wait 2
+hold 0.8 PX=0.245+PY=0.625
+shot loc2_molten
+hold 0.3 A+PX=0.245+PY=0.625
+wait 2.5
+hold 0.8 PX=0.655+PY=0.218
+shot ms2_molten
+tap B 0.2
+wait 2
+hold 0.8 PX=0.544+PY=0.671
+shot loc2_faraway
+hold 0.3 A+PX=0.544+PY=0.671
+wait 2.5
+hold 0.8 PX=0.652+PY=0.22
+shot ms2_faraway
+tap B 0.2
+wait 2
+hold 0.8 PX=0.689+PY=0.754
+shot loc2_dragons
+hold 0.3 A+PX=0.689+PY=0.754
+wait 2.5
+hold 0.8 PX=0.642+PY=0.207
+shot ms2_dragons
+tap B 0.2
+wait 2
+hold 0.8 PX=0.358+PY=0.804
+shot loc2_cauldron
+hold 0.3 A+PX=0.358+PY=0.804
+wait 2.5
+hold 0.8 PX=0.564+PY=0.272
+shot ms2_cauldron
+tap B 0.2
+wait 2
+quit

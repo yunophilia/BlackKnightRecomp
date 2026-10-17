@@ -1,0 +1,79 @@
+# Boot to the menus with a save loaded, taking a screenshot after each step.
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+shot m01_title
+hold 0.3 START
+wait 3.7
+shot m02
+hold 0.3 START
+wait 3.7
+shot m03
+hold 0.3 A
+wait 3
+shot m04
+tap RIGHT 0.15
+wait 1
+shot map_r1
+tap RIGHT 0.15
+wait 1
+shot map_r2
+tap RIGHT 0.15
+wait 1
+shot map_r3
+tap RIGHT 0.15
+wait 1
+shot map_r4
+tap RIGHT 0.15
+wait 1
+shot map_r5
+tap RIGHT 0.15
+wait 1
+shot map_r6
+tap RIGHT 0.15
+wait 1
+shot map_r7
+tap RIGHT 0.15
+wait 1
+shot map_r8
+tap A 0.2
+wait 2.5
+shot ms_0
+tap RIGHT 0.15
+wait 1
+shot ms_r1
+tap RIGHT 0.15
+wait 1
+shot ms_r2
+tap RIGHT 0.15
+wait 1
+shot ms_r3
+tap RIGHT 0.15
+wait 1
+shot ms_r4
+tap RIGHT 0.15
+wait 1
+shot ms_r5
+tap RIGHT 0.15
+wait 1
+shot ms_r6
+tap RIGHT 0.15
+wait 1
+shot ms_r7
+tap DOWN 0.15
+wait 1
+shot ms_d1
+tap DOWN 0.15
+wait 1
+shot ms_d2
+tap DOWN 0.15
+wait 1
+shot ms_d3
+wait 1
+quit

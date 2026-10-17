@@ -1,0 +1,102 @@
+include watches.tas
+watch px f32 [80803e10]+2050
+watch py f32 [80803e10]+2054
+watch pz f32 [80803e10]+2058
+watch bx f32 [80803e10]+2070
+watch by f32 [80803e10]+2074
+watch bz f32 [80803e10]+2078
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 5.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 0.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 11.7
+wait 1
+log still
+wait 1
+log run
+hold 3 LY=1.0
+log stop
+wait 2
+log jump
+tap A
+wait 2
+log runjump
+set LY=1.0
+wait 1
+tap A
+wait 1.5
+set
+log turn
+hold 2 LX=1.0
+log stop2
+wait 2
+log end
+quit

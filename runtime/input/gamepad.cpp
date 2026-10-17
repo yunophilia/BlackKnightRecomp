@@ -1,6 +1,7 @@
 // XInput controllers with a keyboard fallback for player 1.
 #include "gamepad.h"
 #include "../config.h"
+#include "../tas/tas.h"
 
 #include <cmath>
 #include <windows.h>
@@ -27,6 +28,7 @@ static bool Key(int vk)
 bool Gamepad_IsConnected(int index)
 {
     if (index == 0) return true;   // keyboard fallback
+    if (Tas_Active()) return false;   // scripted runs ignore real controllers
     static DWORD lastCheck[4];
     static bool connected[4];
     DWORD now = GetTickCount();
@@ -135,6 +137,10 @@ void Gamepad_LoadScript(const char* path)
 void Gamepad_Poll(int index, GamepadState& out)
 {
     out = GamepadState();
+    if (index == 0 && Tas_Poll(out))
+        return;
+    if (Tas_Active())
+        return;
     if (!s_script.empty() && index == 0)
     {
         double t = (GetTickCount() - s_scriptStart) / 1000.0;
@@ -212,7 +218,7 @@ void Gamepad_Poll(int index, GamepadState& out)
 
 bool Gamepad_RumbleAllowed()
 {
-    if (!s_script.empty() || g_autoPress) return false;
+    if (!s_script.empty() || g_autoPress || Tas_Active()) return false;
     HWND hwnd = (HWND)Video_HWND();
     return hwnd && GetForegroundWindow() == hwnd;
 }

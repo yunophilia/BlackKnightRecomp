@@ -24,6 +24,13 @@
             "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
         },
         {
+            "name": "windows-clang-counts",
+            "displayName": "Windows (clang-cl, call counting)",
+            "description": "instrumented build for frame-rate analysis (out/BlackKnightRecomp_counts.exe)",
+            "inherits": "windows-clang",
+            "cacheVariables": { "BKR_CALL_COUNTS": "ON" }
+        },
+        {
             "name": "windows-msvc",
             "displayName": "Windows (MSVC)",
             "description": "cl + link; run from a Visual Studio x64 Developer prompt",
@@ -42,6 +49,7 @@
     ],
     "buildPresets": [
         { "name": "windows-clang", "configurePreset": "windows-clang" },
+        { "name": "windows-clang-counts", "configurePreset": "windows-clang-counts" },
         { "name": "windows-msvc", "configurePreset": "windows-msvc" },
         { "name": "linux-clang", "configurePreset": "linux-clang" }
     ]

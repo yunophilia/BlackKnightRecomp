@@ -1,5 +1,6 @@
 #include "disc.h"
 #include "../log.h"
+#include "../tas/tas.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -163,6 +164,7 @@ bool Disc_ReadPartition(uint64_t offset, uint32_t length, uint8_t* out)
         if (s >= e) continue;
         FILE* f = GetFile(it->path);
         if (!f) continue;
+        if (s == it->offset) Tas_OnFileRead(it->path);
         _fseeki64(f, (int64_t)(s - it->offset), SEEK_SET);
         fread(out + (s - offset), 1, (size_t)(e - s), f);
         any = true;

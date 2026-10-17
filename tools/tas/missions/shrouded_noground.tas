@@ -1,0 +1,50 @@
+include ../watches.tas
+watch px f32 [80803e10]+2050
+watch py f32 [80803e10]+2054
+watch pz f32 [80803e10]+2058
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 A
+wait 3
+hold 1 PX=0.331+PY=0.217
+hold 0.3 A+PX=0.331+PY=0.217
+wait 2.5
+tap LEFT 0.12
+wait 0.55
+tap UP 0.12
+wait 0.55
+wait 0.3
+shot shrouded_noground_select
+tap A 0.2
+wait 1.5
+tap A 0.2
+until file files_stg timeout 40
+wait 8
+log play
+calls -
+shot shrouded_noground_start
+set LY=1.0
+repeat 40
+tap X 0.1
+wait 0.4
+tap A 0.15
+wait 0.6
+tap X 0.1
+wait 0.5
+end
+set
+calls shrouded_noground
+shot shrouded_noground_end
+wait 0.5
+log end
+quit

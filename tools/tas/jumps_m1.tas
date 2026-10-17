@@ -1,0 +1,159 @@
+include watches.tas
+watch px f32 [80803e10]+2050
+watch py f32 [80803e10]+2054
+watch pz f32 [80803e10]+2058
+watch bx f32 [80803e10]+2070
+watch by f32 [80803e10]+2074
+watch bz f32 [80803e10]+2078
+watch btn u16 80781582
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 5.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 0.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 11.7
+wait 1
+wait 1
+log jump 0.05
+hold 0.05 A
+wait 2.15
+log jump 0.05
+hold 0.05 A
+wait 2.15
+log jump 0.05
+hold 0.05 A
+wait 2.15
+log jump 0.05
+hold 0.05 A
+wait 2.15
+log jump 0.1
+hold 0.1 A
+wait 2.1
+log jump 0.1
+hold 0.1 A
+wait 2.1
+log jump 0.1
+hold 0.1 A
+wait 2.1
+log jump 0.1
+hold 0.1 A
+wait 2.1
+log jump 0.15
+hold 0.15 A
+wait 2.05
+log jump 0.15
+hold 0.15 A
+wait 2.05
+log jump 0.15
+hold 0.15 A
+wait 2.05
+log jump 0.15
+hold 0.15 A
+wait 2.05
+log jump 0.2
+hold 0.2 A
+wait 2
+log jump 0.2
+hold 0.2 A
+wait 2
+log jump 0.2
+hold 0.2 A
+wait 2
+log jump 0.2
+hold 0.2 A
+wait 2
+log jump 0.3
+hold 0.3 A
+wait 1.9
+log jump 0.3
+hold 0.3 A
+wait 1.9
+log jump 0.3
+hold 0.3 A
+wait 1.9
+log jump 0.3
+hold 0.3 A
+wait 1.9
+log jump 0.5
+hold 0.5 A
+wait 1.7
+log jump 0.5
+hold 0.5 A
+wait 1.7
+log jump 0.5
+hold 0.5 A
+wait 1.7
+log jump 0.5
+hold 0.5 A
+wait 1.7
+log run
+hold 3 LY=1.0
+log end
+quit

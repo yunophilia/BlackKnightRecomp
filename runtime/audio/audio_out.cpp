@@ -49,6 +49,8 @@ static void CreateVoice(uint32_t rate)
     s_rate = rate;
 }
 
+bool g_audioMute = false;   // --mute (test runs)
+
 void AudioOut_Init()
 {
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -64,7 +66,9 @@ void AudioOut_Init()
         s_xa = nullptr;
         return;
     }
-    LOG_INFO("XAudio2 initialised");
+    extern bool g_audioMute;
+    if (g_audioMute) s_master->SetVolume(0.0f);
+    LOG_INFO("XAudio2 initialised{}", g_audioMute ? " (muted)" : "");
 }
 
 void AudioOut_PushDSP(const uint8_t* data, uint32_t bytes, uint32_t sampleRate)

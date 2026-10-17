@@ -1,0 +1,147 @@
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 5.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 2.7
+hold 0.3 A
+wait 0.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 3.7
+hold 0.3 A
+wait 11.7
+calls -
+hold 10 LY=1.0
+calls run
+wait 2
+hold 0.3 A
+wait 1.7
+hold 0.3 A
+wait 1.7
+hold 0.3 A
+wait 1.7
+hold 0.3 A
+wait 1.7
+hold 0.3 A
+wait 2.2
+calls -
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+wait 0.85
+hold 0.15 X
+calls slash
+log end
+quit
