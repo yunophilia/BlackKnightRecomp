@@ -49,12 +49,16 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 
 ## Building
 
-Requirements: Windows 10+, Visual Studio 2019 or newer with the C++ workload (for its
-headers and the Windows SDK), [LLVM](https://github.com/llvm/llvm-project/releases)
-(clang-cl, lld-link), Ninja, CMake 3.21+, Python 3.10+, and Dolphin (for `DolphinTool.exe`
-and its signature database). LLVM and Ninja are also available through winget:
-`winget install LLVM.LLVM Ninja-build.Ninja` (or Visual Studio's "C++ Clang tools for
-Windows" component).
+Requirements:
+
+- Windows 10+
+- Visual Studio 2026 (2022 or newer; the free Build Tools are enough) with the "Desktop
+  development with C++" workload and the "C++ Clang Compiler for Windows" component
+- CMake 3.21+ and Ninja (both included with Visual Studio)
+- Python 3.10+
+- Dolphin (for `DolphinTool.exe` and its signature database)
+- Optional: a newer standalone [LLVM](https://github.com/llvm/llvm-project/releases)
+  (`winget install LLVM.LLVM`); the presets use whichever `clang-cl` comes first on `PATH`
 
 1. Extract your disc into `game/`:
 
@@ -81,7 +85,8 @@ Windows" component).
    cmake --preset windows-clang
    cmake --build --preset windows-clang
    ```
-   The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
+   Run these from a "Developer PowerShell for VS" (or `tools/dev_build.bat`, which sets that
+   up). The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
    only the build command is needed (`tools/dev_build.bat` runs it). Other presets:
    `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`,
    which only builds the recompiled code until the runtime is ported off D3D11/XAudio2.

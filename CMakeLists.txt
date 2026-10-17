@@ -23,6 +23,20 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CLANG ON)
 endif()
 
+# Visual Studio 2026 is recommended; 2022 (MSVC 19.30) is the oldest supported. clang-cl
+# reports the version of the Visual Studio libraries it found.
+if(MSVC_FRONTEND)
+    if(CLANG)
+        set(VS_LIB_VERSION ${CMAKE_CXX_SIMULATE_VERSION})
+    else()
+        set(VS_LIB_VERSION ${CMAKE_CXX_COMPILER_VERSION})
+    endif()
+    if(VS_LIB_VERSION VERSION_LESS 19.30)
+        message(FATAL_ERROR "Visual Studio 2022 or newer is required (found MSVC ${VS_LIB_VERSION}); "
+                            "install Visual Studio 2026 (Build Tools are enough) with the C++ workload")
+    endif()
+endif()
+
 # ---------------------------------------------------------------- recompiled game code
 add_library(ppcrecomp OBJECT ${PPC_RECOMP_SOURCES})
 target_include_directories(ppcrecomp PUBLIC runtime/cpu generated)

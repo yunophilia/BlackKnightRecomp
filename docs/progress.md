@@ -87,12 +87,12 @@ ON command completes and an UNMUTE succeeds (state machine around 0x801355A0).
 
 ## Build notes
 
-- Default toolchain: clang-cl + lld-link + Ninja (`windows-clang` preset), using Visual
-  Studio's headers and the Windows SDK. Full build 124 s (MSVC 2019: ~25-30 min); about
-  11% less CPU time than the MSVC build over the same scripted 60 fps run.
-- VS2019 16.10's linker crashes (`LNK1000` in `LIB::Search`) with the Windows SDK
-  10.0.26100 import libraries; lld-link does not. The `windows-msvc` preset with VS2019
-  needs `vcvars64.bat 10.0.19041.0`.
+- Toolchain: Visual Studio 2026 Build Tools (MSVC 19.51 headers/libs, Windows SDK, CMake
+  4.3, Ninja) with clang-cl + lld-link (`windows-clang` preset); a standalone LLVM on
+  PATH is preferred when it is newer than VS's bundled clang. CMake rejects anything
+  older than VS2022. Full build ~2.5 min (MSVC 2019 took ~25-30 min); the clang build
+  used about 11% less CPU than the MSVC 2019 build over the same scripted 60 fps run.
+- `tools/dev_build.bat` finds the newest VS with vswhere, runs VsDevCmd and builds.
 - Recompiled code avoids MSVC intrinsics (`ppc_bswap*`, `ppc_rotl32` in `ppc_context.h`)
   so the `linux-clang` preset builds it (verified with clang 21 in WSL).
 
