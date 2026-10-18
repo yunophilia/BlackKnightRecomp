@@ -62,11 +62,18 @@ def stats(rows):
     speeds.sort()
     st['speed_p50'] = speeds[len(speeds) // 2] if speeds else None
     st['speed_p90'] = speeds[int(len(speeds) * 0.9)] if speeds else None
-    apex = []
-    for a, b, c in zip(pts, pts[1:], pts[2:]):
-        if b[2] > a[2] and b[2] >= c[2]:
-            # rise above the last local minimum
-            apex.append(b[2])
+    # jumps: rises of more than 5 units above the last ground height that land again
+    # (sample jitter on the ground must not count, there are twice as many samples at 60 fps)
+    jumps = 0; ground = None; air = False
+    for p in pts:
+        y = p[2]
+        if ground is None: ground = y
+        if not air:
+            if y > ground + 5: air = True
+            else: ground = min(ground, y) if y < ground else (ground * 0.9 + y * 0.1)
+        elif y < ground + 1:
+            jumps += 1; air = False; ground = y
+    apex = range(jumps)
     st['jumps'] = len(apex)
     last = rows[-1]
     st['rings'] = num(last, 'rings'); st['score'] = num(last, 'score')
