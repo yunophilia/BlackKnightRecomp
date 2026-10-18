@@ -28,9 +28,9 @@ MISSIONS = {
 }
 
 BOOT = '''include ../watches.tas
-watch px f32 [80803e10]+2050
-watch py f32 [80803e10]+2054
-watch pz f32 [80803e10]+2058
+watch px f32 [8072bfbc]+380
+watch py f32 [8072bfbc]+384
+watch pz f32 [8072bfbc]+388
 log boot
 wait 40
 hold 0.3 A+B
@@ -70,9 +70,11 @@ os.makedirs(os.path.join(HERE, 'missions'), exist_ok=True)
 for name, (loc, icon, kind) in MISSIONS.items():
     x, y = LOCS[loc].split()
     p = f'PX={x}+PY={y}'
-    s = BOOT + f'hold 1 {p}\nhold 0.3 A+{p}\nwait 2.5\n'
+    s = BOOT + f'hold 1 {p}\nfilemark\ntap A+{p} 0.1\nwait 2.5\n'
     for d in path(NAV[loc]['edges'], NAV[loc]['start'], icon): s += f'tap {d} 0.12\nwait 0.55\n'
-    s += f'wait 0.3\nshot {name}_select\ntap A 0.2\nwait 1.5\ntap A 0.2\n'   # mission, then "Are you ready?" YES
+    # mission, then "Are you ready?" YES (boss missions start without the question; the
+    # second A then only skips the intro)
+    s += f'wait 0.3\nshot {name}_select\ntap A 0.2\nwait 1.5\ntap A 0.2\n'
     s += 'until file files_stg timeout 40\nwait 8\nlog play\ncalls -\nshot {0}_start\n'.format(name)
     s += PLAY[kind]
     s += f'calls {name}\nshot {name}_end\nwait 0.5\nlog end\nquit\n'

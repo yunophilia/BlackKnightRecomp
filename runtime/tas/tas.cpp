@@ -115,7 +115,7 @@ bool ReadValue(VType t, const std::string& expr, double& out)
 }
 
 // ------------------------------------------------------------------ script
-enum class Op { Wait, Hold, Tap, Mash, Set, Until, Check, Log, Shot, Dump, Calls, Repeat, End, Quit };
+enum class Op { FileMark, Wait, Hold, Tap, Mash, Set, Until, Check, Log, Shot, Dump, Calls, Repeat, End, Quit };
 
 struct Input
 {
@@ -269,7 +269,8 @@ void LoadFile(const std::filesystem::path& path, int depth)
             s_watches.push_back(wt);
             continue;
         }
-        if (w == "wait") { c.op = Op::Wait; if (!(ss >> c.secs)) bad(); }
+        if (w == "filemark") c.op = Op::FileMark;
+        else if (w == "wait") { c.op = Op::Wait; if (!(ss >> c.secs)) bad(); }
         else if (w == "hold" || w == "tap" || w == "set" || w == "mash")
         {
             c.op = w == "hold" ? Op::Hold : w == "tap" ? Op::Tap : w == "set" ? Op::Set : Op::Mash;
@@ -398,16 +399,19 @@ void Step(GamepadState& out)
     {
         Cmd& c = s_cmds[s_pc];
         bool fresh = s_cmdStart < 0;
-        if (fresh)
-        {
-            s_cmdStart = now;
-            std::lock_guard lk(s_fileMutex);
-            s_fileMark = s_fileReads.size();
-        }
+        if (fresh) s_cmdStart = now;
         double el = now - s_cmdStart;
         auto next = [&]() { s_pc++; s_cmdStart = -1; };
         switch (c.op)
         {
+        case Op::FileMark:
+        {
+            std::lock_guard lk(s_fileMutex);
+            s_fileMark = s_fileReads.size();
+            LOG_INFO("TAS: filemark at read {}", s_fileMark);
+            next();
+            continue;
+        }
         case Op::Wait:
             if (el < c.secs) return;
             next();

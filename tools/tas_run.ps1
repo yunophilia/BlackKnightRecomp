@@ -10,7 +10,8 @@ param(
     [int]$Seconds = 600,
     [switch]$Full,
     [int]$Scale = 1,                 # internal resolution for low-impact runs                    # real settings; default is low impact (muted, 1x, below-normal priority)
-    [string]$Exe = ""
+    [string]$Exe = "",
+    [string]$ExtraArgs = ""           # more game options, e.g. "--watch 80753efc"
 )
 $root = Split-Path $PSScriptRoot
 $out = Join-Path $root "out"
@@ -29,8 +30,10 @@ $scriptPath = (Resolve-Path $Script).Path
 $gameArgs = "--nobox --tas `"$scriptPath`" --telemetry `"$csv`" --nand `"$nand`""
 if ($Fps60) { $gameArgs += " --60fps" }
 if (-not $Full) { $gameArgs += " --mute --scale $Scale" }
+if ($ExtraArgs) { $gameArgs += " $ExtraArgs" }
 
 Get-Process BlackKnightRecomp* -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Resolve-Path $Exe).Path } | Stop-Process -Force
+$runStart = Get-Date
 $p = Start-Process -FilePath $Exe -ArgumentList $gameArgs -WorkingDirectory (Split-Path $Exe) -PassThru -WindowStyle Minimized
 if (-not $Full) { try { $p.PriorityClass = "BelowNormal" } catch {} }
 $code = $null
@@ -38,6 +41,16 @@ if ($p.WaitForExit($Seconds * 1000)) { $code = $p.ExitCode } else { Stop-Process
 Get-Process BlackKnightRecomp* -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Resolve-Path $Exe).Path } | Stop-Process -Force
 Start-Sleep -Milliseconds 300
 Copy-Item (Join-Path (Split-Path $Exe) "BlackKnightRecomp.log") (Join-Path $tasDir "$Tag.log") -Force
+# keep this run's screenshots apart (scripts use the same names at 30 and 60 fps)
+$shotDir = Join-Path $out "shots"
+if (Test-Path $shotDir) {
+    $mine = Get-ChildItem $shotDir -Filter *.bmp | Where-Object { $_.LastWriteTime -ge $runStart }
+    if ($mine) {
+        $dst = Join-Path $tasDir "shots\$Tag"
+        New-Item -ItemType Directory -Force $dst | Out-Null
+        $mine | Move-Item -Destination $dst -Force
+    }
+}
 $log = Get-Content (Join-Path $tasDir "$Tag.log")
 $fails = $log | Where-Object { $_ -match "TAS: FAIL|\[E\]" }
 $result = if ($code -eq 0 -and -not $fails) { "OK" } elseif ($code -eq $null) { "TIMEOUT" } else { "FAILED (exit $code)" }

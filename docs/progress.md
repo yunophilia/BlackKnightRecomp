@@ -30,8 +30,32 @@
 - [x] HOME menu module recompiled (verified by hash at runtime); intro movie 60 fps
 - [x] Soak tests: 4 x 15 min + 30 min random input (30 and 60 fps) with no errors;
       mission 1 cleared, results/save/retry/item codex/world map exercised
-- [ ] Verify 60 FPS mode in all stage types (needs real play-testing)
+- [ ] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison done for every
+      location, mission type and boss (see "60 FPS verification"); a pass at full settings and
+      Battle mode remain
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
+
+## 60 FPS verification
+
+Method: TAS scripts (docs/tas.md) play the same input at 30 and 60 fps with the 99% PAL
+test save; telemetry, call counts and screenshots are compared (tools/tas/compare.py).
+Game code is not modified for this (read-only probes and input only).
+
+- Game logic runs at a fixed 60 Hz in both modes: the stage timer and ~1,900 functions run
+  at the same rate per second; the per-step time scale (`f32 807FEEE4`) is 1.0 in both. At
+  30 fps the game runs two logic steps per rendered frame.
+- ~740 functions run once per rendered frame: rendering, CRI middleware servers
+  (`SVM_*` vsync servers, frame counter at 0x80753EFC) and part of the player movement.
+- Player movement integrates per rendered frame with the frame's time step, so 60 fps is
+  slightly more precise: a full jump is 40.8 vs 39.8 units high (+2.5%) and lasts 1.17 vs
+  1.13 s; the short hop is identical (10.2). Running speeds match within a few percent.
+  Not changed (it would need a game logic patch).
+- 27 missions covering all 13 locations, every mission type and all bosses (Lancelot x2,
+  Percival, Gawain, King Arthur, Dark Queen, Dragon Slayer): stage timer 0.997-1.000 of
+  real time at both rates, no errors, frame rate held (low-impact runs), start-of-mission
+  screenshots identical. Stage 1 (Misty Lake) was compared with the boot-to-mission script.
+- Open: a slowly drifting float block (~0x80866870, Misty Lake idle) changes ~1.75x faster
+  at 60 fps; heap address varies between runs, likely a visual effect.
 
 ## Performance notes
 

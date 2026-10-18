@@ -1,7 +1,7 @@
 include ../watches.tas
-watch px f32 [80803e10]+2050
-watch py f32 [80803e10]+2054
-watch pz f32 [80803e10]+2058
+watch px f32 [8072bfbc]+380
+watch py f32 [8072bfbc]+384
+watch pz f32 [8072bfbc]+388
 log boot
 wait 40
 hold 0.3 A+B
@@ -17,7 +17,8 @@ wait 3.7
 hold 0.3 A
 wait 3
 hold 1 PX=0.331+PY=0.217
-hold 0.3 A+PX=0.331+PY=0.217
+filemark
+tap A+PX=0.331+PY=0.217 0.1
 wait 2.5
 tap LEFT 0.12
 wait 0.55

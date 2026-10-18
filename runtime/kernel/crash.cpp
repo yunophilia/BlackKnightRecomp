@@ -84,7 +84,8 @@ static LONG CALLBACK CrashHandler(EXCEPTION_POINTERS* ep)
             uint32_t fn = Crash_GuestFunctionForHost((uintptr_t)ep->ContextRecord->Rip);
             static uint32_t lastFn = 0, lastLr = 0;
             uint32_t lr = g_curThread ? g_curThread->ctx.lr : 0;
-            if ((fn != lastFn || lr != lastLr) && s_watchHits++ < 40)
+            bool exact = ga - (s_watchAddr & 0x1FFFFFFFu) < 4 || ga - s_watchAddr < 4;   // only the watched word is logged
+            if (exact && (fn != lastFn || lr != lastLr) && s_watchHits++ < 40)
                 LOG_INFO("WATCH: write to {:08x} by ~fn_{:08X} lr={:08x} r3={:08x} r4={:08x} r5={:08x}", ga, fn, lr,
                          g_curThread ? g_curThread->ctx.r[3] : 0, g_curThread ? g_curThread->ctx.r[4] : 0, g_curThread ? g_curThread->ctx.r[5] : 0);
             lastFn = fn;

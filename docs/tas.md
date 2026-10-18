@@ -32,6 +32,7 @@ guest time.
 
 | command | effect |
 |---|---|
+| `filemark` | `file` conditions only count disc reads after this point (default: script start) |
 | `wait S` | no input for S seconds |
 | `hold S INPUT` | hold INPUT for S seconds |
 | `tap INPUT [S]` | hold for S (default 0.1) then release for 0.1 s |
@@ -53,8 +54,8 @@ analog values `LX= LY= RX= RY= LT= RT=` (-1..1) and pointer `PX= PY=` (0..1 of t
 screen), e.g. `hold 2 LY=1.0+A`. Buttons use the default logical layout (A jump, X
 slash, B Wii B, RB guard, ...).
 
-COND: `file TEXT` (a disc file whose path contains TEXT was read since the command
-started) or `TYPE EXPR OP VALUE` with TYPE `u8 s8 u16 s16 u32 s32 f32` and OP
+COND: `file TEXT` (a disc file whose path contains TEXT was read since the last
+`filemark`) or `TYPE EXPR OP VALUE` with TYPE `u8 s8 u16 s16 u32 s32 f32` and OP
 `== != < <= > >=`.
 
 EXPR: hex address, probe `p0`..`p15`, `+`/`-` offsets and `[expr]` to read a pointer,
@@ -69,7 +70,7 @@ e.g. `[80803e10]+2050`. Unmapped addresses read as missing values.
 | rings | `s32 p1` |
 | score | `s32 p2+4` |
 | Soul gauge | `f32 p3` (max at `+4`) |
-| Sonic position | `f32 [80803e10]+2050/+2054/+2058` (y up) |
+| Sonic position | `f32 [8072bfbc]+380/+384/+388` (y up; in normal stages) |
 | buttons as the game sees them | `u16 80781582` (0x0800 = A) |
 
 ## Call counting

@@ -1,0 +1,48 @@
+include watches.tas
+watch px f32 [80803e10]+2050
+watch py f32 [80803e10]+2054
+watch pz f32 [80803e10]+2058
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+hold 0.3 A
+wait 3
+hold 1 PX=0.745+PY=0.538
+filemark
+tap A+PX=0.745+PY=0.538 0.1
+wait 2.5
+wait 0.3
+shot crystal_goal_select
+tap A 0.2
+wait 1.5
+tap A 0.2
+until file files_stg timeout 40
+wait 8
+log play
+wait 4
+dump crystal_goal_s0
+wait 0.5
+dump crystal_goal_s0b
+hold 1.2 LY=1.0
+wait 1.2
+dump crystal_goal_s1
+wait 0.5
+dump crystal_goal_s1b
+hold 1.2 LX=1.0
+wait 1.2
+dump crystal_goal_s2
+hold 0.4 A
+wait 0.15
+dump crystal_goal_s3air
+wait 2
+dump crystal_goal_s4
+quit
