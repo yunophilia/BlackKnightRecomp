@@ -139,6 +139,20 @@ def main():
             if s:
                 extra = sorted(s - common)
                 lines.append(f'| {n} | {len(extra)}: ' + ' '.join(f'{a:08x}' for a in extra[:40]) + (' ...' if len(extra) > 40 else '') + ' |')
+    # full-settings performance pass (tas_batch.ps1 -Full -Rates 60)
+    perf = []
+    for n in names:
+        p = os.path.join(TAS, n + '_60_full.log')
+        if not os.path.exists(p): continue
+        txt = open(p, errors='replace').read()
+        fps = [float(x) for x in re.findall(r'status: ([0-9.]+) fps', txt)][3:]   # skip boot
+        if not fps: continue
+        srt = sorted(fps)
+        low = sum(1 for f in fps if f < 58) / len(fps)
+        perf.append(f'| {n} | {min(fps):.1f} | {srt[len(srt) // 20]:.1f} | {100 * low:.0f}% | {len(re.findall(r"^\[E\]", txt, re.M))} |')
+    if perf:
+        lines += ['', '## 60 fps at full settings', '', '| mission | min fps | 5th percentile | samples < 58 fps | errors |',
+                  '|---|---|---|---|---|'] + perf
     open(os.path.join(TAS, 'report.md'), 'w').write('\n'.join(lines) + '\n')
     print('\n'.join(lines[:len(names) + 4]))
 

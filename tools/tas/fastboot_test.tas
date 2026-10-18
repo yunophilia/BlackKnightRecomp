@@ -1,0 +1,23 @@
+include watches.tas
+log boot
+wait 2
+until file adv_title_eng mash A+B timeout 80
+wait 2
+shot fb_1_title
+hold 0.3 A+B
+wait 5.7
+shot fb_2
+hold 0.3 A
+wait 7.7
+shot fb_3
+hold 0.3 START
+wait 3.7
+shot fb_4
+hold 0.3 START
+wait 3.7
+shot fb_5
+hold 0.3 A
+wait 3
+shot fb_6_map
+wait 0.5
+quit

@@ -42,7 +42,7 @@ Get-Process BlackKnightRecomp* -ErrorAction SilentlyContinue | Where-Object { $_
 Start-Sleep -Milliseconds 300
 Copy-Item (Join-Path (Split-Path $Exe) "BlackKnightRecomp.log") (Join-Path $tasDir "$Tag.log") -Force
 # keep this run's screenshots apart (scripts use the same names at 30 and 60 fps)
-$shotDir = Join-Path $out "shots"
+$shotDir = Join-Path (Split-Path $Exe) "shots"   # the game writes next to its exe
 if (Test-Path $shotDir) {
     $mine = Get-ChildItem $shotDir -Filter *.bmp | Where-Object { $_.LastWriteTime -ge $runStart }
     if ($mine) {

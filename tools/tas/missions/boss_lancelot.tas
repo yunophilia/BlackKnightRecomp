@@ -3,17 +3,14 @@ watch px f32 [8072bfbc]+380
 watch py f32 [8072bfbc]+384
 watch pz f32 [8072bfbc]+388
 log boot
-wait 40
-hold 0.3 A+B
-wait 5.7
+wait 2
+# skip the strap screen, Sega logo and intro until the title screen loads
+until file adv_title_eng mash A+B timeout 80
+wait 2
 hold 0.3 A+B
 wait 5.7
 hold 0.3 A
 wait 7.7
-hold 0.3 START
-wait 3.7
-hold 0.3 START
-wait 3.7
 hold 0.3 A
 wait 3
 hold 1 PX=0.220+PY=0.358
