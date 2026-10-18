@@ -1,0 +1,60 @@
+players 2
+include ../watches.tas
+watch px f32 [8072bfbc]+380
+watch py f32 [8072bfbc]+384
+watch pz f32 [8072bfbc]+388
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+hold 0.3 START
+wait 3.7
+hold 0.3 START
+wait 3.7
+tap DOWN 0.12
+wait 1
+tap A 0.15
+wait 3
+tap A 0.15
+wait 3
+tap A 0.15
+wait 2
+tap P2:A 0.15
+wait 2
+tap P2:A 0.15
+wait 2
+hold 1 P2:PX=0.40+PY=0.26
+tap P2:A+PX=0.40+PY=0.26 0.15
+wait 1.5
+tap START 0.15
+wait 3
+shot battle_misty_select
+filemark
+hold 1 PX=0.26+PY=0.3
+tap A+PX=0.26+PY=0.3 0.15
+until file sng_stg timeout 40
+wait 6
+log play
+calls -
+shot battle_misty_start
+set LY=1.0 P2:LY=1.0
+repeat 40
+tap X P2:X 0.1
+wait 0.3
+set LX=0.7 P2:LX=-0.7
+tap A P2:A 0.15
+wait 0.5
+set LY=1.0 P2:LY=1.0
+tap X P2:X 0.1
+wait 0.6
+end
+set
+calls battle_misty
+shot battle_misty_end
+wait 0.5
+log end
+quit

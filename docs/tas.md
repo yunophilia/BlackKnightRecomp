@@ -32,6 +32,7 @@ guest time.
 
 | command | effect |
 |---|---|
+| `players N` | controllers the game sees (1 or 2); player 2 takes the `P2:` inputs |
 | `filemark` | `file` conditions only count disc reads after this point (default: script start) |
 | `wait S` | no input for S seconds |
 | `hold S INPUT` | hold INPUT for S seconds |
@@ -51,7 +52,8 @@ guest time.
 
 INPUT: `A B X Y LB RB START BACK UP DOWN LEFT RIGHT HOME LS RS` joined with `+`, and
 analog values `LX= LY= RX= RY= LT= RT=` (-1..1) and pointer `PX= PY=` (0..1 of the
-screen), e.g. `hold 2 LY=1.0+A`. Buttons use the default logical layout (A jump, X
+screen), e.g. `hold 2 LY=1.0+A`. A word prefixed `P2:` is player 2's input, e.g.
+`tap A P2:A`. Buttons use the default logical layout (A jump, X
 slash, B Wii B, RB guard, ...).
 
 COND: `file TEXT` (a disc file whose path contains TEXT was read since the last

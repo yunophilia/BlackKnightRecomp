@@ -79,4 +79,23 @@ for name, (loc, icon, kind) in MISSIONS.items():
     s += PLAY[kind]
     s += f'calls {name}\nshot {name}_end\nwait 0.5\nlog end\nquit\n'
     open(os.path.join(HERE, 'missions', name + '.tas'), 'w').write(s)
-print(len(MISSIONS), 'scripts in tools/tas/missions')
+
+# Battle mode: two scripted players (player 2 joins by pressing A, then points at Sonic),
+# rule "Battle", one script per arena (picked with player 1's pointer).
+ARENAS = {'misty': (0.26, 0.30), 'castle': (0.45, 0.30), 'forest': (0.64, 0.30), 'night': (0.83, 0.30),
+          'crypt': (0.26, 0.56), 'cauldron': (0.45, 0.56), 'plain': (0.64, 0.56)}
+BATTLE_PLAY = 'set LY=1.0 P2:LY=1.0\nrepeat 40\ntap X P2:X 0.1\nwait 0.3\nset LX=0.7 P2:LX=-0.7\ntap A P2:A 0.15\nwait 0.5\nset LY=1.0 P2:LY=1.0\ntap X P2:X 0.1\nwait 0.6\nend\nset\n'
+for arena, (ax, ay) in ARENAS.items():
+    name = f'battle_{arena}'
+    # BOOT ends by confirming Adventure on the main menu; stop before that and pick Battle
+    s_ = 'players 2\n' + BOOT
+    s_ = s_[:s_.rindex('hold 0.3 A\nwait 3\n')]
+    s_ += 'tap DOWN 0.12\nwait 1\ntap A 0.15\nwait 3\ntap A 0.15\nwait 3\n'          # Battle, rule "Battle"
+    s_ += 'tap A 0.15\nwait 2\ntap P2:A 0.15\nwait 2\ntap P2:A 0.15\nwait 2\n'         # P1 ready, P2 joins
+    s_ += 'hold 1 P2:PX=0.40+PY=0.26\ntap P2:A+PX=0.40+PY=0.26 0.15\nwait 1.5\n'       # P2 picks Sonic
+    s_ += 'tap START 0.15\nwait 3\n'
+    s_ += f'shot {name}_select\nfilemark\nhold 1 PX={ax}+PY={ay}\ntap A+PX={ax}+PY={ay} 0.15\n'
+    s_ += 'until file sng_stg timeout 40\nwait 6\nlog play\ncalls -\n' + f'shot {name}_start\n'
+    s_ += BATTLE_PLAY + f'calls {name}\nshot {name}_end\nwait 0.5\nlog end\nquit\n'
+    open(os.path.join(HERE, 'missions', name + '.tas'), 'w').write(s_)
+print(len(MISSIONS) + len(ARENAS), 'scripts in tools/tas/missions')

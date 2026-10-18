@@ -137,7 +137,7 @@ struct Cmd
 {
     Op op;
     double secs = 0, period = 0;
-    Input input;
+    Input input, input2;   // player 1, player 2 ("P2:" inputs)
     bool mash = false;
     std::vector<Cond> conds;   // all must hold
     std::string text;
@@ -156,7 +156,9 @@ std::vector<Watch> s_watches;
 bool s_active = false;
 size_t s_pc = 0;
 double s_cmdStart = -1;
-Input s_background;
+Input s_background, s_background2;
+int s_players = 1;   // "players N": controllers the game sees while a script runs
+GamepadState s_pad2;
 std::vector<int> s_repeatLeft;
 std::mutex s_fileMutex;
 std::vector<std::string> s_fileReads;
@@ -207,6 +209,12 @@ bool ParseInputToken(const std::string& word, Input& in)
         if (!found && tok != "NONE") ok = false;
     }
     return ok;
+}
+
+bool ParseInputFor(const std::string& word, Input& p1, Input& p2)
+{
+    if (word.rfind("P2:", 0) == 0) return ParseInputToken(word.substr(3), p2);
+    return ParseInputToken(word, p1);
 }
 
 bool ParseCond(std::istringstream& ss, std::string first, Cond& c)
@@ -269,6 +277,11 @@ void LoadFile(const std::filesystem::path& path, int depth)
             s_watches.push_back(wt);
             continue;
         }
+        if (w == "players")
+        {
+            if (!(ss >> s_players) || s_players < 1 || s_players > 2) bad();
+            continue;
+        }
         if (w == "filemark") c.op = Op::FileMark;
         else if (w == "wait") { c.op = Op::Wait; if (!(ss >> c.secs)) bad(); }
         else if (w == "hold" || w == "tap" || w == "set" || w == "mash")
@@ -285,7 +298,7 @@ void LoadFile(const std::filesystem::path& path, int depth)
                     else c.period = std::stod(tok);
                     continue;
                 }
-                if (!ParseInputToken(tok, c.input)) bad();
+                if (!ParseInputFor(tok, c.input, c.input2)) bad();
             }
             if (c.op == Op::Tap && c.secs == 0) c.secs = 0.1;
             if (c.op == Op::Mash && c.secs == 0) bad();
@@ -299,7 +312,7 @@ void LoadFile(const std::filesystem::path& path, int depth)
             while (ss >> tok)
             {
                 if (tok == "timeout") { if (!(ss >> c.secs)) bad(); continue; }
-                if (tok == "mash") { std::string in; if (!(ss >> in) || !ParseInputToken(in, c.input)) bad(); c.mash = true; c.period = 0.2; continue; }
+                if (tok == "mash") { std::string in; if (!(ss >> in) || !ParseInputFor(in, c.input, c.input2)) bad(); c.mash = true; c.period = 0.2; continue; }
                 if (tok == "and") continue;
                 if (c.op == Op::Check && tok == "msg") { std::getline(ss, c.text); break; }
                 Cond cd;
@@ -392,7 +405,7 @@ void Merge(GamepadState& out, const Input& in)
 }
 
 // Runs commands until one needs more time; returns that command's input contribution.
-void Step(GamepadState& out)
+void Step(GamepadState* out)
 {
     double now = Now();
     for (int guard = 0; guard < 10000 && s_pc < s_cmds.size(); guard++)
@@ -417,20 +430,21 @@ void Step(GamepadState& out)
             next();
             continue;
         case Op::Hold:
-            if (el < c.secs) { Merge(out, c.input); return; }
+            if (el < c.secs) { Merge(out[0], c.input); Merge(out[1], c.input2); return; }
             next();
             continue;
         case Op::Tap:
-            if (el < c.secs) { Merge(out, c.input); return; }
+            if (el < c.secs) { Merge(out[0], c.input); Merge(out[1], c.input2); return; }
             if (el < c.secs + 0.1) return;
             next();
             continue;
         case Op::Mash:
-            if (el < c.secs) { if (fmod(el, c.period) < c.period / 2) Merge(out, c.input); return; }
+            if (el < c.secs) { if (fmod(el, c.period) < c.period / 2) Merge(out[0], c.input); Merge(out[1], c.input2); return; }
             next();
             continue;
         case Op::Set:
             s_background = c.input;
+            s_background2 = c.input2;
             next();
             continue;
         case Op::Until:
@@ -443,7 +457,7 @@ void Step(GamepadState& out)
                 LOG_WARN("TAS: FAIL line {}: condition not met within {:.0f} s", c.line, c.secs);
                 Quit(3);
             }
-            if (c.mash && fmod(el, c.period) < c.period / 2) Merge(out, c.input);
+            if (c.mash && fmod(el, c.period) < c.period / 2) Merge(out[0], c.input); Merge(out[1], c.input2);
             return;
         }
         case Op::Check:
@@ -520,13 +534,25 @@ void Tas_SetTelemetry(const char* csvPath) { s_csvPath = csvPath; }
 
 bool Tas_Active() { return s_active; }
 
-bool Tas_Poll(GamepadState& out)
+int Tas_Players() { return s_players; }
+
+bool Tas_Poll(int index, GamepadState& out)
 {
     if (!s_active) return false;
-    out = GamepadState();
-    out.connected = true;
-    Step(out);
-    Merge(out, s_background);
+    if (index != 0)
+    {
+        // player 2 was computed with player 1's poll (the game polls players in order)
+        out = index == 1 && s_players >= 2 ? s_pad2 : GamepadState();
+        return true;
+    }
+    GamepadState pads[2];
+    pads[0].connected = true;
+    pads[1].connected = s_players >= 2;
+    Step(pads);
+    Merge(pads[0], s_background);
+    Merge(pads[1], s_background2);
+    out = pads[0];
+    s_pad2 = pads[1];
     return true;
 }
 

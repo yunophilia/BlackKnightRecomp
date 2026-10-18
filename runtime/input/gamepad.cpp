@@ -27,8 +27,8 @@ static bool Key(int vk)
 // is slow, so absent pads are re-checked at most once a second.
 bool Gamepad_IsConnected(int index)
 {
+    if (Tas_Active()) return index < Tas_Players();   // scripted runs ignore real controllers
     if (index == 0) return true;   // keyboard fallback
-    if (Tas_Active()) return false;   // scripted runs ignore real controllers
     static DWORD lastCheck[4];
     static bool connected[4];
     DWORD now = GetTickCount();
@@ -137,9 +137,7 @@ void Gamepad_LoadScript(const char* path)
 void Gamepad_Poll(int index, GamepadState& out)
 {
     out = GamepadState();
-    if (index == 0 && Tas_Poll(out))
-        return;
-    if (Tas_Active())
+    if (Tas_Poll(index, out))
         return;
     if (!s_script.empty() && index == 0)
     {

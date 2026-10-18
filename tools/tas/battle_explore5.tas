@@ -1,0 +1,53 @@
+players 2
+# Boot to the menus with a save loaded, taking a screenshot after each step.
+include watches.tas
+log boot
+wait 40
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A+B
+wait 5.7
+hold 0.3 A
+wait 7.7
+shot m01_title
+hold 0.3 START
+wait 3.7
+shot m02
+hold 0.3 START
+wait 3.7
+shot m03
+tap DOWN 0.12
+wait 1
+tap A 0.15
+wait 3
+shot bt_01
+tap A 0.15
+wait 3
+shot bt_02
+tap A 0.15
+wait 3
+tap P2:A 0.15
+wait 2
+shot bv_01
+tap P2:A 0.15
+wait 2
+shot bv_02
+hold 1 P2:PX=0.40+PY=0.26
+shot bx_01
+tap P2:A+PX=0.40+PY=0.26 0.15
+wait 1
+shot bx_02
+tap P2:RIGHT 0.15
+wait 0.6
+tap P2:RIGHT 0.15
+wait 0.6
+shot bx_03
+tap P2:A 0.15
+wait 1.5
+shot bx_04
+tap A 0.15
+wait 2
+shot bx_05
+wait 4
+shot bx_06
+quit

@@ -11,9 +11,10 @@ struct GamepadState;
 void Tas_Load(const char* path);
 void Tas_SetTelemetry(const char* csvPath);
 bool Tas_Active();
-// Fills player 1's input while a script runs (guest thread). Returns false when no
+// Fills a player's input while a script runs (guest thread). Returns false when no
 // script is loaded.
-bool Tas_Poll(GamepadState& out);
+bool Tas_Poll(int index, GamepadState& out);
+int Tas_Players();   // controllers connected while a script runs ("players N")
 // Once per presented frame (GX thread): telemetry rows and screenshot requests.
 void Tas_OnPresent(void (*saveShot)(const char* path));
 // Disc file reads, for "until file <name>".
