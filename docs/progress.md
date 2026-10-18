@@ -30,9 +30,8 @@
 - [x] HOME menu module recompiled (verified by hash at runtime); intro movie 60 fps
 - [x] Soak tests: 4 x 15 min + 30 min random input (30 and 60 fps) with no errors;
       mission 1 cleared, results/save/retry/item codex/world map exercised
-- [ ] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison done for every
-      location, mission type, boss and Battle arena (see "60 FPS verification"); a pass at full
-      settings remains
+- [x] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison for every location,
+      mission type, boss and Battle arena, plus a full-settings pass (see "60 FPS verification")
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
 
 ## 60 FPS verification
@@ -54,6 +53,9 @@ Game code is not modified for this (read-only probes and input only).
   Percival, Gawain, King Arthur, Dark Queen, Dragon Slayer): stage timer 0.997-1.000 of
   real time at both rates, no errors, frame rate held (low-impact runs), start-of-mission
   screenshots identical. Stage 1 (Misty Lake) was compared with the boot-to-mission script.
+- Full-settings pass (3x internal resolution, audio, normal priority; `tas_batch.ps1 -Full
+  -Rates 60`), all 34 scripts: during gameplay every one-second sample is >= 58.3 fps, no
+  errors. Only stage loading briefly dips (56-57 fps while sound banks load).
 - Battle mode, two scripted players, all 7 arenas: battle timer 0.999 of real time at both
   rates (60 s rounds end on time), no errors, movement speeds and jump counts alike.
 - Open: a slowly drifting float block (~0x80866870, Misty Lake idle) changes ~1.75x faster

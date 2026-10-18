@@ -81,13 +81,20 @@ def stats(rows):
     return st
 
 
+def play_fps(txt):
+    """Frame rate samples during gameplay: status lines between the play and end markers."""
+    a = txt.find('TAS: play'); b = txt.find('TAS: end', a)
+    seg = txt[a:b if b > 0 else len(txt)] if a >= 0 else txt
+    return [float(x) for x in re.findall(r'status: ([0-9.]+) fps', seg)]
+
+
 def log_info(name):
     p = os.path.join(TAS, name + '.log')
     if not os.path.exists(p): return {}
     txt = open(p, errors='replace').read()
-    fps = [float(x) for x in re.findall(r'status: ([0-9.]+) fps', txt)]
+    fps = play_fps(txt)
     return {'errors': len(re.findall(r'^\[E\]', txt, re.M)), 'fails': txt.count('TAS: FAIL'),
-            'fps_min': min(fps[3:]) if len(fps) > 3 else None,
+            'fps_min': min(fps) if fps else None,
             'stages': sorted(set(re.findall(r'files/(stg\d{3})\.one', txt)))}
 
 
@@ -152,7 +159,7 @@ def main():
         p = os.path.join(TAS, n + '_60_full.log')
         if not os.path.exists(p): continue
         txt = open(p, errors='replace').read()
-        fps = [float(x) for x in re.findall(r'status: ([0-9.]+) fps', txt)][3:]   # skip boot
+        fps = play_fps(txt)
         if not fps: continue
         srt = sorted(fps)
         low = sum(1 for f in fps if f < 58) / len(fps)
