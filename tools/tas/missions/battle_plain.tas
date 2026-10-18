@@ -30,12 +30,20 @@ wait 2
 hold 1 P2:PX=0.40+PY=0.26
 tap P2:A+PX=0.40+PY=0.26 0.15
 wait 1.5
+tap P2:A 0.15
+wait 1.5
+tap A 0.15
+wait 2
 tap START 0.15
+wait 2
+tap A 0.15
 wait 3
-shot battle_plain_select
 filemark
 hold 1 PX=0.64+PY=0.56
 tap A+PX=0.64+PY=0.56 0.15
+wait 1.5
+shot battle_plain_select
+tap A 0.15
 until file sng_stg timeout 40
 wait 6
 log play

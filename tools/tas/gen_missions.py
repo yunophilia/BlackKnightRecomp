@@ -91,10 +91,14 @@ for arena, (ax, ay) in ARENAS.items():
     s_ = 'players 2\n' + BOOT
     s_ = s_[:s_.rindex('hold 0.3 A\nwait 3\n')]
     s_ += 'tap DOWN 0.12\nwait 1\ntap A 0.15\nwait 3\ntap A 0.15\nwait 3\n'          # Battle, rule "Battle"
-    s_ += 'tap A 0.15\nwait 2\ntap P2:A 0.15\nwait 2\ntap P2:A 0.15\nwait 2\n'         # P1 ready, P2 joins
-    s_ += 'hold 1 P2:PX=0.40+PY=0.26\ntap P2:A+PX=0.40+PY=0.26 0.15\nwait 1.5\n'       # P2 picks Sonic
-    s_ += 'tap START 0.15\nwait 3\n'
-    s_ += f'shot {name}_select\nfilemark\nhold 1 PX={ax}+PY={ay}\ntap A+PX={ax}+PY={ay} 0.15\n'
+    # P1 joins, P2 joins (its first press reconnects it) and picks Sonic; P1 confirms last,
+    # since a player joining resets the others' ready state
+    s_ += 'tap A 0.15\nwait 2\ntap P2:A 0.15\nwait 2\ntap P2:A 0.15\nwait 2\n'
+    s_ += 'hold 1 P2:PX=0.40+PY=0.26\ntap P2:A+PX=0.40+PY=0.26 0.15\nwait 1.5\ntap P2:A 0.15\nwait 1.5\n'
+    s_ += 'tap A 0.15\nwait 2\n'
+    s_ += 'tap START 0.15\nwait 2\ntap A 0.15\nwait 3\n'                              # on-screen START
+    # the arena under the pointer is picked with A and confirmed with a second A
+    s_ += f'filemark\nhold 1 PX={ax}+PY={ay}\ntap A+PX={ax}+PY={ay} 0.15\nwait 1.5\nshot {name}_select\ntap A 0.15\n'
     s_ += 'until file sng_stg timeout 40\nwait 6\nlog play\ncalls -\n' + f'shot {name}_start\n'
     s_ += BATTLE_PLAY + f'calls {name}\nshot {name}_end\nwait 0.5\nlog end\nquit\n'
     open(os.path.join(HERE, 'missions', name + '.tas'), 'w').write(s_)
