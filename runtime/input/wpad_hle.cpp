@@ -45,6 +45,7 @@ struct Chan
     bool speaker = false;       // WPADControlSpeaker ON .. OFF
     int32_t adpcmPred = 0, adpcmStep = 127;
     uint64_t lastSampleTb = 0;
+    bool dropped = false;       // disconnected by the game (WPADDisconnect) until a button is pressed
 };
 
 Chan s_chan[4];
@@ -60,9 +61,20 @@ struct PendingCb
 std::deque<PendingCb> s_pending;
 
 // Remote 1 is always present (keyboard works without a pad); 2-4 follow XInput pads.
+// Like real remotes, 2-4 stay off after the game disconnects them (it does so for the
+// extra remotes in single-player menus) until a button on that controller is pressed.
 bool Connected(int chan)
 {
-    return chan >= 0 && chan < 4 && Gamepad_IsConnected(chan);
+    if (chan < 0 || chan >= 4 || !Gamepad_IsConnected(chan)) return false;
+    Chan& ch = s_chan[chan];
+    if (ch.dropped)
+    {
+        GamepadState pad;
+        Gamepad_Poll(chan, pad);
+        if (!pad.buttons) return false;
+        ch.dropped = false;
+    }
+    return true;
 }
 
 void CallGuest(PPCContext& ctx, uint8_t* base, uint32_t func, uint32_t r3, uint32_t r4)
@@ -276,7 +288,12 @@ PPC_FUNC(fn_803D73C4) { ctx.r[3] = 1; }
 // s32 WPADDisconnect(s32 chan)
 PPC_FUNC(fn_803D4A0C)
 {
-    LOG_INFO("WPAD: game requested disconnect of {}", ctx.r[3]);
+    int chan = (int)(ctx.r[3] & 3);
+    if (chan != 0 && !s_chan[chan].dropped)
+    {
+        LOG_INFO("WPAD: game disconnected controller {}", chan);
+        s_chan[chan].dropped = true;
+    }
     ctx.r[3] = WPAD_ERR_NONE;
 }
 
