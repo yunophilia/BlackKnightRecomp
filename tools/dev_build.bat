@@ -15,7 +15,7 @@ if not defined VSCMD_VER (
 )
 rem Visual Studio's CMake and Ninja, ahead of any older standalone ones
 set "PATH=%VSINSTALLDIR%Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;%VSINSTALLDIR%Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;%PATH%"
-if exist "C:\Program Files\LLVM\bin\clang-cl.exe" set "PATH=C:\Program Files\LLVM\bin;%PATH%"
+if exist "%ProgramFiles%\LLVM\bin\clang-cl.exe" set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
 if not exist build\windows-clang\CMakeCache.txt (
     cmake --preset windows-clang > out\configure.log 2>&1 || (type out\configure.log & echo CONFIGURE FAILED & exit /b 1)
 )

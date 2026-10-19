@@ -21,7 +21,6 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOL = os.path.join(ROOT, 'game', 'extracted', 'DATA', 'sys', 'main.dol')
 SEL = os.path.join(ROOT, 'game', 'extracted', 'DATA', 'files', 'BLACKKNIGHT.sel')
-DSY = r'C:\dolphin_emu\Dolphin-x64\Sys\totaldb.dsy'
 FUNCS = os.path.join(ROOT, 'out', 'functions.json')
 OVR = os.path.join(ROOT, 'out', 'overrides.txt')
 GEN = os.path.join(ROOT, 'generated')
