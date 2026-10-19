@@ -1,4 +1,9 @@
-"""Match functions against Dolphin's DSY signature database (same hash as Dolphin)."""
+"""Name SDK functions in out/functions.json.
+
+  sigdb.py main.dol functions.json totaldb.dsy     match against Dolphin's DSY signature
+                                                   database (same hash as Dolphin)
+  sigdb.py main.dol functions.json sdk_names.txt   apply names recorded from an earlier match
+"""
 import json
 import struct
 import sys
@@ -43,9 +48,27 @@ def load_dsy(path):
     return db
 
 
+def apply_names(funcs, path):
+    names = {}
+    for line in open(path, encoding='utf-8'):
+        if line.strip() and not line.startswith('#'):
+            addr, name = line.rstrip('\n').split(' ', 1)
+            names[int(addr, 16)] = name
+    hits = 0
+    for f in funcs:
+        if f['start'] in names:
+            f['sig'] = names[f['start']]
+            hits += 1
+    return hits
+
+
 if __name__ == '__main__':
     dol = Dol(sys.argv[1])
     funcs = json.load(open(sys.argv[2]))
+    if sys.argv[3].endswith('.txt'):
+        print(f'{apply_names(funcs, sys.argv[3])} names applied', file=sys.stderr)
+        json.dump(funcs, open(sys.argv[2], 'w'))
+        sys.exit(0)
     db = load_dsy(sys.argv[3])
     hits = 0
     for f in funcs:

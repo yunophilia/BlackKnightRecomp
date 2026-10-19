@@ -1,0 +1,2180 @@
+# SDK function names for main.dol of RENE8P (the only binary the recompiler supports),
+# found by matching against Dolphin's signature database (Data/Sys/totaldb.dsy,
+# GPL-2.0-or-later). tools/build_generated.py applies this file when no totaldb.dsy is
+# given, so Dolphin is not needed. Format: address name
+
+80004000 memcpy
+80004050 __fill_mem
+80004104 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80004134 TRK_memset
+80004164 TRK_memcpy
+800060BC __TRK_reset
+80006290 __init_registers
+80006320 __init_data
+800063C8 __init_hardware
+800063EC __flush_cache
+8003685C homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80036970 dGeomDisable
+8003B83C cPoseAccumulator::GetNodeMatrix( (int))
+8003C8A8 ___blank(char *,...)
+8004889C udp_cc_shutdown
+800489E0 udp_cc_shutdown
+80048A94 udp_cc_shutdown
+80056F0C JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+800577E0 PSVECAdd 	mtx.a vec.o
+80057A64 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80057AD8 JAUSeqDataBlock::JAUSeqDataBlock(void) 	JAudio2.a JAUSeqDataBlockMgr.o
+800580DC nlVector3::Set(float, float, float)
+800584F4 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80058890 dVectorScale(float *, float)
+8005CE3C nlListContainer<P8SaveData>::__ct(void)
+8005F150 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F180 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F250 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F290 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F304 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F334 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F404 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F444 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F500 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F530 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F560 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F590 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F640 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F670 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F6A4 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F71C JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F790 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F7C0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F7F0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F820 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F8D0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F900 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F934 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005F9AC JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8005FAA8 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80060098 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+800603B4 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80062A88 LooseBallAnims::Destroy(void)
+8006438C dataARAMDefaultGetInfo
+8006A97C JUTProcBar::destroy(void) 	JUtility.a JUTProcBar.o
+8006B21C LexicalCast<b,i>(int &)
+8006D8C8 dJointSetCharacterNoMotionDirection(dxJoint *, float *)
+8007221C GXInvalidateVtxCache
+8007222C GXInvalidateVtxCache
+80074560 ___blank(char *,...)
+800745B0 ___blank(char *,...)
+80076814 nlVector3::Set(float, float, float)
+800776B8 dJointSetCharacterNoMotionDirection(dxJoint *, float *)
+800776D4 dJointSetCharacterNoMotionDirection(dxJoint *, float *)
+80078018 nlListContainer<P8SaveData>::__ct(void)
+800784B0 J2DPane::getParentPane(void) 	J2DGraph.a J2DPane.o
+80079654 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8007BC50 GKI_init_timer_list 	bte.a gki_time.o
+8008878C udp_cc_shutdown
+80088EE0 udp_cc_shutdown
+80089220 udp_cc_shutdown
+80089244 udp_cc_shutdown
+80089670 THPSimpleGetCurrentFrame
+80089680 SaveLoad::DidGameIDChange(void)
+800896BC THPSimpleGetCurrentFrame
+8008A210 cPlayer::ClearSwapControllerTimer(void)
+8008B4A0 udp_cc_shutdown
+8008B4C4 udp_cc_shutdown
+8008D50C homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80093E28 nlListContainer<P8SaveData>::__ct(void)
+800947C4 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8009484C JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+800948C0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80094D00 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+80096398 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+800964CC homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80096738 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80098480 dGeomEnable
+80098490 dGeomDisable
+8009A4B0 cPlayer::ClearSwapControllerTimer(void)
+8009D23C J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8009D4E0 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8009E230 ColourBlendScreenTransition::Update(float)
+800A0AE8 sdpu_release_ccb 	bte.a sdp_utils.o
+800A681C nlListContainer<P8SaveData>::__ct(void)
+800A68C0 SetupVolume
+800AF690 cTeam::GetPlayer(int)
+800B26DC JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+800B79D8 J2DWindowEx::getFrameMaterial(unsigned char) const 	J2DGraph.a J2DWindowEx.o
+800BFD20 cFielder::IsStriker( (void))
+800CE764 GKI_init_timer_list 	bte.a gki_time.o
+800D9B28 nlListContainer<P8SaveData>::__ct(void)
+800DB380 GKI_init_timer_list 	bte.a gki_time.o
+800DD420 LooseBallAnims::Destroy(void)
+800DFAF4 LooseBallAnims::Destroy(void)
+800E9340 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+800E9D8C nlVector3::Set(float, float, float)
+800F432C J2DPane::getParentPane(void) 	J2DGraph.a J2DPane.o
+800F45F4 J2DPane::getParentPane(void) 	J2DGraph.a J2DPane.o
+800F462C J2DPane::getParentPane(void) 	J2DGraph.a J2DPane.o
+800F4F38 J2DPane::getParentPane(void) 	J2DGraph.a J2DPane.o
+80102DE0 __fini_cpp_exceptions
+80105540 dBodySetAutoDisableFlag
+80108968 JAUWaveBankTable::getWaveBank(unsigned long) 	JAudio2.a JAUSectionHeap.o
+8010F948 __fini_cpp_exceptions
+8011E5EC LexicalCast<b,i>(int &)
+801205A4 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+801207B0 GKI_init_timer_list 	bte.a gki_time.o
+801212F4 PlatAudio::IsEntireSampleFileInMem(void)
+8012D9E4 FormationPos::__ct(void)
+8012DA2C FormationPos::__ct(void)
+8012DC48 J2DTevBlock1::setFontUndeleteFlag(void) 	J2DGraph.a J2DMatBlock.o
+80132F68 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80133BE4 SaveLoad::DidGameIDChange(void)
+80136188 glxSwapWaitDrawDone(void)
+801367B0 J3DColorBlockAmbientOn::getAmbColor(unsigned long) 	J3DGraphBase.a J3DMatBlock.o
+80139E18 JUTProcBar::destroy(void) 	JUtility.a JUTProcBar.o
+80143A44 homebutton::Controller::setInValidPos(void) 	homebuttonLib.a HBMController.o
+8014B4A4 cPlayer::ClearSwapControllerTimer(void)
+8014D544 dGeomEnable
+8014E07C nlListContainer<P8SaveData>::__ct(void)
+8015E4FC LooseBallAnims::Destroy(void)
+8015FA90 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80167788 __sinit_ParticleSystem_cpp
+8019BC04 nlInit(void)
+8019BC34 glxSwapWaitDrawDone(void)
+801A08C0 dGeomEnable
+801A08D0 dGeomDisable
+801A1900 OSReportInit(void) 	m_Do_printf.o 
+801A329C homebutton::Controller::setInValidPos(void) 	homebuttonLib.a HBMController.o
+801A5C80 FormationPos::__ct(void)
+801AB230 dGeomDisable
+801D2EF0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+801D3A78 RFCOMM_DlcReleaseReq 	bte.a rfc_port_if.o
+801D3AA8 RFCOMM_DlcReleaseReq 	bte.a rfc_port_if.o
+801D4478 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+801D5600 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+801D5688 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+801D56C0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+801DB92C nlListContainer<P8SaveData>::__ct(void)
+801E8890 BundleSortProc(glTexBundleDict *, glTexBundleDict *)
+801F6B04 LooseBallAnims::Destroy(void)
+80206C20 __fini_cpp_exceptions
+8020711C dGeomDisable
+802076A0 dGeomDisable
+802076D8 dGeomDisable
+80207710 dGeomDisable
+8020AC50 cCharacter::InitMovementStrafing(float, float, float, float)
+8020CFE4 cAnimInventory::GetAnim(int)
+8020D624 GKI_init_timer_list 	bte.a gki_time.o
+8020D8BC J3DTexGenBlockPatched::getTexCoord(unsigned long) 	J3DGraphBase.a J3DMatBlock.o
+8020DBF4 JUTProcBar::destroy(void) 	JUtility.a JUTProcBar.o
+8020E398 dJointSetCharacterNoMotionDirection(dxJoint *, float *)
+80211774 cAnimInventory::GetAnim(int)
+802117F8 nlListContainer<P8SaveData>::__ct(void)
+8021383C sdpu_release_ccb 	bte.a sdp_utils.o
+8021E6C0 __fini_cpp_exceptions
+80238814 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80238838 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80239FE4 nlListContainer<P8SaveData>::__ct(void)
+8023DF1C cPlayer::ClearSwapControllerTimer(void)
+8023E0C0 cTeam::GetPlayer(int)
+8023E79C PSVECAdd 	mtx.a vec.o
+8023E7C0 FormationPos::__ct(void)
+8023FE14 dGeomDisable
+80240E50 dGeomDisable
+802478A4 JPABaseEmitter::getCurrentCreateNumber(void) const 	JParticle.a JPAEmitter.o
+8025AA78 __fini_cpp_exceptions
+8026FD58 LooseBallAnims::Destroy(void)
+80279F4C JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8028A94C cFielder::IsStriker( (void))
+80292D98 GKI_init_timer_list 	bte.a gki_time.o
+8029F688 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+802A0CCC LexicalCast<b,i>(int &)
+802A6584 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+802A6BB0 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+802A7C54 nlListContainer<P8SaveData>::__ct(void)
+802A855C J3DColorBlockAmbientOn::getAmbColor(unsigned long) 	J3DGraphBase.a J3DMatBlock.o
+802BC0F8 GKI_getnext 	bte.a gki_buffer.o
+802BD2D0 LooseBallAnims::Destroy(void)
+802C0864 nlListContainer<P8SaveData>::__ct(void)
+802C09EC dGeomDisable
+802D4898 cTeam::GetPlayer(int)
+802DFEB8 nlListContainer<P8SaveData>::__ct(void)
+802E31E0 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+802E320C cPoseAccumulator::GetNodeMatrix( (int))
+802E9DF4 cPoseAccumulator::GetNodeMatrix( (int))
+802EA480 dJointSetCharacterNoMotionDirection(dxJoint *, float *)
+802EA578 FormationPos::__ct(void)
+802EDF18 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+802FA730 dGeomDisable
+80309010 LexicalCast<b,i>(int &)
+8031809C udp_cc_shutdown
+8031DD48 __fini_cpp_exceptions
+8033EC84 GKI_init_timer_list 	bte.a gki_time.o
+8033FA10 nlListContainer<P8SaveData>::__ct(void)
+80345B20 GKI_init_timer_list 	bte.a gki_time.o
+80349270 __fini_cpp_exceptions
+8034F0C8 GameInfoManager::IsPossibleCupMatch( (void))
+8036222C strlen 	Runtime.PPCEABI.H.a __mem.o
+80362248 __va_arg 	Runtime.PPCEABI.H.a __va_arg.o
+80362310 __register_global_object
+80362328 __destroy_global_chain 	Runtime.PPCEABI.H.a global_destructor_chain.o
+803625CC __construct_new_array 	Runtime.PPCEABI.H.a NMWException.o
+803626D0 __partial_array_destructor::~__partial_array_destructor(void) 	Runtime.PPCEABI.H.a NMWException.o
+8036278C __construct_array 	Runtime.PPCEABI.H.a NMWException.o
+80362884 __destroy_arr 	Runtime.PPCEABI.H.a NMWException.o
+803628FC __destroy_new_array 	Runtime.PPCEABI.H.a NMWException.o
+80362A38 __ptmf_test
+80362A68 __ptmf_cmpr 	Runtime.PPCEABI.H.a ptmf.o
+80362AF4 __cvt_fp2unsigned 	Runtime.PPCEABI.H.a runtime.o
+80362C80 __div2u
+80362D6C __div2i
+80362EA4 __mod2u 	Runtime.PPCEABI.H.a runtime.o
+80362F88 __mod2i 	Runtime.PPCEABI.H.a runtime.o
+80363094 __shl2i
+803630B8 __shr2u
+80363178 __cvt_sll_flt
+8036322C __cvt_dbl_usll
+803632F8 __cvt_dbl_ull 	Runtime.PPCEABI.H.a runtime.o
+803633A0 __init_cpp_exceptions 	Runtime.PPCEABI.H.a __init_cpp_exceptions.o
+803633DC __fini_cpp_exceptions
+80363624 __register_fragment
+80363658 __unregister_fragment 	Runtime.PPCEABI.H.a Gecko_ExceptionPPC.o
+803646AC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80364D6C __sys_free 	Runtime.PPCEABI.H.a GCN_mem_alloc.o
+80364E24 __sys_free 	Runtime.PPCEABI.H.a GCN_mem_alloc.o
+803650E0 Block_link 	MSL_C.PPCEABI.bare.H.a alloc.o
+80365230 SubBlock_merge_next 	MSL_C.PPCEABI.bare.H.a alloc.o
+80365920 deallocate_from_fixed_pools 	MSL_C.PPCEABI.bare.H.a alloc.o
+80365E0C free 	MSL_C.PPCEABI.bare.H.a alloc.o
+803663B8 __close_all 	MSL_C.PPCEABI.bare.H.a ansi_files.o
+803664E0 __flush_all 	MSL_C.PPCEABI.bare.H.a ansi_files.o
+8036654C __ull2dec 	MSL_C.PPCEABI.bare.H.a ansi_fp.o
+80366628 __timesdec 	MSL_C.PPCEABI.bare.H.a ansi_fp.o
+8036699C __two_exp 	MSL_C.PPCEABI.bare.H.a ansi_fp.o
+80367408 __num2dec_internal 	MSL_C.PPCEABI.bare.H.a ansi_fp.o
+8036756C __num2dec 	MSL_C.PPCEABI.bare.H.a ansi_fp.o
+80367EBC abs
+80368008 __prep_buffer 	MSL_C.PPCEABI.bare.H.a buffer_io.o
+8036812C __flush_buffer 	MSL_C.PPCEABI.bare.H.a buffer_io.o
+80368670 __fwrite 	MSL_C.PPCEABI.bare.H.a direct_io.o
+80368978 fclose 	MSL_C.PPCEABI.bare.H.a file_io.o
+80368A34 fflush 	MSL_C.PPCEABI.bare.H.a file_io.o
+80368E50 __msl_strnicmp 	MSL_C.PPCEABI.bare.H.a file_io.o
+80368F10 _ftell 	MSL_C.PPCEABI.bare.H.a FILE_POS.o
+80368FBC _fseek 	MSL_C.PPCEABI.bare.H.a FILE_POS.o
+803692C0 __mbtowc_noconv 	MSL_C.PPCEABI.bare.H.a mbstring.o
+8036930C __wctomb_noconv 	MSL_C.PPCEABI.bare.H.a mbstring.o
+803693E8 wcstombs 	MSL_C.PPCEABI.bare.H.a mbstring.o
+803694A0 memmove 	MSL_C.PPCEABI.bare.H.a mem.o
+8036956C memchr
+80369598 __memrchr 	MSL_C.PPCEABI.bare.H.a mem.o
+803695C4 memcmp 	MSL_C.PPCEABI.bare.H.a mem.o
+80369610 __copy_longs_aligned
+803696CC __copy_longs_rev_aligned
+80369774 __copy_longs_unaligned
+80369834 __copy_longs_rev_unaligned
+803698E0 __fpclassifyf 	MSL_C.PPCEABI.bare.H.a math_api.o
+80369944 __signbitd 	MSL_C.PPCEABI.bare.H.a math_api.o
+8036995C __fpclassifyd 	MSL_C.PPCEABI.bare.H.a math_api.o
+803699DC cGameSFX::Init(void)
+803699EC __stdio_atexit 	MSL_C.PPCEABI.bare.H.a misc_io.o
+803699FC parse_format 	MSL_C.PPCEABI.bare.H.a printf.o
+80369FF8 long2str 	MSL_C.PPCEABI.bare.H.a printf.o
+8036A220 longlong2str 	MSL_C.PPCEABI.bare.H.a printf.o
+8036A4C0 double2hex 	MSL_C.PPCEABI.bare.H.a printf.o
+8036A888 round_decimal 	MSL_C.PPCEABI.bare.H.a printf.o
+8036A9B0 float2str 	MSL_C.PPCEABI.bare.H.a printf.o
+8036B180 __pformatter 	MSL_C.PPCEABI.bare.H.a printf.o
+8036B9DC __FileWrite 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BA34 __StringWrite 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BAA0 printf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BB68 fprintf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BC2C vprintf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BCA4 vsnprintf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BD28 vsprintf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BDA8 snprintf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036BE80 sprintf 	MSL_C.PPCEABI.bare.H.a printf.o
+8036D4FC __StringRead 	MSL_C.PPCEABI.bare.H.a scanf.o
+8036D654 raise 	MSL_C.PPCEABI.bare.H.a signal.o
+8036D704 strcpy 	MSL_C.PPCEABI.bare.H.a string.o
+8036D7C4 strncpy 	MSL_C.PPCEABI.bare.H.a string.o
+8036D808 strcat 	MSL_C.PPCEABI.bare.H.a string.o
+8036D880 strcmp 	MSL_C.PPCEABI.bare.H.a string.o
+8036D99C strncmp 	MSL_C.PPCEABI.bare.H.a string.o
+8036D9DC strchr 	MSL_C.PPCEABI.bare.H.a string.o
+8036DFAC strrchr 	MSL_C.PPCEABI.bare.H.a string.o
+8036F750 __strtoul 	MSL_C.PPCEABI.bare.H.a strtoul.o
+80370044 strtoul 	MSL_C.PPCEABI.bare.H.a strtoul.o
+803700EC strtol 	MSL_C.PPCEABI.bare.H.a strtoul.o
+8037122C round_decimal 	MSL_C.PPCEABI.bare.H.a printf.o
+80372580 wcslen 	MSL_C.PPCEABI.bare.H.a wstring.o
+803725B8 wcsncpy 	MSL_C.PPCEABI.bare.H.a wstring.o
+8037265C fwide 	MSL_C.PPCEABI.bare.H.a wchar_io.o
+803726E0 __write_console
+803727B8 abort 	MSL_C.PPCEABI.bare.H.a abort_exit_ppc_eabi.o
+803727EC scalbn 	MSL_C.PPCEABI.bare.H.a math_sun.o
+8037282C stricmp 	MSL_C.PPCEABI.bare.H.a extras.o
+803728DC stricmp 	MSL_C.PPCEABI.bare.H.a extras.o
+80372984 __ieee754_acos 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_
+80372C48 __ieee754_asin 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_
+80372EE0 __ieee754_atan2 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double
+80373150 __ieee754_exp 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_p
+80373384 __ieee754_fmod 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_
+80373A7C __ieee754_pow 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_p
+803742C4 __ieee754_rem_pio2 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Dou
+8037465C __kernel_cos 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_pr
+8037476C __kernel_rem_pio2 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Doub
+80375E78 __kernel_sin 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_pr
+80375F38 __kernel_tan 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_pr
+80376190 atan 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision\
+803763D0 ceil 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision\
+80376510 copysign 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precis
+8037653C cos 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision\s
+80376610 floor 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision
+80376754 frexp 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision
+803767DC ldexp 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision
+80376A44 sin 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision\s
+80376B1C tan 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_precision\s
+80376BB4 __ieee754_sqrt 	MSL_C.PPCEABI.bare.H.a D:\layout\RVL_1.0\Layout\PowerPC_EABI_Support\MSL\MSL_C\MSL_Common_Embedded\Math\Double_
+80377A74 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80377A98 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80379B04 nlListContainer<P8SaveData>::__ct(void)
+80379B14 Jumbotron::StopPlaying(void)
+8037FD20 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8038B4BC JPABaseEmitter::getCurrentCreateNumber(void) const 	JParticle.a JPAEmitter.o
+8038C784 DBInitComm 	NdevExi2A.a DebuggerDriver.o
+8038C7E0 DBInitInterrupts 	NdevExi2A.a DebuggerDriver.o
+8038C834 DBQueryData 	NdevExi2A.a DebuggerDriver.o
+8038C8D8 DBRead 	NdevExi2A.a DebuggerDriver.o
+8038C958 DBWrite 	NdevExi2A.a DebuggerDriver.o
+8038CA70 __EXI2Imm 	NdevExi2A.a exi2.o
+8038CD58 __DBEXIInit 	NdevExi2A.a exi2.o
+8038CE14 __DBEXIReadReg 	NdevExi2A.a exi2.o
+8038CF38 __DBEXIWriteReg 	NdevExi2A.a exi2.o
+8038D03C __DBEXIReadRam 	NdevExi2A.a exi2.o
+8038D11C __DBEXIWriteRam 	NdevExi2A.a exi2.o
+8038D1FC TRKNubMainLoop
+8038D2F4 cFielder::UpdatePlay(float)
+8038D318 TRKConstructEvent
+8038D330 TRKPostEvent
+8038D410 TRKGetNextEvent
+8038D4C4 TRKInitializeEventQueue
+8038D51C TRKNubWelcome
+8038D544 LexicalCast<PCc,f>(float &)
+8038D568 TRKInitializeNub 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\nubinit.o
+8038D6A0 TRKMessageSend 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msg.o
+8038D6CC TRKReadBuffer_ui32
+8038D7BC TRKReadBuffer_ui8
+8038D854 TRKReadBuffer1_ui64
+8038D93C TRKAppendBuffer_ui32
+8038DA38 TRKAppendBuffer_ui8
+8038DAA0 TRKAppendBuffer1_ui64
+8038DB9C TRKReadBuffer
+8038DC28 TRKAppendBuffer
+8038DCCC TRKSetBufferPosition
+8038DCFC TRKResetBuffer
+8038DD3C TRKReleaseBuffer
+8038DDA0 TRKGetBuffer
+8038DDCC TRKGetFreeBuffer
+8038DE94 TRKInitializeMessageBuffers
+8038DF10 TRKInitializeSerialHandler 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\serpoll
+8038DF34 TRKProcessInput
+8038DF84 TRKGetInput
+8038DFE4 TRKTestForPacket 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\serpoll.o
+8038E0B8 usr_puts_serial
+8038E140 TRKDispatchMessage 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\dispatch.o
+8038E288 TRKDoSetOption 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038E354 TRKDoStop 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038E420 TRKDoStep 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038E6F4 TRKDoContinue 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038E7D8 TRKDoWriteRegisters 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038EA94 TRKDoReadRegisters 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038ECB8 TRKDoWriteMemory 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038EED4 TRKDoReadMemory 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038F12C TRKDoReset 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038F1A8 TRKDoReset 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038F224 TRKDoDisconnect 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038F2C0 TRKDoConnect 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\msghndlr.o
+8038F354 THPSimpleGetCurrentFrame
+8038F364 HandlePositionFileSupportRequest
+8038F474 HandleCloseFileSupportRequest
+8038F55C HandleOpenFileSupportRequest
+8038F678 TRKRequestSend 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\support.o
+8038F7F8 TRKSuppAccessFile
+8038FA30 TRKDoNotifyStopped
+8038FAC8 TRK_flush_cache
+8038FB00 TRK_fill_mem
+8038FBB8 strlen
+8038FBE4 TRK_ppc_memcpy
+8038FF68 ReadFPSCR
+8038FF8C WriteFPSCR
+8038FFB0 TRKTargetSetInputPendingPtr
+8038FFC0 TRKTargetStop
+8038FFD8 TRKTargetSetInputPendingPtr
+8038FFE8 THPSimpleGetCurrentFrame
+8038FFF8 TRKTargetSupportRequest
+803901F8 THPSimpleGetCurrentFrame
+80390208 TRKTargetStepOutOfRange 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Processor\ppc\Gener
+80390284 TRKTargetSingleStep 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Processor\ppc\Generic\t
+803902F0 TRKTargetAddExceptionInfo
+80390374 TRKTargetAddStopInfo
+80390400 TRKTargetInterrupt 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Processor\ppc\Generic\ta
+8039055C TRKPostInterruptEvent
+80390608 TRKTargetAccessExtended2
+80390A40 TRKTargetAccessExtended1
+80390BB0 TRKTargetAccessFP
+803910BC TRKTargetAccessDefault
+803911B0 TRKTargetReadInstruction
+803911FC TRKTargetAccessMemory
+80391348 TRKValidMemory32
+803917C8 TRKRestoreExtended1Block
+80391980 __position_file
+80391A5C __close_file
+80391AE0 __open_file
+80391C5C __write_file
+80391D10 __write_file
+80391DC4 __TRK_write_console
+80391E80 __TRK_write_console
+80392068 TRKInitializeTarget
+803920B4 __TRK_copy_vectors
+803921E0 TRKTargetTranslate
+80392238 cPlayer::PostPhysicsUpdate(void)
+80392258 TRK_main 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Portable\main_TRK.o
+80392328 InitializeProgramEndTrap
+80392380 TRK_board_display
+803923B0 UnreserveEXI2Port
+803923E0 UnreserveEXI2Port
+80392410 TRKWriteUARTN
+8039244C TRKWriteUARTN
+80392488 UnreserveEXI2Port
+803924B8 EnableEXI2Interrupts
+80392500 TRKInitializeIntDrivenUART
+80392550 InitMetroTRKCommTable 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\debugger\embedded\MetroTRK\Os\dolphin\dolphin_tr
+80392724 TRKEXICallBack
+8039275C TRKTargetContinue
+80392790 SaveLoad::DidGameIDChange(void)
+803927F4 LexicalCast<PCc,f>(float &)
+80392818 ddh_cc_peek
+80392888 LexicalCast<PCc,f>(float &)
+803928AC LexicalCast<PCc,f>(float &)
+803928D0 gdev_cc_write 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\gamedev\cust_connection\cc\exi2\GCN\EXI2_GDEV_GCN\main.o
+80392944 gdev_cc_read 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\gamedev\cust_connection\cc\exi2\GCN\EXI2_GDEV_GCN\main.o
+80392A00 ddh_cc_open
+80392A2C gdev_cc_initialize 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\gamedev\cust_connection\cc\exi2\GCN\EXI2_GDEV_GCN\m
+80392A68 OutputData 	TRK_Hollywood_Revolution.a C:\products\RVL\runtime_libs\gamedev\cust_connection\cc\exi2\GCN\EXI2_GDEV_GCN\main.o
+80392AB4 CircleBufferReadBytes
+80392BBC CircleBufferWriteBytes
+80392CC4 CircleBufferInitialize
+80392D1C cFielder::UpdatePlay(float)
+80392D40 MWEnterCriticalSection
+8039E304 nlVector3::Set(float, float, float)
+8039F16C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8039F484 nlMatrix4::SetColumn(int, nlVector3 &)
+8039F55C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8039F5F8 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8039F6F4 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8039F914 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::size(void) const 	JStudio.a functionvalue.o
+803A00F4 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+803A09CC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A1010 __sinit_\JASSeqCtrl_cpp 	JAudio2.a JASSeqCtrl.o
+803A104C J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A105C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A21B4 sndAuxCallbackShutdownChorus
+803A2208 sndAuxCallbackShutdownChorus
+803A2AF8 JGadget::TNodeLinkList::TNodeLinkList(void) 	JAudio2.a JASTrack.o
+803A3920 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+803A39BC JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+803A3B18 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+803A3B2C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::size(void) const 	JStudio.a functionvalue.o
+803A4FE8 FormationPos::__ct(void)
+803A56E0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A5914 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A64B0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A7378 nlVector3::Set(float, float, float)
+803A8588 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A9424 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803A9FF0 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+803AAA7C nlVector3::Set(float, float, float)
+803AAAB4 J3DModelLoader_v26::J3DModelLoader_v26(void) 	J3DGraphLoader.a J3DModelLoader.o
+803AB338 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+803AB354 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803AB73C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803ABF90 nlListContainer<P8SaveData>::__ct(void)
+803AC40C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803AC44C GKI_init_timer_list 	bte.a gki_time.o
+803AD7DC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803ADE34 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803AE7E4 JASBankTable<256>::JASBankTable<256>(void) 	JAudio2.a JASTrack.o
+803AE960 GKI_init_timer_list 	bte.a gki_time.o
+803B06B0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803B1D04 JASBankTable<256>::JASBankTable<256>(void) 	JAudio2.a JASTrack.o
+803B220C cPlayer::ClearSwapControllerTimer(void)
+803B2C38 GLXMemoryInfo::__ct(void)
+803B41E8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803B4228 dGeomDisable
+803B4A0C nlPrintf(char *,...)
+803B5CD8 J3DModelLoader_v26::J3DModelLoader_v26(void) 	J3DGraphLoader.a J3DModelLoader.o
+803B6270 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803B77B0 JASBankTable<256>::JASBankTable<256>(void) 	JAudio2.a JASTrack.o
+803B8BD4 J3DModelLoader_v26::J3DModelLoader_v26(void) 	J3DGraphLoader.a J3DModelLoader.o
+803BB254 JASBankTable<256>::JASBankTable<256>(void) 	JAudio2.a JASTrack.o
+803BB818 homebutton::GroupAnmController::GroupAnmController(void) 	homebuttonLib.a HBMAnmController.o
+803BBDC4 homebutton::GroupAnmController::GroupAnmController(void) 	homebuttonLib.a HBMAnmController.o
+803BCA94 homebutton::GroupAnmController::GroupAnmController(void) 	homebuttonLib.a HBMAnmController.o
+803BCFFC homebutton::GroupAnmController::GroupAnmController(void) 	homebuttonLib.a HBMAnmController.o
+803BE920 JASBankTable<256>::JASBankTable<256>(void) 	JAudio2.a JASTrack.o
+803BEDC4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803BEE90 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803BFDA0 J3DModelLoader_v26::J3DModelLoader_v26(void) 	J3DGraphLoader.a J3DModelLoader.o
+803C22B0 JASBankTable<256>::JASBankTable<256>(void) 	JAudio2.a JASTrack.o
+803C7A18 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803C97F0 JUTProcBar::destroy(void) 	JUtility.a JUTProcBar.o
+803C9BB4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803C9BF4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803C9F3C nlListContainer<P8SaveData>::__ct(void)
+803C9F8C set<f>__Q29JGeometry8TVec2<f>FRCQ29JGeometry8TVec2<f>_v 	J2DGraph.a J2DWindowEx.o
+803CAA50 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+803CCFC8 ISFS_CreateFile 	fs.a fs.o
+803CD0BC ISFS_CreateFileAsync 	fs.a fs.o
+803CD1B0 ISFS_ReadDir 	fs.a fs.o
+803CD304 ISFS_ReadDirAsync 	fs.a fs.o
+803CD44C ISFS_GetAttr 	fs.a fs.o
+803CD5A4 ISFS_GetAttrAsync 	fs.a fs.o
+803CD6D8 ISFS_Delete 	fs.a fs.o
+803CD7B0 ISFS_DeleteAsync 	fs.a fs.o
+803CD880 ISFS_Rename 	fs.a fs.o
+803CDA88 ISFS_GetUsage 	fs.a fs.o
+803CDCE4 ISFS_CreateFile 	fs.a fs.o
+803CDDD8 ISFS_CreateFileAsync 	fs.a fs.o
+803CDECC ISFS_Open 	fs.a fs.o
+803CDF94 ISFS_OpenAsync 	fs.a fs.o
+803CE1DC ISFS_SeekAsync 	fs.a fs.o
+803CE288 ISFS_WriteAsync 	fs.a fs.o
+803CE34C ISFS_WriteAsync 	fs.a fs.o
+803CE3F4 ISFS_CloseAsync 	fs.a fs.o
+803CE630 NANDCreate 	nand.a nand.o
+803CE6A4 NANDPrivateCreateAsync 	nand.a nand.o
+803CE71C NANDPrivateCreateAsync 	nand.a nand.o
+803CE794 NANDDelete 	nand.a nand.o
+803CE9B4 NANDPrivateDeleteAsync 	nand.a nand.o
+803CEA74 NANDWrite 	nand.a nand.o
+803CEADC NANDWriteAsync 	nand.a nand.o
+803CEB54 NANDWrite 	nand.a nand.o
+803CEBBC NANDWriteAsync 	nand.a nand.o
+803CEC34 NANDSeekAsync 	nand.a nand.o
+803CEEF0 NANDPrivateCreateAsync 	nand.a nand.o
+803CEF68 NANDPrivateCreateAsync 	nand.a nand.o
+803CF394 nandComposePerm 	nand.a nand.o
+803CF3E8 nandSplitPerm 	nand.a nand.o
+803CF474 nandGetStatus 	nand.a nand.o
+803CF5C8 nandGetStatusCallback 	nand.a nand.o
+803CF704 NANDPrivateGetStatusAsync 	nand.a nand.o
+803CF788 NANDPrivateGetStatusAsync 	nand.a nand.o
+803CF81C nandOpen 	nand.a NANDOpenClose.o
+803CFA48 NANDPrivateOpenAsync 	nand.a NANDOpenClose.o
+803CFAC0 NANDPrivateOpenAsync 	nand.a NANDOpenClose.o
+803CFD00 nandRemoveTailToken 	nand.a NANDCore.o
+803CFDD4 nandGetHeadToken 	nand.a NANDCore.o
+803CFEA8 nandGetRelativeName 	nand.a NANDCore.o
+803CFF40 nandConvertPath 	nand.a NANDCore.o
+803D007C nandIsPrivatePath 	nand.a NANDCore.o
+803D00B0 nandIsUnderPrivatePath 	nand.a NANDCore.o
+803D0108 nandIsInitialized 	nand.a NANDCore.o
+803D0280 nandGenerateAbsPath 	nand.a NANDCore.o
+803D0934 nandGetType 	nand.a NANDCore.o
+803D17A8 JKRSolidHeap::do_getSize(void *) 	JKernel.a JKRSolidHeap.o
+803D17D8 JKRSolidHeap::do_getSize(void *) 	JKernel.a JKRSolidHeap.o
+803D1808 JKRSolidHeap::do_getSize(void *) 	JKernel.a JKRSolidHeap.o
+803D37D4 WPADGetRadioSensitivity 	wpad.a WPAD.o
+803D3818 WPADGetSpeakerVolume 	wpad.a WPAD.o
+803D4910 WPADGetAccGravityUnit 	wpad.a WPAD.o
+803D4ACC WPADSetSpeakerVolume 	wpad.a WPAD.o
+803D4B58 WPADProbe 	wpad.a WPAD.o
+803D4D50 WPADIsDpdEnabled 	wpad.a WPAD.o
+803D50C0 WPADControlMotor 	wpad.a WPAD.o
+803D518C WPADEnableMotor 	wpad.a WPAD.o
+803D51C0 WPADIsMotorEnabled 	wpad.a WPAD.o
+803D53DC WPADSaveConfig 	wpad.a WPAD.o
+803D58E0 WPADIsDpdEnabled 	wpad.a WPAD.o
+803D6F40 WPADGetSpeakerVolume 	wpad.a WPAD.o
+803D6FC4 IsBusyStream 	wpad.a WPAD.o
+803D70FC WPADCanSendStreamData 	wpad.a WPAD.o
+803D7390 WPADGetSpeakerVolume 	wpad.a WPAD.o
+803D73C4 WPADIsDpdEnabled 	wpad.a WPAD.o
+803D8F34 WPADiClearQueue 	wpad.a WPAD.o
+803DE004 WPADiDecode 	wpad.a WPADEncrypt.o
+803DEE9C ___blank(char *,...)
+803DF318 cM_initRnd2(int, int, int) 	SComponent.a c_math.o
+803F9AE8 THPSimpleGetCurrentFrame
+803F9AF8 THPSimpleGetCurrentFrame
+803FFE84 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+803FFEA0 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+80400E9C nlVector3::Set(float, float, float)
+80400EE8 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+80411B94 glxSwapWaitDrawDone(void)
+80411C9C LexicalCast<PCc,f>(float &)
+80411CC0 LexicalCast<PCc,f>(float &)
+80411CE4 LexicalCast<PCc,f>(float &)
+80414058 sndSeqContinue
+80414A40 glxSwapWaitDrawDone(void)
+80414CE0 sndSeqMute
+804153CC sndSeqContinue
+80415994 sndSeqContinue
+80415CC8 sndSeqMute
+80416168 sndSeqMute
+804166E4 glxSwapWaitDrawDone(void)
+80416874 sndSeqSpeed
+80416A2C sndSeqSpeed
+80416C14 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80416C38 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80418158 sndSeqContinue
+8041844C csXyz::csXyz(short, short, short) 	SComponent.a c_sxyz.o
+8041F61C bta_sys_disable 	bte.a bta_sys_main.o
+80423138 sndSeqVolume
+804232D4 sndSeqMute
+80423428 sndSeqMute
+80423D18 sndSeqContinue
+80423F60 sndSeqVolume
+804241F4 sndSeqMute
+80424430 sndSeqMute
+80426574 nandIsPrivatePath 	nand.a NANDCore.o
+80429A18 LexicalCast<PCc,f>(float &)
+80429E2C WENCGetEncodeData 	wenc.a wenc.o
+8042C890 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8042C8D0 J2DAnmTexPattern::J2DAnmTexPatternTIMGPointer::~J2DAnmTexPatternTIMGPointer(void) 	J2DGraph.a J2DAnimation.o
+8042CA3C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8042CF0C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8042E784 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8042EB80 JGeometry::TVec3<f>::dot(JGeometry::TVec3<f> const &) const 	J3DU.a J3DUShadow.o
+8042F8C0 FormationSet::GetFormationSpec( (int))
+80430CEC FormationSet::GetFormationSpec( (int))
+804312F0 cPoseAccumulator::GetNodeMatrix( (int))
+80431300 cPlayer::ClearSwapControllerTimer(void)
+80432E18 FormationSet::GetFormationSpec( (int))
+80432E28 GKI_init_timer_list 	bte.a gki_time.o
+804346D4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80434B38 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+80434B5C JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+80435610 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80435650 J3DModel::~J3DModel(void) 	J3DGraphAnimator.a J3DModel.o
+80436870 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80439E98 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8043ADD0 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8043ADF4 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8043AE18 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8043AE3C JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8043B040 FormationPos::__ct(void)
+8043B054 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8043B5F4 JGeometry::TBox2<f>::operator=(JGeometry::TBox2<f> const &) 	J2DGraph.a J2DGrafContext.o
+8043DDA4 AIsgn(float)
+8043DEE8 PSVECSquareMag 	mtx.a vec.o
+8043E3F0 tanf
+8043EB68 PSVECMag 	mtx.a vec.o
+80441ED8 cPoseAccumulator::GetNodeMatrix( (int))
+80444D80 GKI_init_timer_list 	bte.a gki_time.o
+80445F10 GKI_init_timer_list 	bte.a gki_time.o
+8044DFD8 nlVector3::Set(float, float, float)
+8044E058 tanf
+80450D18 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80450D58 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80450D98 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80450DD8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80451010 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80457178 GameInfoManager::IsPossibleCupMatch( (void))
+80457194 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+80457464 J3DGXColorS10::operator=(_GXColorS10 const &) 	J3DGraphBase.a J3DMatBlock.o
+804574B4 J3DGXColorS10::operator=(_GXColorS10 const &) 	J3DGraphBase.a J3DMatBlock.o
+8045CB98 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8045CBB4 Jumbotron::StopPlaying(void)
+80460174 JGeometry::TVec3<f>::dot(JGeometry::TVec3<f> const &) const 	J3DU.a J3DUShadow.o
+8046B44C JStudio::stb::TParse::TParse(JStudio::stb::TControl *) 	JStudio.a stb.o
+8046C594 J3DTexGenBlockPatched::getTexCoord(unsigned long) 	J3DGraphBase.a J3DMatBlock.o
+8046C6BC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8047231C nlListContainer<P8SaveData>::__ct(void)
+80477780 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80477AB0 cFollowCamera::GetType(void)
+80477D2C GKI_init_timer_list 	bte.a gki_time.o
+80477EB4 cPoseAccumulator::GetNodeMatrix( (int))
+80478570 cPoseAccumulator::GetNodeMatrix( (int))
+80478588 J3DGXColorS10::operator=(_GXColorS10 const &) 	J3DGraphBase.a J3DMatBlock.o
+8047D5EC JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8047E078 GKI_init_timer_list 	bte.a gki_time.o
+8047E114 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8047E188 GKI_init_timer_list 	bte.a gki_time.o
+8047E224 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8047E8B0 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+8047F5D8 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+8047F9C0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804801B0 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80480504 ___blank(char *,...)
+80480A98 JGeometry::TBox2<f>::operator=(JGeometry::TBox2<f> const &) 	J2DGraph.a J2DGrafContext.o
+80480B44 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80480BB8 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80480D08 GKI_init_timer_list 	bte.a gki_time.o
+80480FFC J3DModelLoader_v26::J3DModelLoader_v26(void) 	J3DGraphLoader.a J3DModelLoader.o
+80481844 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80482464 JGeometry::TBox2<f>::set(JGeometry::TBox<Q29JGeometry8TVec2<f>> const &) 	J2DGraph.a J2DPane.o
+804824EC dVector4Set(float *, float, float, float, float)
+804833E0 JGeometry::TBox2<f>::set(JGeometry::TBox<Q29JGeometry8TVec2<f>> const &) 	J2DGraph.a J2DPane.o
+80484500 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+80486120 JGeometry::TBox2<f>::set(JGeometry::TBox<Q29JGeometry8TVec2<f>> const &) 	J2DGraph.a J2DPane.o
+80486568 GXInitLightAttn
+80487074 J3DTexGenBlockPatched::getTexCoord(unsigned long) 	J3DGraphBase.a J3DMatBlock.o
+80487E60 FormationPos::__ct(void)
+80489B54 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8048A398 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8048B5F0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8048EAE8 J2DPicture::swap(float &, float &) 	J2DGraph.a J2DPicture.o
+8048EAFC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80490384 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80493368 GKI_init_timer_list 	bte.a gki_time.o
+80493404 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8049359C J3DGXColorS10::operator=(_GXColorS10 const &) 	J3DGraphBase.a J3DMatBlock.o
+80494BF8 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80494CF4 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8049BDB8 JASSeqParser::cmdLoopE(JASTrack *, unsigned long *) 	JAudio2.a JASSeqParser.o
+8049BF08 JASSeqParser::cmdLoopE(JASTrack *, unsigned long *) 	JAudio2.a JASSeqParser.o
+8049BF30 JASSeqParser::cmdLoopE(JASTrack *, unsigned long *) 	JAudio2.a JASSeqParser.o
+8049E618 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804A5AD4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804A5B14 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804A60DC JStudio::stb::TParse::TParse(JStudio::stb::TControl *) 	JStudio.a stb.o
+804A60F0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804A6B38 J2DPicture::swap(float &, float &) 	J2DGraph.a J2DPicture.o
+804A6B4C dGeomPlaneGetParams
+804A945C JGeometry::TBox2<f>::set(JGeometry::TBox<Q29JGeometry8TVec2<f>> const &) 	J2DGraph.a J2DPane.o
+804AC7E0 JGeometry::TBox2<f>::set(JGeometry::TBox<Q29JGeometry8TVec2<f>> const &) 	J2DGraph.a J2DPane.o
+804AC81C cTeam::GetPlayer(int)
+804AC82C cTeam::GetPlayer(int)
+804ACCC0 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804B1924 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+804B2C70 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804B9A70 nlListContainer<P8SaveData>::__ct(void)
+804BA270 homebutton::GroupAnmController::GroupAnmController(void) 	homebuttonLib.a HBMAnmController.o
+804BB9CC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804BD69C cTeam::GetPlayer(int)
+804BD988 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804BDC90 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804BEB58 FormationPos::__ct(void)
+804BF29C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804C1080 cM3dGAab::ClearForMinMax(void) 	SComponent.a c_m3d_g_aab.o
+804CB4FC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804CB53C cPlayer::ClearSwapControllerTimer(void)
+804CB5DC JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CB6D8 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CB940 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CBB00 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::size(void) const 	JStudio.a functionvalue.o
+804CBBD4 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CBC48 GKI_init_timer_list 	bte.a gki_time.o
+804CBCE4 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CBDE0 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CBF2C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CC20C GKI_init_timer_list 	bte.a gki_time.o
+804CC2A8 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CC530 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CC62C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CC728 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CC824 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CC920 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CCA1C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804CE4C8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804CEAF8 JMessage::TControl::getProcessor(void) const 	JMessage.a control.o
+804CED38 AVLTreeBase<Ul,12FuzzyVariant,48BasicSlotPool<31AVLTreeEntry<Ul,12FuzzyVariant>>,21DefaultKeyCompare<Ul>>::DeleteEntry(AVLTreeE
+804D2A00 J2DWindowEx::getFrameMaterial(unsigned char) const 	J2DGraph.a J2DWindowEx.o
+804D2C08 JGeometry::TBox2<f>::operator=(JGeometry::TBox2<f> const &) 	J2DGraph.a J2DGrafContext.o
+804D2C94 JGeometry::TBox2<f>::operator=(JGeometry::TBox2<f> const &) 	J2DGraph.a J2DGrafContext.o
+804D7348 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804D7558 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804D76F0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804D7888 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804D7A80 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804D7D24 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804D7DA4 cPlayer::ClearSwapControllerTimer(void)
+804D8C2C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804DA2F0 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804DA3EC JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804DAE24 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804E2214 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804E2330 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804E274C dVector4Set(float *, float, float, float, float)
+804E3064 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804E3378 J3DGXColorS10::operator=(_GXColorS10 const &) 	J3DGraphBase.a J3DMatBlock.o
+804E3A08 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804E3C00 nlVector3::Set(float, float, float)
+804E3D28 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804E45D4 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804EB720 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804ED4DC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804EF7F4 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+804F0D98 cCharacter::IsPlayingEffect( (EffectsGroup *))
+804F16CC JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::size(void) const 	JStudio.a functionvalue.o
+804F2008 cPlayer::ClearSwapControllerTimer(void)
+804F2658 FormationPos::__ct(void)
+804F502C J2DTextureSRTInfo::operator=(J2DTextureSRTInfo const &) 	J2DGraph.a J2DMaterial.o
+804F5068 dJointSetCharacterNoMotionDirection(dxJoint *, float *)
+804F5084 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804F5CD8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804F6670 JUTProcBar::~JUTProcBar(void) 	JUtility.a JUTProcBar.o
+804F7C90 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+804F9240 cM_rndF2(float) 	SComponent.a c_math.o
+804F947C JSUPtrList::JSUPtrList(bool) 	JSupport.a JSUList.o
+804F9500 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+804FAACC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80500C74 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80501B78 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050265C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80503650 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805039F8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050430C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050541C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050545C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805060E4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80506BFC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805073B4 JStudio::TVariableValue::setValue_functionValue(JStudio::TFunctionValue *) 	JStudio.a jstudio-object.o
+805082F8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050A510 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050B08C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050B0CC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050B194 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8050B290 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8050B38C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8050B488 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8050B584 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8050B90C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050BA34 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+8050C1C8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050C3BC cAnimInventory::GetAnim(int)
+8050DE70 J3DGXColorS10::operator=(_GXColorS10 const &) 	J3DGraphBase.a J3DMatBlock.o
+8050E014 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+8050E4BC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050E4FC __sinit_\JASSeqCtrl_cpp 	JAudio2.a JASSeqCtrl.o
+8050E538 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050F084 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050F40C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8050FE18 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80510834 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80511148 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80511F2C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80513BD8 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80513BEC JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::size(void) const 	JStudio.a functionvalue.o
+80513C68 JGeometry::TBox2<f>::operator=(JGeometry::TBox2<f> const &) 	J2DGraph.a J2DGrafContext.o
+80513C8C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80513D74 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+80513DA4 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+80513DD4 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+80514100 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80514140 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80514180 GKI_init_timer_list 	bte.a gki_time.o
+8051426C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+805142E0 GKI_init_timer_list 	bte.a gki_time.o
+8051437C JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80514478 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80514574 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80514670 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+805150D0 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::DestroyElement_(void **, void **) 	JGadget.a std-vector.o
+80519A78 JGadget::TVector<Pv,Q27JGadget14TAllocator<Pv>>::size(void) const 	JStudio.a functionvalue.o
+8051D538 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8051D8D8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8051E0F8 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8051E5FC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8051FCC4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80520CE8 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80521B30 homebutton::GroupAnmController::GroupAnmController(void) 	homebuttonLib.a HBMAnmController.o
+80521B4C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80522908 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80522918 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80523B00 cPlayer::ClearSwapControllerTimer(void)
+80528FE0 J3DModelLoader_v26::J3DModelLoader_v26(void) 	J3DGraphLoader.a J3DModelLoader.o
+805295F8 JStudio::stb::TParse::TParse(JStudio::stb::TControl *) 	JStudio.a stb.o
+8052960C J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8052B138 J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8052B148 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8052B824 nlListContainer<P8SaveData>::__ct(void)
+8052BEAC nlVector3::Set(float, float, float)
+8052C2A0 FormationPos::__ct(void)
+8052C390 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8052C4F4 JStudio::math::getFromTransformation_T(Vec *, float const (*)[4]) 	JStudio_JStage.a object-camera.o
+8052DBB4 J3DAlphaComp::operator=(J3DAlphaComp const &) 	J3DGraphBase.a J3DMatBlock.o
+8052DBD0 cXyz::operator!=(Vec const &) const 	SComponent.a c_xyz.o
+8052DCE8 JMessage::TSequenceProcessor::on_branch_register(void const *(*)(JMessage::TSequenceProcessor const *, unsigned long), void con
+80531D48 __sinit_\JUTException_cpp 	JUtility.a JUTException.o
+80534D88 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805351F4 JASSeqParser::cmdLoopE(JASTrack *, unsigned long *) 	JAudio2.a JASSeqParser.o
+805362D0 JGeometry::TBox2<f>::operator=(JGeometry::TBox2<f> const &) 	J2DGraph.a J2DGrafContext.o
+805375DC JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+80537A00 SetExiInterruptMask 	exi.a EXIBios.o
+80537AF0 EXIImm 	exi.a EXIBios.o
+80537D6C EXIImmEx 	exi.a EXIBios.o
+80537E10 EXIDma 	exi.a EXIBios.o
+80537F08 EXISync 	exi.a EXIBios.o
+80538184 EXISetExiCallback 	exi.a EXIBios.o
+80538208 __EXIProbe 	exi.a EXIBios.o
+80538388 EXIAttach 	exi.a EXIBios.o
+805384A0 EXIDetach 	exi.a EXIBios.o
+80538558 EXISelect 	exi.a EXIBios.o
+80538688 EXIDeselect 	exi.a EXIBios.o
+80538788 EXIIntrruptHandler 	exi.a EXIBios.o
+80538840 TCIntrruptHandler 	exi.a EXIBios.o
+80538A58 EXTIntrruptHandler 	exi.a EXIBios.o
+80538B28 EXIInit 	exi.a EXIBios.o
+80538CEC EXILock 	exi.a EXIBios.o
+80538DE8 EXIUnlock 	exi.a EXIBios.o
+80538EC0 UnlockedHandler 	exi.a EXIBios.o
+80538EE8 EXIGetID 	exi.a EXIBios.o
+80539294 ProbeBarnacle 	exi.a EXIUart.o
+8053940C __OSEnableBarnacle 	exi.a EXIUart.o
+805395C8 EXIWriteReg 	exi.a EXICommon.o
+80539754 CompleteTransfer 	si.a SIBios.o
+80539A48 SIInterruptHandler 	si.a SIBios.o
+80539E34 SIInit 	si.a SIBios.o
+80539EF4 __SITransfer 	si.a SIBios.o
+8053A0A4 SISetCommand 	si.a SIBios.o
+8053A0B8 SISetXY 	si.a SIBios.o
+8053A114 SIEnablePolling 	si.a SIBios.o
+8053A19C SIDisablePolling 	si.a SIBios.o
+8053A208 SIGetResponse 	si.a SIBios.o
+8053A32C AlarmHandler 	si.a SIBios.o
+8053A3B8 SITransfer 	si.a SIBios.o
+8053A524 GetTypeCallback 	si.a SIBios.o
+8053A7D4 SIGetType 	si.a SIBios.o
+8053A988 SIGetTypeAsync 	si.a SIBios.o
+8053AA98 SISetSamplingRate 	si.a SISamplingRate.o
+8053ABFC PPCMffpscr 	base.a PPCArch.o
+8053AC1C PPCMtfpscr 	base.a PPCArch.o
+8053AC68 PPCDisableSpeculation 	base.a PPCArch.o
+8053AC98 PPCMthid4 	base.a PPCArch.o
+8053ACE8 DBInit 	db.a db.o
+8053AD10 __DBExceptionDestinationAux 	db.a db.o
+8053AD68 __DBIsExceptionMarked 	db.a db.o
+8053AD80 ___blank(char *,...)
+8053ADD0 __OSFPRInit
+8053B1E8 ClearArena 	os.a OS.o
+8053B3C4 ClearMEM2Arena 	os.a OS.o
+8053BE14 OSExceptionInit 	os.a OS.o
+8053C094 __OSDBIntegrator
+8053C0BC __OSSetInterruptHandler 	os.a OSInterrupt.o
+8053C0D0 VMBASEGetVirtualAddrFromPageInMRAM
+8053C1D4 __OSPSInit 	os.a OS.o
+8053C228 AIGetStreamPlayState
+8053C2CC OSGetAppType 	os.a OS.o
+8053C2EC __OSInitAlarm 	os.a OSAlarm.o
+8053C344 nlListContainer<P8SaveData>::__ct(void)
+8053C354 InsertAlarm 	os.a OSAlarm.o
+8053C5A4 OSSetAlarm 	os.a OSAlarm.o
+8053C614 OSSetPeriodicAlarm 	os.a OSAlarm.o
+8053C698 OSCancelAlarm 	os.a OSAlarm.o
+8053C7B0 DecrementerExceptionCallback 	os.a OSAlarm.o
+8053CA2C OnReset 	os.a OSAlarm.o
+8053CAC8 cPhs_Set(request_of_phase_process_class *, int (**)(void *)) 	SComponent.a c_phase.o
+8053CB80 DLInsert 	os.a OSAlloc.o
+8053CC2C OSAllocFromHeap 	os.a OSAlloc.o
+8053CD24 OSFreeToHeap 	os.a OSAlloc.o
+8053CD9C glx_SetLoadCallback(unsigned long (*)(unsigned long))
+8053CDAC OSInitAlloc 	os.a OSAlloc.o
+8053CE1C OSCreateHeap 	os.a OSAlloc.o
+8053CEE8 OSAllocFromMEM1ArenaLo 	os.a OSArena.o
+8053CF1C __AIClockInit 	os.a OSAudioSystem.o
+8053D13C __OSInitAudioSystem 	os.a OSAudioSystem.o
+8053D304 __OSStopAudioSystem 	os.a OSAudioSystem.o
+8053D3D0 DCEnable
+8053D3E4 DCInvalidateRange
+8053D410 DCFlushRange
+8053D440 DCStoreRange
+8053D470 DCFlushRangeNoSync
+8053D49C DCStoreRangeNoSync
+8053D4C8 DCZeroRange
+8053D4F4 ICInvalidateRange
+8053D528 ICFlashInvalidate
+8053D538 ICEnable
+8053D54C LCDisable
+8053D574 DMAErrorHandler 	os.a OSCache.o
+8053D6BC __OSCacheInit 	os.a OSCache.o
+8053D7F4 __OSLoadFPUContext
+8053D918 __OSSaveFPUContext
+8053DA48 OSSetCurrentContext
+8053DAB0 OSSaveContext
+8053DC10 OSSwitchFiber 	os.a OSContext.o
+8053DC40 OSSwitchFiberEx 	os.a OSContext.o
+8053DC70 OSClearContext 	os.a OSContext.o
+8053DD50 OSDumpContext 	os.a OSContext.o
+8053E034 __OSContextInit 	os.a OSContext.o
+8053E07C JUTWarningConsole_f 	JUtility.a JUTConsole.o
+8053E10C OSPanic
+8053E238 OSSetErrorHandler 	os.a OSError.o
+8053E4C0 __OSUnhandledException 	os.a OSError.o
+8053E7B0 PackArgs 	os.a OSExec.o
+8053EC9C __OSGetExecParams 	os.a OSExec.o
+8053FC4C __OSBootDol
+8053FE2C ScreenReport 	os.a OSFatal.o
+80540150 ConfigureVideo 	os.a OSFatal.o
+80540464 Halt 	os.a OSFatal.o
+80540A64 GetFontCode 	os.a OSFont.o
+80540B98 Decode 	os.a OSFont.o
+80540D3C OSSetFontEncode 	os.a OSFont.o
+80540DBC ReadFont 	os.a OSFont.o
+805410BC OSLoadFont 	os.a OSFont.o
+805411E4 ParseStringS 	os.a OSFont.o
+805412E0 ParseStringW 	os.a OSFont.o
+8054149C OSGetFontTexel 	os.a OSFont.o
+8054172C OSDisableInterrupts
+80541740 OSEnableInterrupts
+80541754 OSRestoreInterrupts
+80541778 __OSSetInterruptHandler 	os.a OSInterrupt.o
+8054178C VMBASEGetVirtualAddrFromPageInMRAM
+8054179C __OSInterruptInit 	os.a OSInterrupt.o
+80541ABC __OSMaskInterrupts 	os.a OSInterrupt.o
+80541B3C __OSUnmaskInterrupts 	os.a OSInterrupt.o
+80541BBC __OSDispatchInterrupt 	os.a OSInterrupt.o
+80541EB0 __OSModuleInit 	os.a OSLink.o
+80541EC8 OSInitMessageQueue 	os.a OSMessage.o
+80541F28 OSSendMessage 	os.a OSMessage.o
+80541FF0 OSReceiveMessage 	os.a OSMessage.o
+805420CC OSJamMessage 	os.a OSMessage.o
+805421C0 OnShutdown 	os.a OSMemory.o
+80542920 OSInitMutex 	os.a OSMutex.o
+80542958 OSLockMutex 	os.a OSMutex.o
+80542A34 OSUnlockMutex 	os.a OSMutex.o
+80542AFC __OSUnlockAllMutex 	os.a OSMutex.o
+80542B68 OSTryLockMutex 	os.a OSMutex.o
+80542C28 OSWaitCond 	os.a OSMutex.o
+80542D74 AXFXGetHooks 	axfx.a AXFXHooks.o
+80542D88 OSRegisterShutdownFunction 	os.a OSReset.o
+80542E10 __OSCallShutdownFunctions 	os.a OSReset.o
+80542EC0 __OSShutdownDevices 	os.a OSReset.o
+8054376C OSGetResetCode
+805437B8 WriteSramCallback 	os.a OSRtc.o
+805438F0 __OSInitSram 	os.a OSRtc.o
+80543AF0 UnlockSram 	os.a OSRtc.o
+80543DD0 THPSimpleGetCurrentFrame
+80543DE0 __OSReadROM 	os.a OSRtc.o
+80543F04 OSGetWirelessID 	os.a OSRtc.o
+80543F7C OSSetWirelessID 	os.a OSRtc.o
+80544018 __OSGetRTCFlags 	os.a OSRtc.o
+80544134 __OSClearRTCFlags 	os.a OSRtc.o
+8054436C __OSInitSystemCall 	os.a OSSync.o
+805443D0 __OSThreadInit 	os.a OSThread.o
+80544654 nlListContainer<P8SaveData>::__ct(void)
+80544670 OSIsThreadTerminated 	os.a OSThread.o
+8054469C OSEnableScheduler 	os.a OSThread.o
+805446D8 OSEnableScheduler 	os.a OSThread.o
+80544714 UnsetRun 	os.a OSThread.o
+8054477C __OSGetEffectivePriority 	os.a OSThread.o
+805447B8 SetEffectivePriority 	os.a OSThread.o
+8054496C __OSPromoteThread 	os.a OSThread.o
+805449BC SelectThread 	os.a OSThread.o
+80544BFC OSCreateThread 	os.a OSThread.o
+80544E68 OSExitThread 	os.a OSThread.o
+8054526C OSResumeThread 	os.a OSThread.o
+80545504 OSSuspendThread 	os.a OSThread.o
+80545698 OSSleepThread 	os.a OSThread.o
+80545784 OSWakeupThread 	os.a OSThread.o
+80545878 OSSetThreadPriority 	os.a OSThread.o
+80545A94 OSGetTime
+80545AB4 __OSGetSystemTime 	os.a OSTime.o
+80545B18 __OSTimeToSystemTime 	os.a OSTime.o
+80545B70 GetDates 	os.a OSTime.o
+80545CE0 OSTicksToCalendarTime 	os.a OSTime.o
+805462C8 OSUTF32toANSI 	os.a OSUtf.o
+80546340 OSUTF32toSJIS 	os.a OSUtf.o
+80546390 __OSInitIPCBuffer 	os.a OSIpc.o
+80546580 OSGetResetSwitchState 	os.a OSStateTM.o
+80546630 __OSInitSTM 	os.a OSStateTM.o
+80546830 __OSSetVIForceDimming 	os.a OSStateTM.o
+80546968 __OSUnRegisterStateEvent 	os.a OSStateTM.o
+805469E0 __VIResetSIIdle 	vi.a vi.o
+80546B58 PlayRecordCallback 	os.a OSPlayRecord.o
+80547008 __OSStartPlayRecord 	os.a OSPlayRecord.o
+80547328 __OSReadStateFlags 	os.a OSStateFlags.o
+80547EB8 PackArgs 	os.a OSExec.o
+80548C78 cPlayer::PostPhysicsUpdate(void)
+80548C98 __init_cpp 	os.a __ppc_eabi_init.o
+80548CE0 exit 	os.a __ppc_eabi_init.o
+80548D2C PSMTXIdentity 	mtx.a mtx.o
+80548D58 PSMTXCopy 	mtx.a mtx.o
+80548D8C PSMTXConcat
+80548FA0 PSMTXRotRad 	mtx.a mtx.o
+8054901C PSMTXRotTrig 	mtx.a mtx.o
+805490CC PSMTXTrans
+80549100 PSMTXTransApply 	mtx.a mtx.o
+8054914C PSMTXScale
+80549174 PSMTXQuat 	mtx.a mtx.o
+805492BC C_MTXLightPerspective 	mtx.a mtx.o
+805493B4 C_MTXLightOrtho 	mtx.a mtx.o
+8054943C PSMTXMultVec 	mtx.a mtxvec.o
+80549490 PSMTXMultVecSR 	mtx.a mtxvec.o
+80549580 C_MTXPerspective 	mtx.a mtx44.o
+8054966C C_MTXOrtho 	mtx.a mtx44.o
+80549704 PSVECAdd 	mtx.a vec.o
+80549728 PSVECScale 	mtx.a vec.o
+80549744 PSVECNormalize 	mtx.a vec.o
+80549788 PSVECSquareMag 	mtx.a vec.o
+805497A0 PSVECMag 	mtx.a vec.o
+805497E4 PSVECCrossProduct 	mtx.a vec.o
+80549820 PSVECSquareDistance 	mtx.a vec.o
+80549848 PSVECDistance 	mtx.a vec.o
+805498C0 PSQUATMultiply 	mtx.a quat.o
+8054991C JGeometry::TVec3<f>::dot(JGeometry::TVec3<f> const &) const 	J3DU.a J3DUShadow.o
+80549990 C_QUATRotAxisRad 	mtx.a quat.o
+80549BFC __DVDFSInit 	dvd.a dvdfs.o
+80549C2C DVDConvertPathToEntrynum 	dvd.a dvdfs.o
+80549F34 DVDOpen 	dvd.a dvdfs.o
+8054A1E0 LexicalCast<PCc,f>(float &)
+8054A204 entryToPath 	dvd.a dvdfs.o
+8054A3C4 DVDReadAsyncPrio 	dvd.a dvdfs.o
+8054A4AC DVDReadPrio 	dvd.a dvdfs.o
+8054A634 StampCommand 	dvd.a dvd.o
+8054A840 stateReadingFST 	dvd.a dvd.o
+8054A9B8 cbForStateReadingFST 	dvd.a dvd.o
+8054AC64 cbForStoreErrorCode2 	dvd.a dvd.o
+8054ACA0 CategorizeError 	dvd.a dvd.o
+8054AD94 cbForStoreErrorCode3 	dvd.a dvd.o
+8054AE58 cbForStateGettingError 	dvd.a dvd.o
+8054B35C cbForUnrecoveredError 	dvd.a dvd.o
+8054B53C cbForUnrecoveredErrorRetry 	dvd.a dvd.o
+8054B850 stateCheckID 	dvd.a dvd.o
+8054BB88 cbForStateReadingTOC 	dvd.a dvd.o
+8054C1A0 cbForStateOpenPartition 	dvd.a dvd.o
+8054C328 cbForStateOpenPartition2 	dvd.a dvd.o
+8054C48C cbForStateCheckID1 	dvd.a dvd.o
+8054C654 cbForStateCheckID2 	dvd.a dvd.o
+8054C7E8 stateCoverClosed 	dvd.a dvd.o
+8054CAFC cbForStateReset 	dvd.a dvd.o
+8054CBE0 stateDownRotation 	dvd.a dvd.o
+8054D060 cbForStateCoverClosed 	dvd.a dvd.o
+8054D138 cbForPrepareCoverRegister 	dvd.a dvd.o
+8054E59C DVDReadAbsAsyncPrio 	dvd.a dvd.o
+8054E680 DVDInquiryAsync 	dvd.a dvd.o
+8054E758 DVDGetCommandBlockStatus 	dvd.a dvd.o
+8054E820 DVDGetDriveStatus 	dvd.a dvd.o
+8054E8BC DVDSetAutoInvalidation 	dvd.a dvd.o
+8054E8CC DVDResume 	dvd.a dvd.o
+8054ED74 __DVDGetCoverStatus 	dvd.a dvd.o
+8054EE80 __DVDPrepareResetAsync 	dvd.a dvd.o
+8054EFA8 __DVDPrepareReset 	dvd.a dvd.o
+8054F108 __DVDClearWaitingQueue 	dvd.a dvdqueue.o
+8054F140 __DVDPushWaitingQueue 	dvd.a dvdqueue.o
+8054F1A8 __DVDPopWaitingQueue 	dvd.a dvdqueue.o
+8054F248 __DVDCheckWaitingQueue 	dvd.a dvdqueue.o
+8054F2A0 __DVDGetNextWaitingQueue 	dvd.a dvdqueue.o
+8054F300 __DVDDequeueWaitingQueue 	dvd.a dvdqueue.o
+8054F38C cbForNandWrite 	dvd.a dvderror.o
+8054FB40 cbForNandCreateDir 	dvd.a dvderror.o
+8054FD44 DVDCompareDiskID 	dvd.a dvdidutils.o
+8054FF28 DVDSetAutoFatalMessaging 	dvd.a dvdFatal.o
+8054FF84 PlatAudio::IsEntireSampleFileInMem(void)
+80550248 doTransactionCallback 	dvd.a dvd_broadway.o
+80550300 doPrepareCoverRegisterCallback 	dvd.a dvd_broadway.o
+8055040C DVDLowInit 	dvd.a dvd_broadway.o
+80550670 DVDLowReadDiskID 	dvd.a dvd_broadway.o
+805507F8 DVDLowOpenPartition 	dvd.a dvd_broadway.o
+80551168 DVDLowClearCoverInterrupt 	dvd.a dvd_broadway.o
+805512CC DVDLowUnencryptedRead 	dvd.a dvd_broadway.o
+80551460 DVDLowAudioBufferConfig 	dvd.a dvd_broadway.o
+805515F4 DVDLowInquiry 	dvd.a dvd_broadway.o
+8055175C DVDLowRequestError 	dvd.a dvd_broadway.o
+805518D0 DVDLowReset 	dvd.a dvd_broadway.o
+80551A4C DVDLowAudioBufferConfig 	dvd.a dvd_broadway.o
+80551D74 DVDLowSetMaximumRotation 	dvd.a dvd_broadway.o
+80551EF4 DVDLowRead 	dvd.a dvd_broadway.o
+805520A4 DVDLowSeek 	dvd.a dvd_broadway.o
+80552220 THPSimpleGetCurrentFrame
+80552248 DVDLowPrepareCoverRegister 	dvd.a dvd_broadway.o
+805523B0 DVDLowPrepareCoverRegister 	dvd.a dvd_broadway.o
+80552518 DVDLowPrepareCoverRegister 	dvd.a dvd_broadway.o
+8055269C DVDLowClearCoverInterrupt 	dvd.a dvd_broadway.o
+805531B0 AIRegisterDMACallback 	ai.a ai.o
+805531F4 AIRegisterDMACallback 	ai.a ai.o
+80553350 __VIInit 	vi.a vi.o
+80553AA8 VIWaitForRetrace 	vi.a vi.o
+8055470C VIConfigurePan 	vi.a vi.o
+80554A60 VIFlush 	vi.a vi.o
+80554B74 VISetNextFrameBuffer 	vi.a vi.o
+80554BE0 VISetBlack 	vi.a vi.o
+80554C60 VIGetNextField 	vi.a vi.o
+80554CFC VIGetCurrentLine 	vi.a vi.o
+80554D8C VIGetTvFormat 	vi.a vi.o
+80554E4C VIGetDTVStatus 	vi.a vi.o
+80554E88 __VIDisplayPositionToXY 	vi.a vi.o
+805551D4 __VIResetSIIdle 	vi.a vi.o
+80555AE8 __VISetYUVSEL 	vi.a vi3in1.o
+80555B8C __VISetFilter4EURGB60 	vi.a vi3in1.o
+80555BCC __VISetCGMS 	vi.a vi3in1.o
+80555C24 __VISetWSS 	vi.a vi3in1.o
+80555C88 __VISetClosedCaption 	vi.a vi3in1.o
+80555CF4 __VISetMacrovision 	vi.a vi3in1.o
+80556A7C __VISetGammaImm 	vi.a vi3in1.o
+80556C38 __VISetTrapFilter 	vi.a vi3in1.o
+80556C94 __VISetRGBOverDrive 	vi.a vi3in1.o
+80556D28 __VISetRGBModeImm 	vi.a vi3in1.o
+805571A4 UpdateOrigin 	pad.a Pad.o
+80557348 PADOriginCallback 	pad.a Pad.o
+80557408 PADProbeCallback 	pad.a Pad.o
+805574DC PADTypeAndStatusCallback 	pad.a Pad.o
+805577FC PADReset 	pad.a Pad.o
+80557904 __PADDisableRecalibration 	pad.a Pad.o
+80557960 AIRegisterDMACallback 	ai.a ai.o
+805579A4 AIInitDMA 	ai.a ai.o
+80557A20 AIStartDMA 	ai.a ai.o
+80557A34 AIStopDMA 	ai.a ai.o
+80557A48 __ARGetInterruptStatus
+80557A70 __ARGetInterruptStatus
+80557A88 AIInit 	ai.a ai.o
+80557C08 __AIDHandler 	ai.a ai.o
+80557CB0 __AICallbackStackSwitch 	ai.a ai.o
+80557D14 __AI_SRC_INIT 	ai.a ai.o
+805584E4 Jumbotron::StopPlaying(void)
+805584F8 Jumbotron::StopPlaying(void)
+8055850C Jumbotron::StopPlaying(void)
+80558520 Jumbotron::StopPlaying(void)
+80558534 Jumbotron::StopPlaying(void)
+805589B4 AVLTreeBase<Ul,12FuzzyVariant,48BasicSlotPool<31AVLTreeEntry<Ul,12FuzzyVariant>>,21DefaultKeyCompare<Ul>>::DeleteEntry(AVLTreeE
+80559BD0 AXFXGetHooks 	axfx.a AXFXHooks.o
+8055AD48 AIRegisterDMACallback 	ai.a ai.o
+8055C598 LexicalCast<PCc,f>(float &)
+8055C6C8 LexicalCast<PCc,f>(float &)
+8055C754 AXFXReverbHiExpInit 	axfx.a AXFXReverbHiExp.o
+8055C9C0 AXFXReverbHiExpShutdown 	axfx.a AXFXReverbHiExp.o
+8055CF30 __AllocDelayLine 	axfx.a AXFXReverbHiExp.o
+8055D0A4 __BzeroDelayLines 	axfx.a AXFXReverbHiExp.o
+8055D1C8 __FreeDelayLine 	axfx.a AXFXReverbHiExp.o
+8055D2DC __InitParams 	axfx.a AXFXReverbHiExp.o
+8055D890 AXFXReverbHiExpShutdown 	axfx.a AXFXReverbHiExp.o
+8055DE94 __AllocDelayLine 	axfx.a AXFXReverbHiExp.o
+8055E008 __BzeroDelayLines 	axfx.a AXFXReverbHiExp.o
+8055E12C __FreeDelayLine 	axfx.a AXFXReverbHiExp.o
+8055FD4C LexicalCast<PCc,f>(float &)
+8056001C AXFXReverbHiExpShutdown 	axfx.a AXFXReverbHiExp.o
+80560C24 AXFXReverbHiExpShutdown 	axfx.a AXFXReverbHiExp.o
+8056167C LexicalCast<PCc,f>(float &)
+80562CAC AXFXGetHooks 	axfx.a AXFXHooks.o
+80566398 __ARGetInterruptStatus
+805663A8 __ARGetInterruptStatus
+805663B8 DSPReadMailFromDSP 	dsp.a dsp.o
+805663CC DSPSendMailToDSP
+805663E0 DSPInit 	dsp.a dsp.o
+80566614 ___blank(char *,...)
+80566A98 __DSP_exec_task 	dsp.a dsp_task.o
+80566C3C __DSP_boot_task 	dsp.a dsp_task.o
+80566DC8 __DSP_insert_task 	dsp.a dsp_task.o
+80566E64 __DSP_remove_task 	dsp.a dsp_task.o
+80566EF8 __GXDefaultTexRegionCallback 	gx.a GXInit.o
+80566FEC __GXDefaultTlutRegionCallback 	gx.a GXInit.o
+80567010 __GXShutdown 	gx.a GXInit.o
+8056717C __GXInitRevisionBits 	gx.a GXInit.o
+805672AC GXInit 	gx.a GXInit.o
+805680C4 GXCPInterruptHandler 	gx.a GXFifo.o
+80568224 GXInitFifoBase 	gx.a GXFifo.o
+805682B0 CPGPLinkCheck 	gx.a GXFifo.o
+805683A8 GXSetCPUFifo 	gx.a GXFifo.o
+80568588 GXSetGPFifo 	gx.a GXFifo.o
+80568818 __GXSaveFifo 	gx.a GXFifo.o
+805689C0 AIRegisterDMACallback 	ai.a ai.o
+80568A4C __GXFifoInit 	gx.a GXFifo.o
+80568AC8 __GXCleanGPFifo 	gx.a GXFifo.o
+80568C68 GXSetVtxDesc 	gx.a GXAttr.o
+80568ECC __GXSetVCD 	gx.a GXAttr.o
+80568F7C __GXCalculateVLim 	gx.a GXAttr.o
+805690A8 GXClearVtxDesc 	gx.a GXAttr.o
+805690DC GXSetVtxAttrFmt 	gx.a GXAttr.o
+8056927C GXSetVtxAttrFmtv 	gx.a GXAttr.o
+80569440 __GXSetVAT 	gx.a GXAttr.o
+805694C0 GXSetArray 	gx.a GXAttr.o
+80569500 GXInvalidateVtxCache
+80569510 GXSetTexCoordGen2 	gx.a GXAttr.o
+80569738 GXSetNumChans 	gx.a GXLight.o
+805697E8 GXFlush 	gx.a GXMisc.o
+80569878 __GXAbort 	gx.a GXMisc.o
+805699DC GXAbortFrame 	gx.a GXMisc.o
+80569C5C __GXFlushTextureState 	gx.a GXBump.o
+80569C80 GXPokeAlphaMode 	gx.a GXMisc.o
+80569C90 GXPokeAlphaRead 	gx.a GXMisc.o
+80569CA8 GXPokeDither 	gx.a GXMisc.o
+80569CBC GXPokeBlendMode 	gx.a GXMisc.o
+80569D18 GXPokeDither 	gx.a GXMisc.o
+80569D2C GXPokeDstAlpha 	gx.a GXMisc.o
+80569D44 GXPokeDither 	gx.a GXMisc.o
+80569D58 GXPokeZMode 	gx.a GXMisc.o
+80569D74 GXPeekZ 	gx.a GXMisc.o
+80569D94 AIRegisterDMACallback 	ai.a ai.o
+80569DD8 GXTokenInterruptHandler 	gx.a GXMisc.o
+80569E5C AIRegisterDMACallback 	ai.a ai.o
+80569EA0 GXFinishInterruptHandler 	gx.a GXMisc.o
+80569F20 __GXPEInit 	gx.a GXMisc.o
+80569F84 __GXSetDirtyState 	gx.a GXGeometry.o
+8056A1FC GXBegin 	gx.a GXGeometry.o
+8056A348 __GXSendFlushPrim 	gx.a GXGeometry.o
+8056A420 GXSetPointSize 	gx.a GXGeometry.o
+8056A454 GXSetPointSize 	gx.a GXGeometry.o
+8056A488 GXSetTevSwapMode 	gx.a GXTev.o
+8056A4C4 GXSetCullMode 	gx.a GXGeometry.o
+8056A528 __GXFlushTextureState 	gx.a GXBump.o
+8056A684 GXSetTexCopySrc 	gx.a GXFrameBuf.o
+8056A6C4 GXSetTexCopySrc 	gx.a GXFrameBuf.o
+8056A704 GXSetDispCopyDst 	gx.a GXFrameBuf.o
+8056A728 GXSetTexCopyDst 	gx.a GXFrameBuf.o
+8056A844 GXSetDispCopyFrame2Field 	gx.a GXFrameBuf.o
+8056A864 GXSetCopyClamp 	gx.a GXFrameBuf.o
+8056A88C GXGetNumXfbLines 	gx.a GXFrameBuf.o
+8056A918 GXGetYScaleFactor 	gx.a GXFrameBuf.o
+8056AB48 GXSetDispCopyYScale 	gx.a GXFrameBuf.o
+8056AC14 GXSetCopyClear 	gx.a GXFrameBuf.o
+8056AC8C GXSetCopyFilter 	gx.a GXFrameBuf.o
+8056AE70 GXSetDispCopyGamma
+8056AE84 GXCopyDisp 	gx.a GXFrameBuf.o
+8056AFC0 GXCopyTex 	gx.a GXFrameBuf.o
+8056B118 GXClearBoundingBox 	gx.a GXFrameBuf.o
+8056B150 GXInitLightAttn
+8056B16C GXInitLightSpot 	gx.a GXLight.o
+8056B2F4 GXInitLightDistAttn 	gx.a GXLight.o
+8056B3C4 nlVector3::Set(float, float, float)
+8056B3D4 GXInitLightDir 	gx.a GXLight.o
+8056B508 GXLoadLightObjImm 	gx.a GXLight.o
+8056B734 GXSetNumChans 	gx.a GXLight.o
+8056B758 GXSetChanCtrl 	gx.a GXLight.o
+8056B7FC GXGetTexBufferSize 	gx.a GXTexture.o
+8056B920 __GetImageTileCount 	gx.a GXTexture.o
+8056B9E0 GXInitTexObj 	gx.a GXTexture.o
+8056BBEC GXInitTexObjCI 	gx.a GXTexture.o
+8056BC34 GXInitTexObjLOD 	gx.a GXTexture.o
+8056BD38 GXInitTexObjWrapMode 	gx.a GXTexture.o
+8056BDD0 GXInitTexObjMaxAniso
+8056BE60 GXGetTexObjHeight 	gx.a GXTexture.o
+8056BE74 GXGetTexObjHeight 	gx.a GXTexture.o
+8056BF98 GXLoadTexObjPreLoaded 	gx.a GXTexture.o
+8056C0FC GXLoadTexObj 	gx.a GXTexture.o
+8056C150 GXInitTlutObj 	gx.a GXTexture.o
+8056C178 GXLoadTlut 	gx.a GXTexture.o
+8056C20C GXInitTexCacheRegion 	gx.a GXTexture.o
+8056C2C0 GXInitTlutRegion 	gx.a GXTexture.o
+8056C2E0 GXInvalidateTexAll 	gx.a GXTexture.o
+8056C328 GXSetTlutRegionCallback 	gx.a GXTexture.o
+8056C33C GXSetTlutRegionCallback 	gx.a GXTexture.o
+8056C350 GXSetTexCoordScaleManually 	gx.a GXTexture.o
+8056C3CC __SetSURegs 	gx.a GXTexture.o
+8056C45C __GXSetSUTexRegs 	gx.a GXTexture.o
+8056C5C4 __GXSetTmemConfig 	gx.a GXTexture.o
+8056C918 GXSetTevIndirect 	gx.a GXBump.o
+8056C980 GXSetIndTexMtx 	gx.a GXBump.o
+8056CAD4 GXSetIndTexCoordScale 	gx.a GXBump.o
+8056CBD8 GXSetIndTexOrder 	gx.a GXBump.o
+8056CCA4 GXSetNumIndStages 	gx.a GXBump.o
+8056CCC4 GXSetTevDirect 	gx.a GXBump.o
+8056CD10 GXSetZCompLoc 	gx.a GXPixel.o
+8056CD40 __GXFlushTextureState 	gx.a GXBump.o
+8056CD64 GXSetTevOp 	gx.a GXTev.o
+8056CDF8 GXSetTevAlphaIn 	gx.a GXTev.o
+8056CE38 GXSetTevAlphaIn 	gx.a GXTev.o
+8056CE78 GXSetTevAlphaOp 	gx.a GXTev.o
+8056CED0 GXSetTevAlphaOp 	gx.a GXTev.o
+8056CF28 GXSetTevColor 	gx.a GXTev.o
+8056CF88 GXSetTevColorS10 	gx.a GXTev.o
+8056CFEC GXSetTevKColor 	gx.a GXTev.o
+8056D048 GXSetTevKAlphaSel 	gx.a GXTev.o
+8056D098 GXSetTevKAlphaSel 	gx.a GXTev.o
+8056D0E8 GXSetTevSwapMode 	gx.a GXTev.o
+8056D124 GXSetTevSwapModeTable 	gx.a GXTev.o
+8056D1A0 GXSetAlphaCompare 	gx.a GXTev.o
+8056D1D8 GXSetZTexture 	gx.a GXTev.o
+8056D264 GXSetTevOrder 	gx.a GXTev.o
+8056D3C0 GXSetNumTevStages 	gx.a GXTev.o
+8056D770 GXSetFogRangeAdj 	gx.a GXPixel.o
+8056D894 GXSetBlendMode 	gx.a GXPixel.o
+8056D8E4 GXSetDither 	gx.a GXPixel.o
+8056D910 GXSetDither 	gx.a GXPixel.o
+8056D93C GXSetZMode 	gx.a GXPixel.o
+8056D970 GXSetZCompLoc 	gx.a GXPixel.o
+8056D9A0 GXSetPixelFmt 	gx.a GXPixel.o
+8056DA48 GXSetDither 	gx.a GXPixel.o
+8056DA74 GXSetDstAlpha 	gx.a GXPixel.o
+8056DAA4 GXSetFieldMask 	gx.a GXPixel.o
+8056DAD8 GXSetFieldMode 	gx.a GXPixel.o
+8056DCAC GXCallDisplayList 	gx.a GXDisplayList.o
+8056DD20 __GXSetProjection 	gx.a GXTransform.o
+8056DD64 GXSetProjection 	gx.a GXTransform.o
+8056DDC8 GXSetProjectionv 	gx.a GXTransform.o
+8056DE14 GXLoadPosMtxImm
+8056DE90 GXLoadNrmMtxImm 	gx.a GXTransform.o
+8056DF38 GXSetCurrentMtx 	gx.a GXTransform.o
+8056DF58 GXLoadTexMtxImm 	gx.a GXTransform.o
+8056E00C __GXSetViewport 	gx.a GXTransform.o
+8056E0D8 GXSetViewport 	gx.a GXTransform.o
+8056E134 GXSetScissor 	gx.a GXTransform.o
+8056E19C GXSetScissorBoxOffset 	gx.a GXTransform.o
+8056E1D8 GXSetClipMode 	gx.a GXTransform.o
+8056E200 __GXSetMatrixIndex 	gx.a GXTransform.o
+8056E288 GXSetGPMetric 	gx.a GXPerf.o
+8056EAB4 GXClearGPMetric
+8056EAC4 FindContainHeap_ 	mem.a mem_heapCommon.o
+8056EC04 MEMiInitHeapHead 	mem.a mem_heapCommon.o
+8056F15C AllocFromHead_ 	mem.a mem_expHeap.o
+8056F238 AllocFromTail_ 	mem.a mem_expHeap.o
+8056F300 RecycleRegion_ 	mem.a mem_expHeap.o
+8056F468 MEMCreateExpHeapEx 	mem.a mem_expHeap.o
+8056F518 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8056F548 MEMAllocFromExpHeapEx 	mem.a mem_expHeap.o
+8056F6F4 MEMInitAllocatorForExpHeap 	mem.a mem_allocator.o
+8056F710 MEMInitList 	mem.a mem_list.o
+8056F728 MEMAppendListObject 	mem.a mem_list.o
+8056F798 nw4hbm::ut::List_Remove(nw4hbm::ut::List *, void *) 	homebuttonLib.a ut_list.o
+8056F804 MEMGetNextListObject 	mem.a mem_list.o
+8056F824 EUARTInit 	euart.a euart.o
+8056F920 InitializeUART 	euart.a euart.o
+8056F968 WriteUARTN 	euart.a euart.o
+8056FB94 IPCInit 	ipc.a ipcMain.o
+8056FC28 IPCReadReg 	ipc.a ipcMain.o
+8056FC38 IPCWriteReg 	ipc.a ipcMain.o
+8056FC60 strnlen 	ipc.a ipcclt.o
+8056FC8C IpcReplyHandler 	ipc.a ipcclt.o
+80570090 IPCCltInit 	ipc.a ipcclt.o
+805703F8 IOS_OpenAsync 	ipc.a ipcclt.o
+80570510 IOS_Open 	ipc.a ipcclt.o
+80570630 IOS_CloseAsync 	ipc.a ipcclt.o
+805706F0 IOS_Close 	ipc.a ipcclt.o
+80570798 IOS_ReadAsync 	ipc.a ipcclt.o
+80570898 IOS_Read 	ipc.a ipcclt.o
+805709A0 IOS_WriteAsync 	ipc.a ipcclt.o
+80570AA0 IOS_Write 	ipc.a ipcclt.o
+80570BA8 IOS_SeekAsync 	ipc.a ipcclt.o
+80570C88 IOS_IoctlAsync 	ipc.a ipcclt.o
+80570DC0 IOS_Ioctl 	ipc.a ipcclt.o
+80570EF0 __ios_Ioctlv 	ipc.a ipcclt.o
+8057102C IOS_IoctlvAsync 	ipc.a ipcclt.o
+80571110 IOS_Ioctlv 	ipc.a ipcclt.o
+805714E8 iosCreateHeap 	ipc.a memory.o
+80571618 __iosAlloc 	ipc.a memory.o
+80571820 iosFree 	ipc.a memory.o
+80571A0C IPCiProfInit 	ipc.a ipcProfile.o
+80571AC4 IPCiProfQueueReq 	ipc.a ipcProfile.o
+80571B44 cCameraManager::PushWorldUpVector(void)
+80571B54 IPCiProfReply 	ipc.a ipcProfile.o
+80572E90 select_1obj_continue 	kpad.a KPAD.o
+80577718 TPLBind 	tpl.a TPL.o
+8057782C TPLGet 	tpl.a TPL.o
+8057784C ARCInitHandle 	arc.a arc.o
+80577B90 ARCFastOpen 	arc.a arc.o
+80577BE0 ARCConvertPathToEntrynum 	arc.a arc.o
+8057800C ARCGetStartAddrInMem 	arc.a arc.o
+80578030 ARCChangeDir 	arc.a arc.o
+80578088 ARCOpenDir 	arc.a arc.o
+80578104 ARCReadDir 	arc.a arc.o
+80578ABC nlMatrix4::SetColumn(int, nlVector3 &)
+8057A0B4 JSUList<Q212JUTException12JUTExMapFile>::JSUList<Q212JUTException12JUTExMapFile>(bool) 	JUtility.a JUTException.o
+8057A550 JSUList<11JKRDisposer>::~JSUList<11JKRDisposer>(void) 	JKernel.a JKRHeap.o
+8057CA10 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+8057CAB0 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80587748 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+8058898C J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805913EC J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+80593DC4 cTeam::GetPlayer(int)
+80597FC0 JSUList<11JKRDisposer>::~JSUList<11JKRDisposer>(void) 	JKernel.a JKRHeap.o
+80599CC4 LexicalCast<b,i>(int &)
+8059B6C8 JSUList<11JKRDisposer>::~JSUList<11JKRDisposer>(void) 	JKernel.a JKRHeap.o
+8059CE2C JSUList<11JKRDisposer>::~JSUList<11JKRDisposer>(void) 	JKernel.a JKRHeap.o
+805A03CC JAU_JAIInitializer::JAU_JAIInitializer(void) 	JAudio2.a JAUInitializer.o
+805A5454 Increment<Q29CrowdMood10CROWD_MOOD>(CrowdMood::CROWD_MOOD &)
+805A6630 aramGetFirstUserAddress
+805A6654 __stdio_atexit 	MSL_C.PPCEABI.bare.H.a misc_io.o
+805A6AC4 JSUList<11JKRDisposer>::~JSUList<11JKRDisposer>(void) 	JKernel.a JKRHeap.o
+805A6C9C J3DAnmKeyLoader_v15::J3DAnmKeyLoader_v15(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805A6DE8 JSUList<11JKRDisposer>::~JSUList<11JKRDisposer>(void) 	JKernel.a JKRHeap.o
+805B09F4 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805B39D4 nw4hbm::ut::detail::LinkListImpl::~LinkListImpl(void) 	homebuttonLib.a ut_LinkList.o
+805B3A58 nw4hbm::ut::detail::LinkListImpl::Erase(nw4hbm::ut::detail::LinkListImpl::Iterator) 	homebuttonLib.a ut_LinkList.o
+805B3AE4 JGadget::TNodeLinkList::Insert(JGadget::TNodeLinkList::iterator, JGadget::TLinkListNode *) 	JGadget.a linklist.o
+805B3E84 J3DAnmVisibilityFull::~J3DAnmVisibilityFull(void) 	J3DGraphLoader.a J3DAnmLoader.o
+805B3F40 MEMInitList 	mem.a mem_list.o
+805B3F58 MEMAppendListObject 	mem.a mem_list.o
+805B4034 nw4hbm::ut::List_Remove(nw4hbm::ut::List *, void *) 	homebuttonLib.a ut_list.o
+805B40A0 MEMGetNextListObject 	mem.a mem_list.o
+805B93D4 cCharacter::IsPlayingEffect( (EffectsGroup *))
+805C1AF8 cCharacter::IsPlayingEffect( (EffectsGroup *))
+805C1FBC JASSeqCtrl::start(void *, unsigned long) 	JAudio2.a JASSeqCtrl.o
+805C4538 gki_init_free_queue 	bte.a gki_buffer.o
+805C4758 gki_buffer_init 	bte.a gki_buffer.o
+805C4A04 GKI_init_q 	bte.a gki_buffer.o
+805C4A18 GKI_getbuf 	bte.a gki_buffer.o
+805C4BB8 GKI_getpoolbuf 	bte.a gki_buffer.o
+805C4CA0 GKI_freebuf 	bte.a gki_buffer.o
+805C4E10 GKI_get_buf_size 	bte.a gki_buffer.o
+805C4E54 GKI_send_msg 	bte.a gki_buffer.o
+805C5010 GKI_read_mbox 	bte.a gki_buffer.o
+805C50C0 GKI_enqueue 	bte.a gki_buffer.o
+805C51FC GKI_enqueue_head 	bte.a gki_buffer.o
+805C533C GKI_dequeue 	bte.a gki_buffer.o
+805C53DC GKI_remove_from_queue 	bte.a gki_buffer.o
+805C54A8 GKI_getnext 	bte.a gki_buffer.o
+805C54C4 GKI_queue_is_empty 	bte.a gki_buffer.o
+805C54D4 GKI_create_pool 	bte.a gki_buffer.o
+805C581C GKI_delete_pool 	bte.a gki_buffer.o
+805C597C gki_timers_init 	bte.a gki_time.o
+805C5A38 GKI_get_tick_count 	bte.a gki_time.o
+805C5A4C GKI_start_timer 	bte.a gki_time.o
+805C5B9C GKI_stop_timer 	bte.a gki_time.o
+805C5C24 GKI_init_timer_list 	bte.a gki_time.o
+805C5C38 GKI_update_timer_list 	bte.a gki_time.o
+805C5CC4 GKI_add_to_timer_list 	bte.a gki_time.o
+805C5DB0 GKI_remove_from_timer_list 	bte.a gki_time.o
+805C5ED4 GKI_init 	bte.a gki_ppc.o
+805C5F64 GKI_shutdown 	bte.a gki_ppc.o
+805C601C GKI_send_event 	bte.a gki_ppc.o
+805C60EC GKI_disable 	bte.a gki_ppc.o
+805C6134 GKI_os_malloc 	bte.a gki_ppc.o
+805C6188 hcisu_h2_receive_msg 	bte.a hcisu_h2.o
+805C6520 hcisu_h2_send_msg_now 	bte.a hcisu_h2.o
+805C66CC hcisu_h2_init 	bte.a hcisu_h2.o
+805C66F8 hcisu_h2_open 	bte.a hcisu_h2.o
+805C6760 hcisu_h2_close 	bte.a hcisu_h2.o
+805C6794 hcisu_h2_send 	bte.a hcisu_h2.o
+805C67C4 hcisu_h2_handle_event 	bte.a hcisu_h2.o
+805C6800 uusb_CloseDeviceCB 	bte.a uusb_ppc.o
+805C7308 UUSB_Close 	bte.a uusb_ppc.o
+805C73B4 UUSB_Unregister 	bte.a uusb_ppc.o
+805C7418 bte_hcisu_task 	bte.a bte_hcisu.o
+805C74B0 btu_init_core 	bte.a btu_init.o
+805C74DC LogMsg 	bte.a bte_logmsg.o
+805C7734 BTA_CleanUp 	bte.a bte_main.o
+805C7798 btu_task_init 	bte.a btu_task1.o
+805C77D8 btu_task_msg_handler 	bte.a btu_task1.o
+805C7B64 btu_start_timer 	bte.a btu_task1.o
+805C7BE8 bdcpy 	bte.a bd.o
+805C7C1C bdcmp 	bte.a bd.o
+805C7CBC TRKTargetSetInputPendingPtr
+805C7CCC TRKTargetSetInputPendingPtr
+805C7CDC TRKTargetSetInputPendingPtr
+805C7CEC bta_sys_conn_close 	bte.a bta_sys_conn.o
+805C7DB0 bta_sys_conn_close 	bte.a bta_sys_conn.o
+805C7F10 bta_sys_init 	bte.a bta_sys_main.o
+805C7F74 bta_sys_event 	bte.a bta_sys_main.o
+805C8080 bta_sys_register 	bte.a bta_sys_main.o
+805C80E4 bta_sys_disable 	bte.a bta_sys_main.o
+805C8154 ptim_init 	bte.a ptim.o
+805C81A0 ptim_timer_update 	bte.a ptim.o
+805C8254 ptim_start_timer 	bte.a ptim.o
+805C82F4 ptim_stop_timer 	bte.a ptim.o
+805C8334 utl_freebuf 	bte.a utl.o
+805C8378 bta_dm_enable 	bte.a bta_dm_act.o
+805C8488 bta_dm_disable 	bte.a bta_dm_act.o
+805C8538 bta_dm_disable_timer_cback 	bte.a bta_dm_act.o
+805C85FC bta_dm_set_visibility 	bte.a bta_dm_act.o
+805C8644 bta_dm_bond 	bte.a bta_dm_act.o
+805C86B4 bta_dm_pin_reply 	bte.a bta_dm_act.o
+805C8750 bta_dm_auth_reply 	bte.a bta_dm_act.o
+805C8824 bta_dm_search_start 	bte.a bta_dm_act.o
+805C8884 bta_dm_search_cancel 	bte.a bta_dm_act.o
+805C8908 bta_dm_discover 	bte.a bta_dm_act.o
+805C8A1C bta_dm_inq_cmpl 	bte.a bta_dm_act.o
+805C8C40 bta_dm_rmt_name 	bte.a bta_dm_act.o
+805C8DAC bta_dm_disc_rmt_name 	bte.a bta_dm_act.o
+805C8E10 bta_dm_sdp_result 	bte.a bta_dm_act.o
+805C9090 bta_dm_disc_result 	bte.a bta_dm_act.o
+805C90E0 bta_dm_search_result 	bte.a bta_dm_act.o
+805C9168 bta_dm_search_timer_cback 	bte.a bta_dm_act.o
+805C91B4 bta_dm_search_cancel_cmpl 	bte.a bta_dm_act.o
+805C91F8 bta_dm_queue_disc 	bte.a bta_dm_act.o
+805C9240 bta_dm_queue_disc 	bte.a bta_dm_act.o
+805C9288 bta_dm_search_cancel_cmpl 	bte.a bta_dm_act.o
+805C92CC bta_dm_search_cancel_cmpl 	bte.a bta_dm_act.o
+805C9310 bta_dm_search_cancel_transac_cmpl 	bte.a bta_dm_act.o
+805C9384 bta_dm_find_services 	bte.a bta_dm_act.o
+805C9524 bta_dm_discover_next_device 	bte.a bta_dm_act.o
+805C9604 bta_dm_sdp_callback 	bte.a bta_dm_act.o
+805C964C bta_dm_inq_results_cb 	bte.a bta_dm_act.o
+805C96DC bta_dm_inq_cmpl_cb 	bte.a bta_dm_act.o
+805C9728 bta_dm_service_search_remname_cback 	bte.a bta_dm_act.o
+805C9768 bta_dm_remname_cback 	bte.a bta_dm_act.o
+805C97F4 bta_dm_disc_remname_cback 	bte.a bta_dm_act.o
+805C9880 bta_dm_authorize_cback 	bte.a bta_dm_act.o
+805C9948 bta_dm_pinname_cback 	bte.a bta_dm_act.o
+805C9A08 bta_dm_pin_cback 	bte.a bta_dm_act.o
+805C9B40 bta_dm_new_link_key_cback 	bte.a bta_dm_act.o
+805C9BDC bta_dm_authentication_complete_cback 	bte.a bta_dm_act.o
+805C9DB8 bta_dm_acl_change_cback 	bte.a bta_dm_act.o
+805C9E28 bta_dm_acl_change 	bte.a bta_dm_act.o
+805CA0C4 bta_dm_link_quality_cback 	bte.a bta_dm_act.o
+805CA130 bta_dm_link_quality_cback 	bte.a bta_dm_act.o
+805CA19C bta_dm_l2cap_server_compress_cback 	bte.a bta_dm_act.o
+805CA280 bta_dm_compress_cback 	bte.a bta_dm_act.o
+805CA4B8 bta_dm_rm_cback 	bte.a bta_dm_act.o
+805CA5C0 bta_dm_keep_acl 	bte.a bta_dm_act.o
+805CA664 bta_dm_send_hci_reset 	bte.a bta_dm_act.o
+805CA6B4 BTA_EnableBluetooth 	bte.a bta_dm_api.o
+805CA73C BTA_HhDisable 	bte.a bta_hh_api.o
+805CA774 BTA_DmIsDeviceUp 	bte.a bta_dm_api.o
+805CA7AC BTA_DmSetDeviceName 	bte.a bta_dm_api.o
+805CA810 BTA_DmSetVisibility 	bte.a bta_dm_api.o
+805CA868 BTA_DmSearch 	bte.a bta_dm_api.o
+805CA8EC BTA_HhDisable 	bte.a bta_hh_api.o
+805CA924 BTA_DmPinReply 	bte.a bta_dm_api.o
+805CA9B0 BTA_DmAddDevice 	bte.a bta_dm_api.o
+805CAAA0 BTA_DmRemoveDevice 	bte.a bta_dm_api.o
+805CAAE8 BTA_HhDisable 	bte.a bta_hh_api.o
+805CAB20 bta_dm_sm_execute 	bte.a bta_dm_main.o
+805CABB8 bta_dm_search_sm_execute 	bte.a bta_dm_main.o
+805CAC80 bta_dm_init_pm 	bte.a bta_dm_pm.o
+805CAD00 bta_dm_pm_cback 	bte.a bta_dm_pm.o
+805CB080 bta_dm_pm_set_mode 	bte.a bta_dm_pm.o
+805CB400 bta_dm_pm_btm_cback 	bte.a bta_dm_pm.o
+805CB478 bta_dm_pm_timer_cback 	bte.a bta_dm_pm.o
+805CB570 bta_dm_pm_btm_status 	bte.a bta_dm_pm.o
+805CB69C bta_hh_api_enable 	bte.a bta_hh_act.o
+805CB810 bta_hh_api_disable 	bte.a bta_hh_act.o
+805CB914 bta_hh_disc_cmpl 	bte.a bta_hh_act.o
+805CB9B8 bta_hh_sdp_cback 	bte.a bta_hh_act.o
+805CBAEC bta_hh_start_sdp 	bte.a bta_hh_act.o
+805CBC80 bta_hh_sdp_cmpl 	bte.a bta_hh_act.o
+805CBDE8 bta_hh_api_disc_act 	bte.a bta_hh_act.o
+805CBE50 bta_hh_open_cmpl_act 	bte.a bta_hh_act.o
+805CBF78 bta_hh_open_act 	bte.a bta_hh_act.o
+805CC030 bta_hh_data_act 	bte.a bta_hh_act.o
+805CC088 bta_hh_handsk_act 	bte.a bta_hh_act.o
+805CC2F0 bta_hh_ctrl_dat_act 	bte.a bta_hh_act.o
+805CC4E8 bta_hh_close_act 	bte.a bta_hh_act.o
+805CC704 bta_hh_maint_dev_act 	bte.a bta_hh_act.o
+805CC868 bta_hh_get_acl_q_info 	bte.a bta_hh_act.o
+805CC984 bta_hh_write_dev_act 	bte.a bta_hh_act.o
+805CCB4C bta_hh_cback 	bte.a bta_hh_act.o
+805CCDE4 BTA_HhEnable 	bte.a bta_hh_api.o
+805CCE6C BTA_HhDisable 	bte.a bta_hh_api.o
+805CCEA4 BTA_HhClose 	bte.a bta_hh_api.o
+805CCF08 BTA_HhOpen 	bte.a bta_hh_api.o
+805CCFBC BTA_HhSendData 	bte.a bta_hh_api.o
+805CD04C BTA_HhAddDev 	bte.a bta_hh_api.o
+805CD0F4 BTA_HhRemoveDev 	bte.a bta_hh_api.o
+805CD160 BTA_HhGetAclQueueInfo 	bte.a bta_hh_api.o
+805CD1B4 bta_hh_sm_execute 	bte.a bta_hh_main.o
+805CD508 bta_hh_hdl_event 	bte.a bta_hh_main.o
+805CD654 bta_hh_evt_code 	bte.a bta_hh_main.o
+805CD708 bta_hh_find_cb 	bte.a bta_hh_utils.o
+805CD844 bta_hh_clean_up_kdev 	bte.a bta_hh_utils.o
+805CD8C4 bta_hh_add_device_to_list 	bte.a bta_hh_utils.o
+805CD980 bta_hh_tod_spt 	bte.a bta_hh_utils.o
+805CD9D4 bta_hh_trace_dev_db 	bte.a bta_hh_utils.o
+805CDAB4 btm_acl_init 	bte.a btm_acl.o
+805CDAD0 btm_handle_to_acl_index 	bte.a btm_acl.o
+805CDE68 btm_acl_removed 	bte.a btm_acl.o
+805CDF2C btm_acl_device_down 	bte.a btm_acl.o
+805CE1AC btm_acl_encrypt_change 	bte.a btm_acl.o
+805CE31C BTM_SetLinkPolicy 	bte.a btm_acl.o
+805CE50C BTM_SetDefaultLinkSuperTout 	bte.a btm_acl.o
+805CE51C btm_read_link_policy_complete 	bte.a btm_acl.o
+805CE620 btm_read_remote_version_complete 	bte.a btm_acl.o
+805CE6AC btm_read_remote_features_complete 	bte.a btm_acl.o
+805CE8D8 BTM_SetDefaultLinkSuperTout 	bte.a btm_acl.o
+805CE8E8 BTM_IsAclConnectionUp 	bte.a btm_acl.o
+805CE9C0 BTM_GetNumAclLinks 	bte.a btm_acl.o
+805CEA1C SaveLoad::DidGameIDChange(void)
+805CEA2C BTM_GetHCIConnHandle 	bte.a btm_acl.o
+805CEAC8 btm_process_clk_off_comp_evt 	bte.a btm_acl.o
+805CEB64 btm_acl_role_changed 	bte.a btm_acl.o
+805CED58 btm_acl_timeout 	bte.a btm_acl.o
+805CEDB4 btm_get_max_packet_size 	bte.a btm_acl.o
+805CEF54 BTM_AclRegisterForChanges 	bte.a btm_acl.o
+805CEF98 btm_qos_setup_complete 	bte.a btm_acl.o
+805CF070 BTM_ReadRSSI 	bte.a btm_acl.o
+805CF1AC BTM_ReadLinkQuality 	bte.a btm_acl.o
+805CF2E8 btm_read_rssi_complete 	bte.a btm_acl.o
+805CF404 btm_read_link_quality_complete 	bte.a btm_acl.o
+805CF51C btm_remove_acl 	bte.a btm_acl.o
+805CF5D8 btm_chg_all_acl_pkt_types 	bte.a btm_acl.o
+805CF7F8 BTM_SecAddDevice 	bte.a btm_dev.o
+805CF980 BTM_SecDeleteDevice 	bte.a btm_dev.o
+805CFA2C BTM_SecReadDevName 	bte.a btm_dev.o
+805CFACC btm_sec_alloc_dev 	bte.a btm_dev.o
+805CFBEC btm_find_dev_by_handle 	bte.a btm_dev.o
+805CFCA4 btm_find_dev 	bte.a btm_dev.o
+805CFD2C btm_find_oldest_dev 	bte.a btm_dev.o
+805CFEC4 btm_dev_init 	bte.a btm_devctl.o
+805CFF64 btm_db_reset 	bte.a btm_devctl.o
+805D0014 BTM_DeviceReset 	bte.a btm_devctl.o
+805D00B0 BTM_SendHciReset 	bte.a btm_devctl.o
+805D0158 BTM_IsDeviceUp 	bte.a btm_devctl.o
+805D0174 BTM_SetAfhChannels 	bte.a btm_devctl.o
+805D0264 btm_dev_timeout 	bte.a btm_devctl.o
+805D04FC btm_reset_complete 	bte.a btm_devctl.o
+805D06C0 btm_read_hci_buf_size_complete 	bte.a btm_devctl.o
+805D0788 btm_read_local_version_complete 	bte.a btm_devctl.o
+805D0844 btm_read_local_features_complete 	bte.a btm_devctl.o
+805D0D40 BTM_SetLocalDeviceName 	bte.a btm_devctl.o
+805D0DF8 btm_read_local_name_complete 	bte.a btm_devctl.o
+805D0E84 BTM_ReadLocalDeviceAddr 	bte.a btm_devctl.o
+805D0EC4 btm_read_local_addr_complete 	bte.a btm_devctl.o
+805D0F0C BTM_ReadLocalVersion 	bte.a btm_devctl.o
+805D0F58 BTM_SetDeviceClass 	bte.a btm_devctl.o
+805D0FD8 dataARAMDefaultGetInfo
+805D0FE8 dataARAMDefaultGetInfo
+805D0FF8 BTM_RegisterForDeviceStatusNotif 	bte.a btm_devctl.o
+805D1010 BTM_VendorSpecificCommand 	bte.a btm_devctl.o
+805D110C btm_vsc_complete 	bte.a btm_devctl.o
+805D1178 BTM_RegisterForVSEvents 	bte.a btm_devctl.o
+805D11B0 btm_vendor_specific_evt 	bte.a btm_devctl.o
+805D1248 BTM_WritePageTimeout 	bte.a btm_devctl.o
+805D12E8 BTM_ReadStoredLinkKey 	bte.a btm_devctl.o
+805D13C0 BTM_WriteStoredLinkKey 	bte.a btm_devctl.o
+805D1490 BTM_DeleteStoredLinkKey 	bte.a btm_devctl.o
+805D1560 btm_read_stored_link_key_complete 	bte.a btm_devctl.o
+805D15DC btm_write_stored_link_key_complete 	bte.a btm_devctl.o
+805D1638 btm_delete_stored_link_key_complete 	bte.a btm_devctl.o
+805D16A0 btm_return_link_keys_evt 	bte.a btm_devctl.o
+805D184C btm_discovery_db_init 	bte.a btm_discovery.o
+805D18C4 btm_discovery_db_reset 	bte.a btm_discovery.o
+805D1980 BTM_SetDiscoverability 	bte.a btm_inq.o
+805D1C04 BTM_SetPageScanType 	bte.a btm_inq.o
+805D1CB4 BTM_SetPageScanType 	bte.a btm_inq.o
+805D1D64 BTM_SetInquiryMode 	bte.a btm_inq.o
+805D1DFC BTM_SetConnectability 	bte.a btm_inq.o
+805D1F84 SaveLoad::DidGameIDChange(void)
+805D1F94 BTM_CancelInquiry 	bte.a btm_inq.o
+805D209C BTM_StartInquiry 	bte.a btm_inq.o
+805D2250 BTM_ReadRemoteDeviceName 	bte.a btm_inq.o
+805D2338 BTM_CancelRemoteDeviceName 	bte.a btm_inq.o
+805D23B0 BTM_InqDbRead 	bte.a btm_inq.o
+805D2470 BTM_InqDbFirst 	bte.a btm_inq.o
+805D2528 BTM_InqDbNext 	bte.a btm_inq.o
+805D2664 BTM_ClearInqDb 	bte.a btm_inq.o
+805D2734 btm_inq_db_reset 	bte.a btm_inq.o
+805D28D0 btm_inq_find_bdaddr 	bte.a btm_inq.o
+805D29AC btm_inq_db_new 	bte.a btm_inq.o
+805D2AB0 btm_set_inq_event_filter 	bte.a btm_inq.o
+805D2B94 btm_event_filter_complete 	bte.a btm_inq.o
+805D2DB4 btm_process_inq_results 	bte.a btm_inq.o
+805D302C btm_process_inq_complete 	bte.a btm_inq.o
+805D3130 btm_initiate_rem_name 	bte.a btm_inq.o
+805D3280 btm_process_remote_name 	bte.a btm_inq.o
+805D33D8 btm_inq_rmt_name_failed 	bte.a btm_inq.o
+805D3418 btm_init 	bte.a btm_main.o
+805D3474 BTM_PmRegister 	bte.a btm_pm.o
+805D3530 BTM_SetPowerMode 	bte.a btm_pm.o
+805D3700 BTM_ReadPowerMode 	bte.a btm_pm.o
+805D3830 btm_pm_sm_alloc 	bte.a btm_pm.o
+805D3880 btm_pm_compare_modes 	bte.a btm_pm.o
+805D3A9C btm_pm_get_set_mode 	bte.a btm_pm.o
+805D3BFC btm_pm_snd_md_req 	bte.a btm_pm.o
+805D3E30 btm_pm_proc_cmd_status 	bte.a btm_pm.o
+805D3EE0 btm_pm_proc_mode_change 	bte.a btm_pm.o
+805D4108 btm_sco_init 	bte.a btm_sco.o
+805D414C btm_esco_conn_rsp 	bte.a btm_sco.o
+805D4328 btm_sco_chk_pend_unpark 	bte.a btm_sco.o
+805D44B4 btm_sco_conn_req 	bte.a btm_sco.o
+805D4694 btm_sco_connected 	bte.a btm_sco.o
+805D4834 BTM_RemoveSco 	bte.a btm_sco.o
+805D48EC btm_remove_sco_links 	bte.a btm_sco.o
+805D4970 btm_sco_removed 	bte.a btm_sco.o
+805D4A84 btm_sco_acl_removed 	bte.a btm_sco.o
+805D4B3C BTM_ChangeEScoLinkParms 	bte.a btm_sco.o
+805D4CE4 btm_esco_proc_conn_chg 	bte.a btm_sco.o
+805D4DE8 btm_is_sco_active 	bte.a btm_sco.o
+805D4E58 btm_num_sco_links_active 	bte.a btm_sco.o
+805D4EB8 btm_is_sco_active_by_bdaddr 	bte.a btm_sco.o
+805D4F40 BTM_SecRegister 	bte.a btm_sec.o
+805D4FB8 BTM_SecAddRmtNameNotifyCallback 	bte.a btm_sec.o
+805D5008 BTM_SecDeleteRmtNameNotifyCallback 	bte.a btm_sec.o
+805D505C BTM_SetPinType 	bte.a btm_sec.o
+805D510C BTM_SetSecurityLevel 	bte.a btm_sec.o
+805D5334 BTM_PINCodeReply 	bte.a btm_sec.o
+805D53F8 BTM_DeviceAuthorized 	bte.a btm_sec.o
+805D55D4 BTM_SecBond 	bte.a btm_sec.o
+805D59A0 btm_sec_l2cap_access_req 	bte.a btm_sec.o
+805D5E04 btm_sec_mx_access_request 	bte.a btm_sec.o
+805D60A0 btm_sec_conn_req 	bte.a btm_sec.o
+805D61E8 btm_sec_dev_reset 	bte.a btm_sec.o
+805D6228 btm_sec_abort_access_req 	bte.a btm_sec.o
+805D62DC btm_sec_rmt_name_request_complete 	bte.a btm_sec.o
+805D65C4 btm_sec_auth_complete 	bte.a btm_sec.o
+805D6908 btm_sec_mkey_comp_event 	bte.a btm_sec.o
+805D6A04 btm_sec_encrypt_change 	bte.a btm_sec.o
+805D6B40 btm_sec_is_bonding 	bte.a btm_sec.o
+805D6B80 btm_sec_connected 	bte.a btm_sec.o
+805D7000 btm_sec_disconnect 	bte.a btm_sec.o
+805D70BC btm_sec_disconnected 	bte.a btm_sec.o
+805D71F8 btm_sec_link_key_notification 	bte.a btm_sec.o
+805D73A4 btm_sec_link_key_request 	bte.a btm_sec.o
+805D74D4 btm_sec_pin_code_request_timeout 	bte.a btm_sec.o
+805D7548 btm_sec_pin_code_request 	bte.a btm_sec.o
+805D78A4 btm_sec_update_clock_offset 	bte.a btm_sec.o
+805D78F4 btm_sec_execute_procedure 	bte.a btm_sec.o
+805D7CD4 btm_sec_start_authorization 	bte.a btm_sec.o
+805D7DF0 btm_sec_collision_timeout 	bte.a btm_sec.o
+805D7ED0 btm_read_trusted_mask 	bte.a btm_sec.o
+805D7F04 btu_hcif_process_event 	bte.a btu_hcif.o
+805D84BC btu_hcif_send_cmd 	bte.a btu_hcif.o
+805D8648 btu_hcif_connection_comp_evt 	bte.a btu_hcif.o
+805D8724 btu_hcif_connection_request_evt 	bte.a btu_hcif.o
+805D87B0 btu_hcif_qos_setup_comp_evt 	bte.a btu_hcif.o
+805D88B0 btu_hcif_esco_connection_comp_evt 	bte.a btu_hcif.o
+805D8AE8 btu_hcif_command_complete_evt 	bte.a btu_hcif.o
+805D8C00 btu_hcif_hdl_command_status 	bte.a btu_hcif.o
+805D8E00 btu_hcif_command_status_evt 	bte.a btu_hcif.o
+805D8F28 btu_hcif_cmd_timeout 	bte.a btu_hcif.o
+805D9080 btu_hcif_link_key_notification_evt 	bte.a btu_hcif.o
+805D9160 btu_init_core 	bte.a btu_init.o
+805D918C BTE_Init 	bte.a btu_init.o
+805D91D8 WBT_ExtCreateRecord 	bte.a wbt_ext.o
+805D92B8 GAP_Init 	bte.a gap_api.o
+805D9318 gap_conn_init 	bte.a gap_conn.o
+805D9388 gap_connect_ind 	bte.a gap_conn.o
+805D9514 gap_connect_cfm 	bte.a gap_conn.o
+805D96F0 gap_config_ind 	bte.a gap_conn.o
+805D982C gap_config_cfm 	bte.a gap_conn.o
+805D9A18 gap_disconnect_ind 	bte.a gap_conn.o
+805D9C10 gap_data_ind 	bte.a gap_conn.o
+805D9D20 gap_congestion_ind 	bte.a gap_conn.o
+805D9E54 btm_cback 	bte.a gap_utils.o
+805DA044 gap_find_addr_name_cb 	bte.a gap_utils.o
+805DA25C gap_find_addr_inq_cb 	bte.a gap_utils.o
+805DA410 gap_convert_btm_status 	bte.a gap_utils.o
+805DA470 btsnd_hcic_inquiry 	bte.a hcicmds.o
+805DA518 btsnd_hcic_read_bd_addr 	bte.a hcicmds.o
+805DA578 btsnd_hcic_per_inq_mode 	bte.a hcicmds.o
+805DA638 btsnd_hcic_create_conn 	bte.a hcicmds.o
+805DA718 btsnd_hcic_disconnect 	bte.a hcicmds.o
+805DA7A0 btsnd_hcic_add_SCO_conn 	bte.a hcicmds.o
+805DA8E8 btsnd_hcic_link_key_req_reply 	bte.a hcicmds.o
+805DAA88 btsnd_hcic_rmt_name_req_cancel 	bte.a hcicmds.o
+805DAB28 btsnd_hcic_pin_code_req_reply 	bte.a hcicmds.o
+805DAD0C btsnd_hcic_rmt_name_req_cancel 	bte.a hcicmds.o
+805DADAC btsnd_hcic_change_conn_type 	bte.a hcicmds.o
+805DAE3C btsnd_hcic_get_link_quality 	bte.a hcicmds.o
+805DAEB8 btsnd_hcic_set_conn_encrypt 	bte.a hcicmds.o
+805DAF44 btsnd_hcic_rmt_name_req 	bte.a hcicmds.o
+805DB01C btsnd_hcic_rmt_name_req_cancel 	bte.a hcicmds.o
+805DB0BC btsnd_hcic_get_link_quality 	bte.a hcicmds.o
+805DB138 btsnd_hcic_get_link_quality 	bte.a hcicmds.o
+805DB1B4 btsnd_hcic_get_link_quality 	bte.a hcicmds.o
+805DB230 btsnd_hcic_setup_esco_conn 	bte.a hcicmds.o
+805DB32C btsnd_hcic_accept_esco_conn 	bte.a hcicmds.o
+805DB474 btsnd_hcic_park_mode 	bte.a hcicmds.o
+805DB528 btsnd_hcic_sniff_mode 	bte.a hcicmds.o
+805DB5F4 btsnd_hcic_exit_park_mode 	bte.a hcicmds.o
+805DB678 btsnd_hcic_park_mode 	bte.a hcicmds.o
+805DB72C btsnd_hcic_exit_park_mode 	bte.a hcicmds.o
+805DB7B0 btsnd_hcic_delete_stored_key 	bte.a hcicmds.o
+805DB860 btsnd_hcic_write_link_super_tout 	bte.a hcicmds.o
+805DB8F4 btsnd_hcic_read_local_features 	bte.a hcicmds.o
+805DBB0C btsnd_hcic_write_encr_mode 	bte.a hcicmds.o
+805DBBE0 btsnd_hcic_write_stored_key 	bte.a hcicmds.o
+805DBDA0 btsnd_hcic_delete_stored_key 	bte.a hcicmds.o
+805DBE50 btsnd_hcic_change_name 	bte.a hcicmds.o
+805DC080 btsnd_hcic_write_encr_mode 	bte.a hcicmds.o
+805DC0F4 btsnd_hcic_write_encr_mode 	bte.a hcicmds.o
+805DC1F0 btsnd_hcic_set_host_buf_size 	bte.a hcicmds.o
+805DC2AC btsnd_hcic_write_link_super_tout 	bte.a hcicmds.o
+805DC3B0 btsnd_hcic_read_bd_addr 	bte.a hcicmds.o
+805DC410 btsnd_hcic_read_local_features 	bte.a hcicmds.o
+805DC494 btsnd_hcic_read_bd_addr 	bte.a hcicmds.o
+805DC4F4 btsnd_hcic_get_link_quality 	bte.a hcicmds.o
+805DC570 btsnd_hcic_read_rssi 	bte.a hcicmds.o
+805DC5E8 btsnd_hcic_set_afh_channels 	bte.a hcicmds.o
+805DCB8C HID_DevInit 	bte.a hidd_api.o
+805DCBF4 hidd_conn_initiate 	bte.a hidd_conn.o
+805DCCB4 hidd_proc_repage_timeout 	bte.a hidd_mgmt.o
+805DCD7C hidd_pm_set_now 	bte.a hidd_pm.o
+805DCF54 hidd_pm_proc_mode_change 	bte.a hidd_pm.o
+805DD0AC hidd_pm_inact_timeout 	bte.a hidd_pm.o
+805DD0F8 HID_HostGetSDPRecord 	bte.a hidh_api.o
+805DD1C0 hidh_search_callback 	bte.a hidh_api.o
+805DD610 HID_HostInit 	bte.a hidh_api.o
+805DD654 HID_HostRegister 	bte.a hidh_api.o
+805DD6D0 HID_HostDeregister 	bte.a hidh_api.o
+805DD7B4 HID_HostAddDev 	bte.a hidh_api.o
+805DD944 HID_HostRemoveDev 	bte.a hidh_api.o
+805DDA70 HID_HostWriteDev 	bte.a hidh_api.o
+805DDBB0 HID_HostCloseDev 	bte.a hidh_api.o
+805DDC50 HID_HostSetSecurityLevel 	bte.a hidh_api.o
+805DDE78 hidh_conn_reg 	bte.a hidh_conn.o
+805DDFD0 hidh_conn_disconnect 	bte.a hidh_conn.o
+805DE074 hidh_sec_check_complete_term 	bte.a hidh_conn.o
+805DE1A4 hidh_l2cif_connect_ind 	bte.a hidh_conn.o
+805DE3FC hidh_proc_repage_timeout 	bte.a hidh_conn.o
+805DE548 hidh_sec_check_complete_orig 	bte.a hidh_conn.o
+805DE75C hidh_l2cif_connect_cfm 	bte.a hidh_conn.o
+805DEAA4 hidh_l2cif_config_ind 	bte.a hidh_conn.o
+805DED4C hidh_l2cif_config_cfm 	bte.a hidh_conn.o
+805DF058 hidh_l2cif_disconnect_ind 	bte.a hidh_conn.o
+805DF31C hidh_l2cif_disconnect_cfm 	bte.a hidh_conn.o
+805DF564 hidh_l2cif_cong_ind 	bte.a hidh_conn.o
+805DF75C hidh_l2cif_data_ind 	bte.a hidh_conn.o
+805DFAF4 hidh_conn_snd_data 	bte.a hidh_conn.o
+805DFD90 hidh_conn_initiate 	bte.a hidh_conn.o
+805DFE8C hidh_conn_dereg 	bte.a hidh_conn.o
+805DFEB8 L2CA_Register 	bte.a l2c_api.o
+805E0054 L2CA_Deregister 	bte.a l2c_api.o
+805E00E4 L2CA_ConnectReq 	bte.a l2c_api.o
+805E0318 L2CA_ConnectRsp 	bte.a l2c_api.o
+805E04A8 L2CA_ConfigReq 	bte.a l2c_api.o
+805E0560 L2CA_ConfigRsp 	bte.a l2c_api.o
+805E0630 L2CA_DisconnectRsp 	bte.a l2c_api.o
+805E06D4 L2CA_DisconnectRsp 	bte.a l2c_api.o
+805E0778 L2CA_DataWrite 	bte.a l2c_api.o
+805E089C L2CA_SetIdleTimeout 	bte.a l2c_api.o
+805E0964 L2CA_SetIdleTimeoutByBdAddr 	bte.a l2c_api.o
+805E0A64 L2CA_SetTraceLevel 	bte.a l2c_api.o
+805E1DBC forward_peer_data 	bte.a l2c_csm.o
+805E1F60 l2c_link_hci_conn_req 	bte.a l2c_link.o
+805E20B4 l2c_link_hci_conn_comp 	bte.a l2c_link.o
+805E22EC l2c_link_sec_comp 	bte.a l2c_link.o
+805E23A0 l2c_link_hci_disc_comp 	bte.a l2c_link.o
+805E245C l2c_link_hci_qos_violation 	bte.a l2c_link.o
+805E24CC l2c_link_timeout 	bte.a l2c_link.o
+805E2640 l2c_link_send_to_lower 	bte.a l2c_link.o
+805E2748 l2c_link_check_send_pkts 	bte.a l2c_link.o
+805E2A14 l2c_link_adjust_allocation 	bte.a l2c_link.o
+805E2BAC l2c_link_process_num_completed_pkts 	bte.a l2c_link.o
+805E2C90 l2c_link_processs_num_bufs 	bte.a l2c_link.o
+805E2CA4 l2cap_link_chk_pkt_start 	bte.a l2c_link.o
+805E2E74 l2cap_link_chk_pkt_end 	bte.a l2c_link.o
+805E2EE0 l2c_link_role_changed 	bte.a l2c_link.o
+805E2F60 l2c_link_role_change_failed 	bte.a l2c_link.o
+805E2FCC l2c_link_segments_xmitted 	bte.a l2c_link.o
+805E30A8 l2c_pin_code_request 	bte.a l2c_link.o
+805E30EC l2c_init 	bte.a l2c_main.o
+805E3200 l2c_rcv_acl_data 	bte.a l2c_main.o
+805E3FF0 l2c_process_held_packets 	bte.a l2c_main.o
+805E411C l2cu_allocate_lcb 	bte.a l2c_utils.o
+805E41F0 l2cu_release_lcb 	bte.a l2c_utils.o
+805E42F0 l2cu_find_lcb_by_bd_addr 	bte.a l2c_utils.o
+805E4378 sdpu_find_ccb_by_cid 	bte.a sdp_utils.o
+805E4408 SaveLoad::DidGameIDChange(void)
+805E4418 l2cu_build_header 	bte.a l2c_utils.o
+805E44DC l2cu_send_peer_cmd_reject 	bte.a l2c_utils.o
+805E45D8 l2cu_send_peer_connect_req 	bte.a l2c_utils.o
+805E469C l2cu_send_peer_connect_rsp 	bte.a l2c_utils.o
+805E4774 l2cu_reject_connection 	bte.a l2c_utils.o
+805E4834 l2cu_send_peer_config_req 	bte.a l2c_utils.o
+805E4B2C l2cu_send_peer_config_rsp 	bte.a l2c_utils.o
+805E4E24 l2cu_send_peer_config_rej 	bte.a l2c_utils.o
+805E4FD8 l2cu_send_peer_disc_req 	bte.a l2c_utils.o
+805E50AC l2cu_send_peer_disc_rsp 	bte.a l2c_utils.o
+805E516C l2cu_send_peer_echo_req 	bte.a l2c_utils.o
+805E52DC l2cu_send_peer_echo_rsp 	bte.a l2c_utils.o
+805E5478 l2cu_send_peer_info_rsp 	bte.a l2c_utils.o
+805E551C l2cu_allocate_ccb 	bte.a l2c_utils.o
+805E5628 l2cu_release_ccb 	bte.a l2c_utils.o
+805E57CC l2cu_find_ccb_by_cid 	bte.a l2c_utils.o
+805E5828 l2cu_allocate_rcb 	bte.a l2c_utils.o
+805E5874 l2cu_release_rcb 	bte.a l2c_utils.o
+805E5884 l2cu_find_rcb_by_psm 	bte.a l2c_utils.o
+805E593C l2cu_process_peer_cfg_req 	bte.a l2c_utils.o
+805E5A84 l2cu_process_our_cfg_rsp 	bte.a l2c_utils.o
+805E5AC4 l2cu_process_our_cfg_req 	bte.a l2c_utils.o
+805E5BD4 l2cu_process_our_cfg_rsp 	bte.a l2c_utils.o
+805E5C14 l2cu_device_reset 	bte.a l2c_utils.o
+805E5C80 l2cu_create_conn 	bte.a l2c_utils.o
+805E5D98 l2cu_create_conn_after_switch 	bte.a l2c_utils.o
+805E5E68 sdpu_find_ccb_by_cid 	bte.a sdp_utils.o
+805E5EF8 l2cu_lcb_disconnecting 	bte.a l2c_utils.o
+805E5FE0 RFCOMM_Init 	bte.a port_api.o
+805E6030 PORT_StartCnf 	bte.a port_rfc.o
+805E6190 PORT_StartInd 	bte.a port_rfc.o
+805E622C PORT_ParNegInd 	bte.a port_rfc.o
+805E63DC PORT_ParNegCnf 	bte.a port_rfc.o
+805E64E0 PORT_DlcEstablishInd 	bte.a port_rfc.o
+805E6620 PORT_DlcEstablishCnf 	bte.a port_rfc.o
+805E6764 PORT_PortNegInd 	bte.a port_rfc.o
+805E68B4 PORT_PortNegCnf 	bte.a port_rfc.o
+805E69CC PORT_ControlInd 	bte.a port_rfc.o
+805E6B44 PORT_ControlCnf 	bte.a port_rfc.o
+805E6C08 PORT_LineStatusInd 	bte.a port_rfc.o
+805E6CD0 PORT_DlcReleaseInd 	bte.a port_rfc.o
+805E6D38 PORT_CloseInd 	bte.a port_rfc.o
+805E6DD8 Port_TimeOutCloseMux 	bte.a port_rfc.o
+805E6E70 PORT_DataInd 	bte.a port_rfc.o
+805E7070 PORT_FlowInd 	bte.a port_rfc.o
+805E71A0 port_rfc_send_tx_data 	bte.a port_rfc.o
+805E7298 port_rfc_closed 	bte.a port_rfc.o
+805E742C port_select_mtu 	bte.a port_utils.o
+805E75A8 port_release_port 	bte.a port_utils.o
+805E7684 port_find_mcb_dlci_port 	bte.a port_utils.o
+805E76D8 port_find_dlci_port 	bte.a port_utils.o
+805E7760 port_flow_control_user 	bte.a port_utils.o
+805E77D0 port_get_signal_changes 	bte.a port_utils.o
+805E7838 port_flow_control_peer 	bte.a port_utils.o
+805E7A80 RFCOMM_ConnectInd 	bte.a rfc_l2cap_if.o
+805E7B0C RFCOMM_ConnectCnf 	bte.a rfc_l2cap_if.o
+805E7C10 RFCOMM_ConfigCnf 	bte.a rfc_l2cap_if.o
+805E7D18 RFCOMM_ConfigCnf 	bte.a rfc_l2cap_if.o
+805E7E24 RFCOMM_DisconnectInd 	bte.a rfc_l2cap_if.o
+805E7F48 RFCOMM_BufDataInd 	bte.a rfc_l2cap_if.o
+805E81E8 RFCOMM_CongestionStatusInd 	bte.a rfc_l2cap_if.o
+805E831C rfc_save_lcid_mcb 	bte.a rfc_l2cap_if.o
+805E8D98 rfc_mx_conf_cnf 	bte.a rfc_mx_fsm.o
+805E8E8C rfc_mx_conf_ind 	bte.a rfc_mx_fsm.o
+805E9930 rfc_process_pn 	bte.a rfc_port_fsm.o
+805E9A18 rfc_process_rpn 	bte.a rfc_port_fsm.o
+805E9D24 rfc_process_msc 	bte.a rfc_port_fsm.o
+805E9E90 rfc_process_rls 	bte.a rfc_port_fsm.o
+805E9F28 rfc_process_fcon 	bte.a rfc_port_fsm.o
+805E9F8C rfc_process_fcoff 	bte.a rfc_port_fsm.o
+805E9FF0 rfc_process_l2cap_congestion 	bte.a rfc_port_fsm.o
+805EA078 rfc_set_port_state 	bte.a rfc_port_fsm.o
+805EA11C RFCOMM_StartRsp 	bte.a rfc_port_if.o
+805EA148 RFCOMM_DlcEstablishReq 	bte.a rfc_port_if.o
+805EA1B0 RFCOMM_DlcEstablishRsp 	bte.a rfc_port_if.o
+805EA220 RFCOMM_ParNegReq 	bte.a rfc_port_if.o
+805EA328 RFCOMM_PortNegReq 	bte.a rfc_port_if.o
+805EA404 RFCOMM_ControlReq 	bte.a rfc_port_if.o
+805EA4A8 RFCOMM_FlowReq 	bte.a rfc_port_if.o
+805EA54C RFCOMM_LineStatusReq 	bte.a rfc_port_if.o
+805EA5E4 RFCOMM_DlcReleaseReq 	bte.a rfc_port_if.o
+805EA610 TRKEXICallBack
+805EA648 rfc_send_disc 	bte.a rfc_ts_frames.o
+805EA6F8 rfc_send_disc 	bte.a rfc_ts_frames.o
+805EA7A8 rfc_send_dm 	bte.a rfc_ts_frames.o
+805EA86C rfc_send_disc 	bte.a rfc_ts_frames.o
+805EA91C rfc_send_buf_uih 	bte.a rfc_ts_frames.o
+805EAAB4 rfc_send_pn 	bte.a rfc_ts_frames.o
+805EAB9C rfc_send_fcoff 	bte.a rfc_ts_frames.o
+805EAC20 rfc_send_fcoff 	bte.a rfc_ts_frames.o
+805EACA4 rfc_send_msc 	bte.a rfc_ts_frames.o
+805EADC4 rfc_send_rls 	bte.a rfc_ts_frames.o
+805EAE74 rfc_send_rpn 	bte.a rfc_ts_frames.o
+805EB038 rfc_send_credit 	bte.a rfc_ts_frames.o
+805EB0F8 rfc_parse_data 	bte.a rfc_ts_frames.o
+805EB66C rfc_process_mx_message 	bte.a rfc_ts_frames.o
+805EBC90 rfc_calc_fcs 	bte.a rfc_utils.o
+805EBCC8 rfc_check_fcs 	bte.a rfc_utils.o
+805EBD14 rfc_alloc_multiplexer_channel 	bte.a rfc_utils.o
+805EBE6C rfc_release_multiplexer_channel 	bte.a rfc_utils.o
+805EBEF4 rfc_timer_start 	bte.a rfc_utils.o
+805EBF68 rfc_timer_stop 	bte.a rfc_utils.o
+805EBFC0 rfc_port_timer_start 	bte.a rfc_utils.o
+805EC040 rfc_port_timer_stop 	bte.a rfc_utils.o
+805EC098 rfc_check_mcb_active 	bte.a rfc_utils.o
+805EC198 rfc_sec_check_complete 	bte.a rfc_utils.o
+805EC1EC rfc_port_closed 	bte.a rfc_utils.o
+805EC344 rfc_inc_credit 	bte.a rfc_utils.o
+805EC3D0 rfc_dec_credit 	bte.a rfc_utils.o
+805EC40C rfc_check_send_cmd 	bte.a rfc_utils.o
+805EC470 SDP_InitDiscoveryDb 	bte.a sdp_api.o
+805EC7E8 SDP_ServiceSearchRequest 	bte.a sdp_api.o
+805EC844 SDP_ServiceSearchAttributeRequest 	bte.a sdp_api.o
+805EC8A8 SDP_FindAttributeInRec 	bte.a sdp_api.o
+805EC8D0 SDP_FindServiceInDb 	bte.a sdp_api.o
+805EC99C SDP_FindServiceUUIDInDb 	bte.a sdp_api.o
+805ECAA4 SDP_SetLocalDiRecord 	bte.a sdp_api.o
+805ECE04 SDP_GetLocalDiRecord 	bte.a sdp_api.o
+805ED2B4 SDP_SetTraceLevel 	bte.a sdp_api.o
+805ED2D8 sdp_db_service_search 	bte.a sdp_db.o
+805ED414 find_uuid_in_seq 	bte.a sdp_db.o
+805ED4EC sdp_db_find_record 	bte.a sdp_db.o
+805ED548 sdp_db_find_attr_in_rec 	bte.a sdp_db.o
+805ED588 SDP_CreateRecord 	bte.a sdp_db.o
+805ED668 SDP_DeleteRecord 	bte.a sdp_db.o
+805ED77C SDP_AddAttribute 	bte.a sdp_db.o
+805EDB14 SDP_AddUuidSequence 	bte.a sdp_db.o
+805EDBEC SDP_AddServiceClassIdList 	bte.a sdp_db.o
+805EDD68 SDP_DeleteAttribute 	bte.a sdp_db.o
+805EDFA4 sdpu_build_uuid_seq 	bte.a sdp_discovery.o
+805EE090 sdp_snd_service_search_req 	bte.a sdp_discovery.o
+805EE1F4 sdp_disc_server_rsp 	bte.a sdp_discovery.o
+805EE334 process_service_search_rsp 	bte.a sdp_discovery.o
+805EE47C process_service_attr_rsp 	bte.a sdp_discovery.o
+805EE724 process_service_search_attr_rsp 	bte.a sdp_discovery.o
+805EE9F8 save_attr_seq 	bte.a sdp_discovery.o
+805EEBE4 add_record 	bte.a sdp_discovery.o
+805EEC84 add_attr 	bte.a sdp_discovery.o
+805EF21C sdp_init 	bte.a sdp_main.o
+805EF3BC sdp_connect_ind 	bte.a sdp_main.o
+805EF480 sdp_connect_cfm 	bte.a sdp_main.o
+805EF610 sdp_config_ind 	bte.a sdp_main.o
+805EF74C sdp_config_cfm 	bte.a sdp_main.o
+805EF8C8 sdp_disconnect_ind 	bte.a sdp_main.o
+805EF9C0 sdp_data_ind 	bte.a sdp_main.o
+805EFA94 sdp_conn_originate 	bte.a sdp_main.o
+805EFBA8 sdp_disconnect 	bte.a sdp_main.o
+805EFC44 sdp_disconnect_cfm 	bte.a sdp_main.o
+805EFD00 sdp_conn_timeout 	bte.a sdp_main.o
+805EFD88 sdp_server_handle_client_req 	bte.a sdp_server.o
+805EFEDC process_service_search 	bte.a sdp_server.o
+805F02EC process_service_attr_req 	bte.a sdp_server.o
+805F067C process_service_search_attr_req 	bte.a sdp_server.o
+805F0A98 sdpu_find_ccb_by_cid 	bte.a sdp_utils.o
+805F0B28 sdpu_allocate_ccb 	bte.a sdp_utils.o
+805F0B9C sdpu_release_ccb 	bte.a sdp_utils.o
+805F0BD4 sdpu_build_attrib_seq 	bte.a sdp_utils.o
+805F0DA4 sdpu_build_attrib_entry 	bte.a sdp_utils.o
+805F0EF8 sdpu_build_n_send_error 	bte.a sdp_utils.o
+805F15D4 sdpu_get_len_from_type 	bte.a sdp_utils.o
+805F16A4 sdpu_is_base_uuid 	bte.a sdp_utils.o
+805F1784 sdpu_compare_uuid_arrays 	bte.a sdp_utils.o
+805F19F8 sdpu_compare_uuid_with_attr 	bte.a sdp_utils.o
+805F1A88 sdpu_sort_attr_list 	bte.a sdp_utils.o
+805F1AD8 SCInit 	sc.a scsystem.o
+805F1C94 SCReloadConfFileAsync 	sc.a scsystem.o
+805F1DA8 OpenCallbackFromReload 	sc.a scsystem.o
+805F1E78 ReadCallbackFromReload 	sc.a scsystem.o
+805F1F60 CloseCallbackFromReload 	sc.a scsystem.o
+805F212C ParseConfBuf 	sc.a scsystem.o
+805F2378 UnpackItem 	sc.a scsystem.o
+805F2510 DeleteItemByID 	sc.a scsystem.o
+805F26A0 CreateItemByID 	sc.a scsystem.o
+805F2918 SCFindByteArrayItem 	sc.a scsystem.o
+805F29F8 SCReplaceByteArrayItem 	sc.a scsystem.o
+805F2B1C SCReplaceIntegerItem 	sc.a scsystem.o
+805F2C34 SCFindU32Item 	sc.a scsystem.o
+805F2D08 SCFindU32Item 	sc.a scsystem.o
+805F2DDC SCFindU32Item 	sc.a scsystem.o
+805F2EB0 SCReplaceU8Item 	sc.a scsystem.o
+805F2EE8 SCFlushAsync 	sc.a scsystem.o
+805F3104 MyNandCallback 	sc.a scsystem.o
+805F343C SCGetWpadSpeakerVolume 	sc.a scapi.o
+805F3490 SCGetDisplayOffsetH 	sc.a scapi.o
+805F3504 SCGetWpadSpeakerVolume 	sc.a scapi.o
+805F3564 SCGetLanguage 	sc.a scapi.o
+805F35D0 SCGetWpadSpeakerVolume 	sc.a scapi.o
+805F3624 SCGetSoundMode 	sc.a scapi.o
+805F36F8 SCGetBtDpdSensibility 	sc.a scapi.o
+805F3760 SCGetWpadSpeakerVolume 	sc.a scapi.o
+805F37BC SCGetWpadSpeakerVolume 	sc.a scapi.o
+805F3810 SCGetWpadSpeakerVolume 	sc.a scapi.o
+805F386C __SCF1 	sc.a scapi_prdinfo.o
+805F39D8 SCGetProductArea 	sc.a scapi_prdinfo.o
+805F3B00 SCGetProductArea 	sc.a scapi_prdinfo.o
+805F3B84 USB_LOG 	usb.a usb.o
+805F3C2C USB_ERR 	usb.a usb.o
+805F3CD8 IUSB_OpenLib 	usb.a usb.o
+805F4894 IUSB_WriteBlkMsgAsync 	usb.a usb.o
+805F4FEC IUSB_WriteCtrlMsgAsync 	usb.a usb.o
+805F5080 App_MEMfree 	wud.a WUD.o
+805F50D0 App_MEMfree 	wud.a WUD.o
+805F5120 SyncFlushCallback 	wud.a WUD.o
+805F6754 DeleteFlushCallback 	wud.a WUD.o
+805F67AC WUDiTerminateDevice 	wud.a WUD.o
+805F6DB8 WUDiClearUnregisteredDevice 	wud.a WUD.o
+805F839C WUDRegisterAllocator 	wud.a WUD.o
+805F8608 WUDGetStatus 	wud.a WUD.o
+805F8644 WUDGetBufferStatus 	wud.a WUD.o
+805F868C WUDSetSniffMode 	wud.a WUD.o
+805F86F8 WUDSetHidConnCallback 	wud.a WUD.o
+805F89CC WUDSetDisableChannel 	wud.a WUD.o
+805F8AB8 WUDSetHidConnCallback 	wud.a WUD.o
+805F8B14 WUDSetHidConnCallback 	wud.a WUD.o
+805F8B70 WUDSetVisibility 	wud.a WUD.o
+805F96AC WUDiGetDevInfo 	wud.a WUD.o
+805F9784 WUDiMoveBottomSmpDevInfoPtr 	wud.a WUD.o
+805F989C WUDiMoveBottomSmpDevInfoPtr 	wud.a WUD.o
+805F9B0C WUDiMoveBottomSmpDevInfoPtr 	wud.a WUD.o
+805F9C24 WUDiMoveBottomSmpDevInfoPtr 	wud.a WUD.o
+805FAB0C WUDDeviceStatusCallback 	wud.a WUD.o
+805FAFF0 _WUDGetDevAddr 	wud.a WUD.o
+805FB044 _WUDGetNotAckedSize 	wud.a WUD.o
+805FB0A0 _WUDGetNotAckedSize 	wud.a WUD.o
+805FB0FC _WUDGetLinkNumber 	wud.a WUD.o
+805FB258 bta_sys_register 	bte.a bta_sys_main.o
+805FB890 ___blank(char *,...)
+805FE4F0 nlListContainer<P8SaveData>::__ct(void)
+805FE940 LexicalCast<PCc,f>(float &)
+80603E0C cCharacter::IsPlayingEffect( (EffectsGroup *))
+80603E40 homebutton::MotorCallback(OSAlarm *, OSContext *) 	homebuttonLib.a HBMBase.o
+80605564 nandIsInitialized 	nand.a NANDCore.o
+80605578 nandIsInitialized 	nand.a NANDCore.o
+8060558C nandIsInitialized 	nand.a NANDCore.o
+80608000 RecvFrom
+806082B8 SendTo
+8060A358 PlatAudio::IsEntireSampleFileInMem(void)
+8060A7A8 DVDSetAutoInvalidation 	dvd.a dvd.o
+8060FF5C THPSimpleGetCurrentFrame
+8061B01C BundleSortProc(glTexBundleDict *, glTexBundleDict *)
+80628DF4 JAUAudioArcLoader::newDynamicSeqBlock(unsigned long) 	JAudio2.a JAUAudioArcLoader.o
+80632E10 __fini_cpp_exceptions
+8063A9BC PlatAudio::IsEntireSampleFileInMem(void)
+8063B230 JASDSPChannel::killActiveChannel(void) 	JAudio2.a JASDSPChannel.o
+8065E96C DrawableModel::Draw(void)
+806600C4 THPSimpleGetCurrentFrame

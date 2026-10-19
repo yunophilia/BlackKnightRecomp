@@ -84,10 +84,12 @@ Verdict: much too heavy for what it buys.
    `ax.cpp` still loads a `dsp_coef.bin` next to the exe or in `game/` if one is present
    (for example from a real DSP ROM dump). Otherwise it uses the generated table, so audio
    always gets polyphase resampling. The hardcoded `C:\` path is gone.
-2. **totaldb.dsy: optional and configurable.** `build_generated.py` looks for it in this
-   order: `--dsy <file>`, `BKR_TOTALDB`, `game/totaldb.dsy`, then
-   `%ProgramFiles%\Dolphin\Sys\totaldb.dsy`. If none exists it skips signature matching and
-   says so. It is not vendored, because it only affects developer tooling.
+2. **totaldb.dsy: not needed.** The 2,175 SDK function names it matched in this game's
+   `main.dol` (the only binary the recompiler supports) are recorded in
+   `tools/sdk_names.txt`, which `build_generated.py` applies. A full reanalysis with that
+   file gives the same functions and names as matching against the database. To rematch,
+   pass `--dsy <file>` or set `BKR_TOTALDB`. The names derive from Dolphin's
+   GPL-2.0-or-later database, compatible with this project's GPL-2.0-only.
 3. **Extraction: our own installer, built on nod (UnleashedRecomp-style).** Dusklight
    (TwilitRealm/dusklight) reads disc images with [nod](https://github.com/encounter/nod)
    through encounter's Aurora/Borealis libraries, Wii discs included. We link nod directly:

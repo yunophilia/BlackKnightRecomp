@@ -88,10 +88,9 @@ build steps, which sets that up.
    ```
    python tools/build_generated.py
    ```
-   Optional: if Dolphin's signature database `totaldb.dsy` is found (`--dsy <file>`, the
-   `BKR_TOTALDB` environment variable or `game/totaldb.dsy`), the first analysis also names
-   the SDK functions in `out/functions.json` for `tools/xref.py`. The generated code is the
-   same either way.
+   The analysis names the SDK functions (for `tools/xref.py` and reports) from
+   `tools/sdk_names.txt`, recorded once from Dolphin's signature database; pass
+   `--dsy <totaldb.dsy>` to rematch. The generated code is the same either way.
    Optional: the HOME menu module (`hbm_part.rso`) runs in the built-in interpreter
    unless it is recompiled too. Run the game once with `BKR_DUMPMEM2=1` set (it writes
    `mem2_dump.bin` next to the exe when the module is first called; move it to `out/`),

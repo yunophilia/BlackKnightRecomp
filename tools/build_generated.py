@@ -6,11 +6,10 @@ Steps: function analysis (cached in out/functions.json), signature matching,
 override scan of runtime/ (functions the runtime replaces), code generation into
 generated/ (files are only rewritten when their content changes).
 
-Signature matching is optional: it only names SDK functions in out/functions.json
-for tools/xref.py; the generated code is the same without it. It uses Dolphin's
-signature database (Data/Sys/totaldb.dsy in Dolphin's repo, Sys/totaldb.dsy in a
-Dolphin build), found via --dsy, the BKR_TOTALDB environment variable, game/totaldb.dsy
-or a Dolphin install under Program Files.
+SDK function names only matter for tools/xref.py and reports; the generated code is
+the same without them. They come from tools/sdk_names.txt (recorded from a match
+against Dolphin's signature database), or, to rematch, from a totaldb.dsy given with
+--dsy or the BKR_TOTALDB environment variable. Dolphin is not needed.
 """
 import json
 import os
@@ -46,22 +45,16 @@ def scan_overrides():
 def find_dsy():
     if '--dsy' in sys.argv:
         return sys.argv[sys.argv.index('--dsy') + 1]
-    cands = [os.environ.get('BKR_TOTALDB'), os.path.join(ROOT, 'game', 'totaldb.dsy')]
-    for pf in (os.environ.get('ProgramFiles'), os.environ.get('ProgramFiles(x86)')):
-        if pf:
-            cands.append(os.path.join(pf, 'Dolphin', 'Sys', 'totaldb.dsy'))
-    return next((c for c in cands if c and os.path.exists(c)), None)
+    dsy = os.environ.get('BKR_TOTALDB')
+    return dsy if dsy and os.path.exists(dsy) else None
 
 
 def main():
     os.makedirs(os.path.join(ROOT, 'out'), exist_ok=True)
     if '--reanalyze' in sys.argv or not os.path.exists(FUNCS):
         run(os.path.join(TOOLS, 'analyze.py'), DOL, SEL, FUNCS)
-        dsy = find_dsy()
-        if dsy:
-            run(os.path.join(TOOLS, 'sigdb.py'), DOL, FUNCS, dsy)
-        else:
-            print('totaldb.dsy not found; skipping signature matching (optional)')
+        # SDK names: rematch with a given totaldb.dsy, else the recorded names
+        run(os.path.join(TOOLS, 'sigdb.py'), DOL, FUNCS, find_dsy() or os.path.join(TOOLS, 'sdk_names.txt'))
     ovr = scan_overrides()
     with open(OVR, 'w') as fp:
         fp.write('\n'.join(f'{a:08X}' for a in ovr))
