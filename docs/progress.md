@@ -33,12 +33,22 @@
 - [x] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison for every location,
       mission type, boss and Battle arena, plus a full-settings pass (see "60 FPS verification")
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
-- [ ] Launcher GUI in BlackKnightRecomp.exe (simple window and buttons to start with):
-  - [ ] Shown on first start, and whenever game/ has no extracted game: asks for the disc
-        image and installs it (replaces the bare first-run installer dialog)
-  - [ ] Settings page that edits config.ini, including button bindings
-- [ ] Apply config.ini changes while the game is running (button bindings, graphics
-      settings), without restarting
+- [ ] Launcher GUI in BlackKnightRecomp.exe, shown on every start (simple window and buttons
+      to start with):
+  - [ ] Play button; settings page that edits config.ini, including button bindings
+  - [ ] Asks for the disc image and installs it only when needed: first start, game/ has no
+        extracted game (e.g. deleted), or the installed files are corrupt
+  - [ ] Corrupt-file check: quick (every FST file present with the right size, main.dol
+        SHA-1) on each start, full hash check of every file on request
+- [ ] In-game settings overlay (Dusklight-style), opened with the controller's View button
+      (PS5: Create) and from the keyboard; the game keeps running underneath (no pause):
+  - [ ] Tabs for video, input, audio and gameplay settings, written back to config.ini
+  - [ ] Settings apply live where possible (bindings, rumble, vsync, fullscreen,
+        anisotropy, texture packs, internal resolution)
+  - [ ] Restart-only settings (frame rate, language, paths) ask "This setting needs a
+        restart. Restart the game?" and restart on yes
+  - [ ] The View button is Wii "-" in the default bindings: move "-" elsewhere or open the
+        overlay with a different press (decide)
 
 ## 60 FPS verification
 
