@@ -13,5 +13,5 @@ void SettingsUI_Draw(SettingsHost host);
 // In game: the user confirmed "Restart the game?" (the overlay restarts the process).
 bool SettingsUI_TakeRestartRequest();
 
-// Dusklight-style dark theme with gold accents.
+// Dark theme with Sonic-blue accents.
 void SettingsUI_ApplyStyle();
