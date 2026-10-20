@@ -29,8 +29,11 @@ if (Test-Path $srcCache) {
     }
 }
 @"
-The game data is installed here on first run: start BlackKnightRecomp.exe and select your
-own disc image (PAL, RENE8P; ISO, RVZ, WIA or WBFS). Optional:
+You don't need to put anything here. Start BlackKnightRecomp.exe and select your own disc
+image (PAL, RENE8P; ISO, RVZ, WIA or WBFS) in the file dialog, wherever it is on your PC.
+The launcher installs the game data into this folder; the image is not needed afterwards.
+
+Optional, if you have one:
   textures\RENE8P\...                       (Dolphin-format HD texture pack)
-"@ | Set-Content (Join-Path $dist "game\PUT_GAME_FILES_HERE.txt")
+"@ | Set-Content (Join-Path $dist "game\ABOUT_THIS_FOLDER.txt")
 "packaged to $dist"
