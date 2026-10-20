@@ -7,8 +7,8 @@ $root = Split-Path $PSScriptRoot
 $out = Join-Path $root "out"
 $script = Join-Path $PSScriptRoot "scripts\mission1.txt"
 if (-not (Test-Path $script)) { throw "missing $script" }
-$args = "--nobox --input-script `"$script`" --shots 600 --shots-start 600"
-if ($Fps60) { $args = "--nobox --60fps --input-script `"$script`" --shots 1200 --shots-start 1200" }
+$args = "--nobox --skip-launcher --input-script `"$script`" --shots 600 --shots-start 600"
+if ($Fps60) { $args = "--nobox --skip-launcher --60fps --input-script `"$script`" --shots 1200 --shots-start 1200" }
 & (Join-Path $PSScriptRoot "run_test.ps1") -Seconds 200 -GameArgs $args | Out-Null
 Start-Sleep 2
 $log = Get-Content (Join-Path $out "BlackKnightRecomp.log")

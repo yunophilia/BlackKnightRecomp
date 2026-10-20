@@ -135,10 +135,11 @@ int main(int argc, char** argv)
         gameDir = std::filesystem::weakly_canonical(std::filesystem::path(root) / ".." / "game");
     std::filesystem::path installDest = gameDir / "extracted" / "DATA";
 
-    // Launcher on every start (settings, install / repair the game data); scripted runs
-    // and restarts from the in-game settings go straight to the game.
+    // Launcher on every start (settings, install / repair the game data); TAS runs,
+    // --skip-launcher (test scripts) and restarts from the in-game settings go straight to
+    // the game. --nobox only suppresses message boxes and dialogs.
     extern bool Tas_Active();
-    if (!g_noMessageBox && !Tas_Active() && !skipLauncher)
+    if (!Tas_Active() && !skipLauncher)
     {
         extern bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const std::filesystem::path& installDest);
         if (!Launcher_Run(dataDir, isoPath, installDest)) return 0;

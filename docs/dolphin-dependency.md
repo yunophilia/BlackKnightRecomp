@@ -103,7 +103,7 @@ Verdict: much too heavy for what it buys.
      interrupted install is never mistaken for a finished one.
    - The game runs this on first start when no data is found: it offers a `.iso` found in
      `game/` or opens a file picker, then shows a progress dialog
-     (`runtime/install_ui.cpp`). Scripted runs (`--nobox`: TAS, smoke tests) never show UI;
+     (`runtime/install_ui.cpp`). Scripted runs (`--nobox --skip-launcher`: TAS, smoke tests) never show UI;
      they stop with an error instead.
    - `out/bkr_install <image>` does the same from the command line. Developers need it
      before the first `build_generated.py`, because that reads `sys/main.dol`. CMake now

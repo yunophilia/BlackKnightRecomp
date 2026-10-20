@@ -92,7 +92,7 @@ Game code is not modified for this (read-only probes and input only).
 ## Bugs found by random-input soak tests
 
 `out/soak*.txt` are generated scripts (menus, then ~12 minutes of random stick/button
-input); run them with `tools/run_test.ps1 -Seconds 900 -GameArgs "--nobox --input-script
+input); run them with `tools/run_test.ps1 -Seconds 900 -GameArgs "--nobox --skip-launcher --input-script
 soak.txt --shots 1800 --shots-start 1800"`. The first one cleared mission 1 and found:
 
 - runtime display lists (GXBeginDisplayList redirects the CPU FIFO to RAM) were never

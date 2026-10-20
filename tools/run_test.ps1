@@ -1,7 +1,7 @@
 # Runs the game for a fixed time with the given arguments, then makes sure it is closed.
 param(
     [int]$Seconds = 30,
-    [string]$GameArgs = "--nobox",
+    [string]$GameArgs = "--nobox --skip-launcher",
     [string]$Exe = ""
 )
 if (-not $Exe) { $Exe = Join-Path $PSScriptRoot "..\out\BlackKnightRecomp.exe" }

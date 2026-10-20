@@ -27,7 +27,7 @@ Copy-Item -Recurse $saveSrc $nand
 $csv = Join-Path $tasDir "$Tag.csv"
 if (-not (Test-Path $Script)) { throw "TAS script not found: $Script" }
 $scriptPath = (Resolve-Path $Script).Path
-$gameArgs = "--nobox --tas `"$scriptPath`" --telemetry `"$csv`" --nand `"$nand`""
+$gameArgs = "--nobox --skip-launcher --tas `"$scriptPath`" --telemetry `"$csv`" --nand `"$nand`""
 if ($Fps60) { $gameArgs += " --60fps" }
 if (-not $Full) { $gameArgs += " --mute --scale $Scale" }
 if ($ExtraArgs) { $gameArgs += " $ExtraArgs" }

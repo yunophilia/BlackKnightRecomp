@@ -7,7 +7,7 @@ movement, slashes, jumps, guards, menu confirmations and short D-pad bursts (whi
 also navigate the world map). Run it with:
 
   powershell -ExecutionPolicy Bypass -File tools/run_test.ps1 -Seconds 900 \\
-      -GameArgs "--nobox --input-script <abs path> --shots 1800 --shots-start 1800"
+      -GameArgs "--nobox --skip-launcher --input-script <abs path> --shots 1800 --shots-start 1800"
 
 then look for [E] lines in out/BlackKnightRecomp.log and review the screenshots.
 """
