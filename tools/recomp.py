@@ -779,7 +779,7 @@ def write_if_changed(path, text):
             if fp.read() == text:
                 return False
     except FileNotFoundError:
-        pass
+        os.makedirs(os.path.dirname(path) or '.', exist_ok=True)   # fresh checkout
     with open(path, 'w', newline='\n') as fp:
         fp.write(text)
     return True
