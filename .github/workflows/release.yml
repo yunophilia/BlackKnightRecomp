@@ -69,13 +69,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # one line per paragraph: release notes keep single line breaks. Edit the notes on
+          # the release page afterwards to add what changed.
           $notes = @"
-          Sonic and the Black Knight, statically recompiled for Windows (x64).
+          Sonic and the Black Knight (Wii), statically recompiled to run natively on Windows.
 
-          You need your own copy of the game (PAL, RENE8P). Unzip, start BlackKnightRecomp.exe and
-          select your disc image (ISO, RVZ, WIA or WBFS) when the launcher asks; the game data is
-          installed next to the exe. This release contains no game data.
+          **This release contains no game data.** You need your own copy of the PAL version (RENE8P) as a disc image: ISO, RVZ, WIA or WBFS. Unzip, start ``BlackKnightRecomp.exe`` and select the image when the launcher asks; the game data is installed next to the exe.
 
-          See the README for controls and settings.
+          See the [README](https://github.com/${{ github.repository }}#readme) for controls and settings.
           "@
-          gh release create "${{ github.ref_name }}" "$env:ZIP" --title "${{ github.ref_name }}" --notes $notes --generate-notes
+          gh release create "${{ github.ref_name }}" "$env:ZIP" --title "${{ github.ref_name }}" --notes $notes
