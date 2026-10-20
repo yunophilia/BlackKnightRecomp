@@ -4,7 +4,7 @@
   "wikidata": "Q2454500",
   "system": "Wii",
   "type": "recomp",
-  "status": "playable",
+  "status": "released",
   "targets": ["Windows"],
   "toolchain": ["clang-cl", "CMake"],
   "original": {"region": "Europe", "serial": "RENE8P"}
