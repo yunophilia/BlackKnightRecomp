@@ -33,6 +33,12 @@
 - [x] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison for every location,
       mission type, boss and Battle arena, plus a full-settings pass (see "60 FPS verification")
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
+- [ ] Launcher GUI in BlackKnightRecomp.exe (simple window and buttons to start with):
+  - [ ] Shown on first start, and whenever game/ has no extracted game: asks for the disc
+        image and installs it (replaces the bare first-run installer dialog)
+  - [ ] Settings page that edits config.ini, including button bindings
+- [ ] Apply config.ini changes while the game is running (button bindings, graphics
+      settings), without restarting
 
 ## 60 FPS verification
 
