@@ -250,7 +250,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         ImGui::SetNextWindowSize(vp->Size);
         ImGui::Begin("launcher", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
         ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.6f);
-        ImGui::TextColored(ImVec4(0.86f, 0.68f, 0.30f, 1), "Sonic and the Black Knight");
+        ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_CheckMark), "Sonic and the Black Knight");
         ImGui::PopFont();
         ImGui::TextDisabled("Recompiled for PC");
         float bottom = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
