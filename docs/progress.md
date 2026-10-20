@@ -47,8 +47,9 @@
         anisotropy, texture packs, internal resolution)
   - [ ] Restart-only settings (frame rate, language, paths) ask "This setting needs a
         restart. Restart the game?" and restart on yes
-  - [ ] The View button is Wii "-" in the default bindings: move "-" elsewhere or open the
-        overlay with a different press (decide)
+  - [ ] View opens the overlay; Wii "-" is unbound by default (tested: "-" has no effect on
+        the title, menus, world map, mission select, gameplay or pause menu; "+" pauses) but
+        stays assignable; the HOME Menu stays on View+Start / H
 
 ## 60 FPS verification
 
