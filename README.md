@@ -50,9 +50,10 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 ## Playing
 
 Run `BlackKnightRecomp.exe`. On first run it asks for your own disc image of the game (PAL,
-`RENE8P`; ISO, RVZ, WIA or WBFS) and installs the game data from it into `game/extracted/`
-next to the exe, which takes about a minute and 3.5 GB. After that the image is no longer
-needed. Mods can replace files under `game/extracted/DATA/files/`.
+`RENE8P`; ISO, RVZ, WIA or WBFS): select it in the file dialog, wherever it is on your PC.
+There is no need to copy it anywhere. The launcher installs the game data from it into
+`game/extracted/` next to the exe, which takes about a minute and 3.5 GB. After that the
+image is no longer needed. Mods can replace files under `game/extracted/DATA/files/`.
 
 ## Building
 
