@@ -124,6 +124,14 @@ list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "/runtime/install/")
 add_executable(BlackKnightRecomp ${RUNTIME_SOURCES})
 target_include_directories(BlackKnightRecomp PRIVATE runtime runtime/cpu generated)
 target_sources(BlackKnightRecomp PRIVATE $<TARGET_OBJECTS:ppcrecomp>)
+# version shown in the launcher and the overlay, refreshed on every build
+set(BKR_VERSION_CPP ${CMAKE_BINARY_DIR}/bkr_version.cpp)
+add_custom_target(bkr_version
+    COMMAND ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_SOURCE_DIR} -DVERSION_OUT=${BKR_VERSION_CPP}
+            -P ${CMAKE_SOURCE_DIR}/tools/version.cmake
+    BYPRODUCTS ${BKR_VERSION_CPP} VERBATIM)
+target_sources(BlackKnightRecomp PRIVATE ${BKR_VERSION_CPP})
+add_dependencies(BlackKnightRecomp bkr_version)
 target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
 # the scripts in tools/ and the shader cache expect the game in out/
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out

@@ -2,6 +2,7 @@
 #include "../config.h"
 #include "../gx/video.h"
 #include "../input/gamepad.h"
+#include "../version.h"
 
 #include <imgui.h>
 #include <windows.h>
@@ -305,6 +306,14 @@ bool SettingsUI_TakeRestartRequest()
     bool r = s_restartRequested;
     s_restartRequested = false;
     return r;
+}
+
+void SettingsUI_DrawVersion()
+{
+    ImGui::SameLine();
+    float pad = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(g_version).x;
+    if (pad > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad);
+    ImGui::TextDisabled("%s", g_version);
 }
 
 void SettingsUI_ApplyStyle()

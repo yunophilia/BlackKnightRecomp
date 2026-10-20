@@ -272,6 +272,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         }
         ImGui::EndChild();
         if (ImGui::Button("Quit")) s_quit = true;
+        SettingsUI_DrawVersion();
         ImGui::End();
 
         ImGui::Render();

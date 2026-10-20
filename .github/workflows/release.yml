@@ -1,15 +1,15 @@
-# Builds and publishes a release when a version tag (v*) is pushed.
+# Builds and publishes a release when a version tag (v*.*.*) is pushed.
 #
 # The recompiled code is generated from the game's main.dol, which is not in this
 # repository: the workflow reads it (with the other build inputs) from a private
-# repository using the PRIVATE_FILES_TOKEN secret (a fine-grained token with read-only
-# Contents access to that repository). Nothing from it is uploaded or published; only
+# repository using the PRIVATE_FILES_TOKEN secret of the "release" environment (a
+# fine-grained token with read-only Contents access to that repository). Nothing from it is uploaded or published; only
 # the built exe goes into the release.
 name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*.*.*"]
 
 permissions:
   contents: write   # create the release
@@ -17,6 +17,9 @@ permissions:
 jobs:
   build:
     runs-on: windows-2025
+    # PRIVATE_FILES_TOKEN is an environment secret: the job only gets it once a
+    # required reviewer approves the run.
+    environment: release
     steps:
       - uses: actions/checkout@v4
 
@@ -48,6 +51,8 @@ jobs:
 
       - name: Build
         shell: cmd
+        env:
+          BKR_VERSION: ${{ github.ref_name }}   # shown in the launcher and the overlay
         run: |
           call tools\dev_build.bat || (type out\build.log & exit /b 1)
 

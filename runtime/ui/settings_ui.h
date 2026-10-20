@@ -13,5 +13,8 @@ void SettingsUI_Draw(SettingsHost host);
 // In game: the user confirmed "Restart the game?" (the overlay restarts the process).
 bool SettingsUI_TakeRestartRequest();
 
+// The build version, right-aligned on the current line (the bottom button row).
+void SettingsUI_DrawVersion();
+
 // Dark theme with Sonic-blue accents.
 void SettingsUI_ApplyStyle();
