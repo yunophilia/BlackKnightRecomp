@@ -4,6 +4,7 @@
 #include "../input/gamepad.h"
 
 #include <imgui.h>
+#include <windows.h>
 
 #include <algorithm>
 #include <format>
@@ -15,6 +16,10 @@ void Renderer_ResetSamplers();
 namespace
 {
 bool s_restartRequested = false;
+// keyboard/mouse rebinding: which binding waits for a key, and whether it adds or replaces
+int s_capture = -1;
+bool s_captureAdd = false;
+bool s_captureArmed = false;   // all keys were released since "Set" was clicked
 bool s_askRestart = false;          // open the "needs a restart" prompt next frame
 const char* s_help = nullptr;      // description of the hovered setting
 
@@ -157,7 +162,71 @@ void InputTab(SettingsHost host)
         for (int i = 0; i < 12; i++) c.bind[i] = defaults.bind[i];
         Changed(host, false);
     }
-    ImGui::TextDisabled("Keyboard: WASD move, Space jump, J slash, K Wii B, Left Shift guard, Enter pause, H HOME.");
+
+    ImGui::SeparatorText("Keyboard and mouse");
+    static const char* keyActions[21] = { "Jump / homing attack (Wii A)", "Slash (swing the Remote)", "Soul Surge (Wii B)",
+                                          "Shake Nunchuk", "Guard / talk (Z)", "Nunchuk C", "Pause (Wii +)", "Wii -",
+                                          "Wii 1", "Wii 2", "Thrust Remote forward", "Pull Remote back", "Wii HOME button",
+                                          "D-pad up", "D-pad down", "D-pad left", "D-pad right", "Move forward",
+                                          "Move back", "Move left", "Move right" };
+    if (s_capture >= 0)
+    {
+        // waiting for a key: wait until everything is released (the click on "Set"), then
+        // take the next key or mouse button; Escape cancels
+        int held = Gamepad_HeldKey();
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) s_capture = -1;
+        else if (!s_captureArmed) s_captureArmed = held == 0;
+        else if (held)
+        {
+            std::string name = Gamepad_KeyName(held);
+            std::string& cur = c.keys[s_capture];
+            if (s_captureAdd && _stricmp(cur.c_str(), "NONE") != 0 && !cur.empty())
+            {
+                bool dup = false;
+                for (int vk : Gamepad_ParseKeys(cur)) dup |= vk == held;
+                if (!dup) cur += ", " + name;
+            }
+            else
+                cur = name;
+            s_capture = -1;
+            Changed(host, false);
+        }
+    }
+    if (ImGui::BeginTable("keys", 2, ImGuiTableFlags_SizingStretchProp))
+    {
+        for (int i = 0; i < 21; i++)
+        {
+            ImGui::PushID(100 + i);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(keyActions[i]);
+            ImGui::TableNextColumn();
+            if (s_capture == i)
+                ImGui::TextColored(ImGui::GetStyle().Colors[ImGuiCol_CheckMark], "Press a key or mouse button (Esc cancels)");
+            else
+            {
+                if (ImGui::Button("Set")) { s_capture = i; s_captureAdd = false; s_captureArmed = false; }
+                Help("Replace this binding: click, then press a key or mouse button.");
+                ImGui::SameLine();
+                if (ImGui::Button("+")) { s_capture = i; s_captureAdd = true; s_captureArmed = false; }
+                Help("Add another key or mouse button for this action.");
+                ImGui::SameLine();
+                if (ImGui::Button("Clear")) { c.keys[i] = "NONE"; Changed(host, false); }
+                ImGui::SameLine();
+                ImGui::TextUnformatted(c.keys[i].c_str());
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+    if (ImGui::Button("Restore default keyboard and mouse"))
+    {
+        Config defaults;
+        for (int i = 0; i < 21; i++) c.keys[i] = defaults.keys[i];
+        Changed(host, false);
+    }
+    ImGui::TextDisabled("F1 opens the settings, F11 toggles fullscreen; the mouse also moves the Wii Remote pointer.");
 }
 
 void AudioTab(SettingsHost host)
@@ -190,11 +259,17 @@ void SettingsUI_Draw(SettingsHost host)
     {
         struct Tab { const char* name; void (*draw)(SettingsHost); };
         static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab } };
+        // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
+        static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
+        static int shotFrames = 0;
+        bool pick = shotTab && shotFrames++ < 2;
         for (auto& t : tabs)
-            if (ImGui::BeginTabItem(t.name))
+            if (ImGui::BeginTabItem(t.name, nullptr, pick && !_stricmp(shotTab, t.name) ? ImGuiTabItemFlags_SetSelected : 0))
             {
                 ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_None);
                 t.draw(host);
+                static const bool shotBottom = getenv("BKR_UI_SHOT_BOTTOM") != nullptr;   // test aid
+                if (shotBottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
                 ImGui::EndChild();
                 ImGui::EndTabItem();
             }

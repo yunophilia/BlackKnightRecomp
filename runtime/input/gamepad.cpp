@@ -5,6 +5,8 @@
 #include "../ui/overlay.h"
 
 #include <atomic>
+#include <string>
+#include <vector>
 #include <cmath>
 #include <windows.h>
 #include <Xinput.h>
@@ -59,7 +61,66 @@ static uint32_t PhysicalBit(const std::string& name)
 }
 
 static std::atomic<bool> s_bindingsChanged{ true };
-void Gamepad_ReloadBindings() { s_bindingsChanged = true; }
+static std::atomic<bool> s_keysChanged{ true };
+void Gamepad_ReloadBindings() { s_bindingsChanged = true; s_keysChanged = true; }
+
+// Keyboard and mouse names used in config.ini [Keyboard]. F1 (settings), F11 (fullscreen)
+// and Escape (closes the settings) are reserved.
+static const struct { const char* name; int vk; } kKeys[] = {
+    { "SPACE", VK_SPACE }, { "ENTER", VK_RETURN }, { "BACKSPACE", VK_BACK }, { "TAB", VK_TAB },
+    { "LSHIFT", VK_LSHIFT }, { "RSHIFT", VK_RSHIFT }, { "LCTRL", VK_LCONTROL }, { "RCTRL", VK_RCONTROL },
+    { "LALT", VK_LMENU }, { "RALT", VK_RMENU }, { "UP", VK_UP }, { "DOWN", VK_DOWN }, { "LEFT", VK_LEFT },
+    { "RIGHT", VK_RIGHT }, { "INSERT", VK_INSERT }, { "DELETE", VK_DELETE }, { "HOME_KEY", VK_HOME }, { "END", VK_END },
+    { "PAGEUP", VK_PRIOR }, { "PAGEDOWN", VK_NEXT }, { "MOUSE1", VK_LBUTTON }, { "MOUSE2", VK_RBUTTON },
+    { "MOUSE3", VK_MBUTTON }, { "MOUSE4", VK_XBUTTON1 }, { "MOUSE5", VK_XBUTTON2 },
+    { "F2", VK_F2 }, { "F3", VK_F3 }, { "F4", VK_F4 }, { "F5", VK_F5 }, { "F6", VK_F6 }, { "F7", VK_F7 },
+    { "F8", VK_F8 }, { "F9", VK_F9 }, { "F10", VK_F10 }, { "F12", VK_F12 },
+    { "NUMPAD0", VK_NUMPAD0 }, { "NUMPAD1", VK_NUMPAD1 }, { "NUMPAD2", VK_NUMPAD2 }, { "NUMPAD3", VK_NUMPAD3 },
+    { "NUMPAD4", VK_NUMPAD4 }, { "NUMPAD5", VK_NUMPAD5 }, { "NUMPAD6", VK_NUMPAD6 }, { "NUMPAD7", VK_NUMPAD7 },
+    { "NUMPAD8", VK_NUMPAD8 }, { "NUMPAD9", VK_NUMPAD9 },
+};
+
+int Gamepad_KeyCode(const std::string& name)
+{
+    std::string u;
+    for (char c : name)
+        if (c != ' ') u += (char)toupper((unsigned char)c);
+    if (u.size() == 1 && isalnum((unsigned char)u[0])) return u[0];   // A-Z, 0-9 (same as their VK codes)
+    for (auto& k : kKeys)
+        if (u == k.name) return k.vk;
+    return 0;
+}
+
+std::string Gamepad_KeyName(int vk)
+{
+    if ((vk >= 'A' && vk <= 'Z') || (vk >= '0' && vk <= '9')) return std::string(1, (char)vk);
+    for (auto& k : kKeys)
+        if (k.vk == vk) return k.name;
+    return "NONE";
+}
+
+std::vector<int> Gamepad_ParseKeys(const std::string& list)
+{
+    std::vector<int> out;
+    size_t a = 0;
+    while (a <= list.size())
+    {
+        size_t b = list.find(',', a);
+        if (b == std::string::npos) b = list.size();
+        if (int vk = Gamepad_KeyCode(list.substr(a, b - a))) out.push_back(vk);
+        a = b + 1;
+    }
+    return out;
+}
+
+// First bindable key or mouse button held right now (settings: "press a key"), or 0.
+int Gamepad_HeldKey()
+{
+    for (int c = 'A'; c <= 'Z'; c++) if (Key(c)) return c;
+    for (int c = '0'; c <= '9'; c++) if (Key(c)) return c;
+    for (auto& k : kKeys) if (Key(k.vk)) return k.vk;
+    return 0;
+}
 
 static void ApplyBindings(GamepadState& out, uint32_t phys, float lt, float rt)
 {
@@ -220,35 +281,33 @@ void Gamepad_Poll(int index, GamepadState& out)
         out.connected = true;
         return;
     }
-    // keyboard (only when our window has focus)
+    // keyboard and mouse (only when our window has focus), bindings from [Keyboard]
     if (GetForegroundWindow() != (HWND)Video_HWND())
         return;
+    static std::vector<int> keys[21];
+    if (s_keysChanged.exchange(false))
+        for (int i = 0; i < 21; i++) keys[i] = Gamepad_ParseKeys(g_config.keys[i]);
+    auto down = [&](int i) {
+        for (int vk : keys[i])
+            if (Key(vk)) return true;
+        return false;
+    };
+    // the 12 Wii actions in Config::bind order, then HOME and the D-pad
+    static const uint16_t logical[17] = { PAD_A, PAD_X, PAD_B, PAD_Y, PAD_RB, PAD_LB, PAD_START, PAD_BACK, PAD_LTHUMB,
+                                          PAD_RTHUMB, 0, 0, PAD_HOME, PAD_DPAD_UP, PAD_DPAD_DOWN, PAD_DPAD_LEFT, PAD_DPAD_RIGHT };
     bool any = false;
-    auto map = [&](int vk, uint16_t bit) { if (Key(vk)) { out.buttons |= bit; any = true; } };
-    map(VK_SPACE, PAD_A);      // jump
-    map('J', PAD_X);           // slash
-    map('K', PAD_B);
-    map('L', PAD_Y);
-    map(VK_LSHIFT, PAD_RB);    // guard
-    map('Q', PAD_LB);
-    map(VK_LBUTTON, PAD_X);    // mouse: left click slashes, right click guards
-    map(VK_RBUTTON, PAD_RB);
-    map(VK_RETURN, PAD_START);
-    map(VK_BACK, PAD_BACK);
-    map('H', PAD_HOME);
-    map(VK_UP, PAD_DPAD_UP);
-    map(VK_DOWN, PAD_DPAD_DOWN);
-    map(VK_LEFT, PAD_DPAD_LEFT);
-    map(VK_RIGHT, PAD_DPAD_RIGHT);
-    float kx = (Key('D') ? 1.0f : 0.0f) - (Key('A') ? 1.0f : 0.0f);
-    float ky = (Key('W') ? 1.0f : 0.0f) - (Key('S') ? 1.0f : 0.0f);
+    for (int i = 0; i < 17; i++)
+        if (logical[i] && down(i)) { out.buttons |= logical[i]; any = true; }
+    if (down(10)) { out.rt = 1.0f; any = true; }   // thrust Remote forward
+    if (down(11)) { out.lt = 1.0f; any = true; }   // pull Remote back
+    float kx = (down(20) ? 1.0f : 0.0f) - (down(19) ? 1.0f : 0.0f);
+    float ky = (down(17) ? 1.0f : 0.0f) - (down(18) ? 1.0f : 0.0f);
     if (kx || ky)
     {
         out.lx = kx;
         out.ly = ky;
         any = true;
     }
-    if (Key('U')) { out.rt = 1.0f; any = true; }
     if (any) out.connected = true;
 }
 

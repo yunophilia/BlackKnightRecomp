@@ -29,6 +29,11 @@ struct Config
     // Wii "-" is unbound by default: the game does not use it, and BACK (the View button)
     // opens the settings overlay.
     std::string bind[12] = { "A", "X", "B", "Y", "RB", "LB", "START", "NONE", "LS", "RS", "RT", "LT" };
+    // [Keyboard] keyboard and mouse bindings: the 12 actions above, then HOME, the D-pad
+    // and the movement stick (see kKeyActions). Each is a comma-separated list of key
+    // names (SPACE, J, LSHIFT, MOUSE1, ...; see input/gamepad.cpp) or NONE.
+    std::string keys[21] = { "SPACE", "J, MOUSE1", "K", "L", "LSHIFT, MOUSE2", "Q", "ENTER", "BACKSPACE", "NONE", "NONE",
+                             "U", "NONE", "H", "UP", "DOWN", "LEFT", "RIGHT", "W", "S", "A", "D" };
     // [Paths]
     std::string dataDir;
     std::string isoPath;
@@ -37,6 +42,7 @@ struct Config
 extern Config g_config;
 
 extern const char* const kBindActions[12];
+extern const char* const kKeyActions[21];   // config.ini names of Config::keys
 
 // Loads config.ini (writing the defaults if it does not exist) and remembers its path.
 void Config_Load(const std::string& path);

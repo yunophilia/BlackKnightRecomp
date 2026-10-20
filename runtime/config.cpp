@@ -15,6 +15,11 @@ static std::string s_path;
 const char* const kBindActions[12] = { "jump", "slash", "wii_b", "shake_nunchuk", "guard", "nunchuk_c",
                                        "plus", "minus", "button_1", "button_2", "thrust", "pull_back" };
 
+// order matches Config::keys
+const char* const kKeyActions[21] = { "jump", "slash", "wii_b", "shake_nunchuk", "guard", "nunchuk_c", "plus", "minus",
+                                      "button_1", "button_2", "thrust", "pull_back", "home", "dpad_up", "dpad_down",
+                                      "dpad_left", "dpad_right", "move_up", "move_down", "move_left", "move_right" };
+
 static const char* const kLanguages[] = { "japanese", "english", "german", "french", "spanish", "italian", "dutch" };
 
 static const char* Bool(bool b) { return b ? "true" : "false"; }
@@ -55,6 +60,12 @@ std::string Config_Text(const Config& c)
     s += "; (BACK, the View button, opens the settings overlay; Back+Start together is HOME;\n";
     s += ";  the right stick also flicks slashes)\n";
     for (int i = 0; i < 12; i++) s += std::format("{} = {}\n", kBindActions[i], c.bind[i]);
+    s += "\n[Keyboard]\n";
+    s += "; keyboard and mouse bindings, comma-separated: A-Z 0-9 F2-F10 F12 SPACE ENTER BACKSPACE TAB\n";
+    s += "; LSHIFT RSHIFT LCTRL RCTRL LALT RALT UP DOWN LEFT RIGHT INSERT DELETE HOME_KEY END PAGEUP\n";
+    s += "; PAGEDOWN NUMPAD0-NUMPAD9 MOUSE1 (left) MOUSE2 (right) MOUSE3 (middle) MOUSE4 MOUSE5 NONE\n";
+    s += "; (F1 opens the settings, F11 toggles fullscreen; the mouse also moves the pointer)\n";
+    for (int i = 0; i < 21; i++) s += std::format("{} = {}\n", kKeyActions[i], c.keys[i]);
     s += "\n[Paths]\n";
     s += "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso)\n";
     s += std::format("data = {}\niso = {}\n", c.dataDir, c.isoPath);
@@ -159,6 +170,11 @@ void Config_Load(const std::string& path)
             if (key == "remote_speaker") c.remoteSpeaker = ParseBool(val);
             for (int i = 0; i < 12; i++)
                 if (key == kBindActions[i]) c.bind[i] = val;
+        }
+        else if (section == "keyboard")
+        {
+            for (int i = 0; i < 21; i++)
+                if (key == kKeyActions[i]) c.keys[i] = val;
         }
         else if (section == "paths")
         {
