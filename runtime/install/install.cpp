@@ -243,11 +243,29 @@ InstallResult Install_Run(const fs::path& image, const fs::path& dest, InstallPr
     }
 
     fs::create_directories(dest.parent_path(), ec);
+    // reinstall over an earlier (e.g. damaged) install: swap it out only once the new
+    // copy is complete
+    fs::path old = dest;
+    old += ".old";
+    bool replaced = false;
+    if (fs::exists(dest, ec))
+    {
+        fs::remove_all(old, ec);
+        fs::rename(dest, old, ec);
+        if (ec)
+        {
+            error = "cannot replace " + dest.string() + ": " + ec.message();
+            return InstallResult::WriteFailed;
+        }
+        replaced = true;
+    }
     fs::rename(tmp, dest, ec);
     if (ec)
     {
         error = "cannot rename " + tmp.string() + " to " + dest.string() + ": " + ec.message();
+        if (replaced) { std::error_code e2; fs::rename(old, dest, e2); }
         return InstallResult::WriteFailed;
     }
+    if (replaced) fs::remove_all(old, ec);
     return InstallResult::Ok;
 }

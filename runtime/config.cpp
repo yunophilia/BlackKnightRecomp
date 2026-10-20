@@ -3,69 +3,80 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <format>
 #include <fstream>
 #include <sstream>
+#include <windows.h>
 
 Config g_config;
+static std::string s_path;
 
 // order matches Config::bind
 const char* const kBindActions[12] = { "jump", "slash", "wii_b", "shake_nunchuk", "guard", "nunchuk_c",
                                        "plus", "minus", "button_1", "button_2", "thrust", "pull_back" };
 
-static const char* kDefaultIni =
-    "; BlackKnightRecomp settings\n"
-    "\n"
-    "[Video]\n"
-    "; 30 = original speed and pacing, 60 = doubled frame rate\n"
-    "frame_rate = 30\n"
-    "; internal resolution multiplier (1 = 640x528, 3 = 1920x1584)\n"
-    "internal_scale = 3\n"
-    "window_width = 1280\n"
-    "window_height = 720\n"
-    "; F11 or Alt+Enter toggles fullscreen at runtime\n"
-    "fullscreen = false\n"
-    "vsync = false\n"
-    "widescreen = true\n"
-    "; force anisotropic texture filtering: 1 (off), 2, 4, 8, 16\n"
-    "anisotropy = 1\n"
-    "; process graphics on a second CPU core (like Dolphin's dual core)\n"
-    "gpu_thread = true\n"
-    "; compile new shaders in the background: no hitches, objects may appear a frame late\n"
-    "async_shaders = true\n"
-    "; Dolphin-format HD texture packs: <dir>/RENE8P/**/tex1_*.png|dds. Empty dir searches\n"
-    "; textures/ next to the exe, game/textures and Documents/Dolphin Emulator/Load/Textures\n"
-    "texture_pack = true\n"
-    "texture_pack_dir =\n"
-    "\n"
-    "[System]\n"
-    "; english, german, french, spanish, italian, dutch, japanese\n"
-    "language = english\n"
-    "; freeze the game while its window is in the background\n"
-    "pause_on_focus_loss = false\n"
-    "\n"
-    "[Input]\n"
-    "rumble = true\n"
-    "; play sounds the game sends to the Wii Remote speaker\n"
-    "remote_speaker = true\n"
-    "; controller bindings: A B X Y LB RB LT RT START BACK LS RS UP DOWN LEFT RIGHT NONE\n"
-    "; (Back+Start together is always HOME; the right stick also flicks slashes)\n"
-    "jump = A\n"
-    "slash = X\n"
-    "wii_b = B\n"
-    "shake_nunchuk = Y\n"
-    "guard = RB\n"
-    "nunchuk_c = LB\n"
-    "plus = START\n"
-    "minus = BACK\n"
-    "button_1 = LS\n"
-    "button_2 = RS\n"
-    "thrust = RT\n"
-    "pull_back = LT\n"
-    "\n"
-    "[Paths]\n"
-    "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso)\n"
-    "data =\n"
-    "iso =\n";
+static const char* const kLanguages[] = { "japanese", "english", "german", "french", "spanish", "italian", "dutch" };
+
+static const char* Bool(bool b) { return b ? "true" : "false"; }
+
+// The whole file, with comments, for the given settings (written on first run and
+// whenever the launcher or the in-game settings change something).
+std::string Config_Text(const Config& c)
+{
+    std::string s;
+    s += "; BlackKnightRecomp settings (also editable in the launcher and in game: View button / F1)\n\n";
+    s += "[Video]\n";
+    s += "; 30 = original speed and pacing, 60 = doubled frame rate\n";
+    s += std::format("frame_rate = {}\n", c.frameRate);
+    s += "; internal resolution multiplier (1 = 640x528, 3 = 1920x1584)\n";
+    s += std::format("internal_scale = {}\n", c.internalScale);
+    s += std::format("window_width = {}\nwindow_height = {}\n", c.windowWidth, c.windowHeight);
+    s += "; F11 or Alt+Enter toggles fullscreen at runtime\n";
+    s += std::format("fullscreen = {}\nvsync = {}\nwidescreen = {}\n", Bool(c.fullscreen), Bool(c.vsync), Bool(c.widescreen));
+    s += "; force anisotropic texture filtering: 1 (off), 2, 4, 8, 16\n";
+    s += std::format("anisotropy = {}\n", c.anisotropy);
+    s += "; process graphics on a second CPU core (like Dolphin's dual core)\n";
+    s += std::format("gpu_thread = {}\n", Bool(c.gpuThread));
+    s += "; compile new shaders in the background: no hitches, objects may appear a frame late\n";
+    s += std::format("async_shaders = {}\n", Bool(c.asyncShaders));
+    s += "; Dolphin-format HD texture packs: <dir>/RENE8P/**/tex1_*.png|dds. Empty dir searches\n";
+    s += "; textures/ next to the exe, game/textures and Documents/Dolphin Emulator/Load/Textures\n";
+    s += std::format("texture_pack = {}\ntexture_pack_dir = {}\n\n", Bool(c.texturePack), c.texturePackDir);
+    s += "[System]\n";
+    s += "; english, german, french, spanish, italian, dutch, japanese\n";
+    s += std::format("language = {}\n", kLanguages[std::clamp(c.language, 0, 6)]);
+    s += "; freeze the game while its window is in the background\n";
+    s += std::format("pause_on_focus_loss = {}\n\n", Bool(c.pauseOnFocusLoss));
+    s += "[Input]\n";
+    s += std::format("rumble = {}\n", Bool(c.rumble));
+    s += "; play sounds the game sends to the Wii Remote speaker\n";
+    s += std::format("remote_speaker = {}\n", Bool(c.remoteSpeaker));
+    s += "; controller bindings: A B X Y LB RB LT RT START BACK LS RS UP DOWN LEFT RIGHT NONE\n";
+    s += "; (BACK, the View button, opens the settings overlay; Back+Start together is HOME;\n";
+    s += ";  the right stick also flicks slashes)\n";
+    for (int i = 0; i < 12; i++) s += std::format("{} = {}\n", kBindActions[i], c.bind[i]);
+    s += "\n[Paths]\n";
+    s += "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso)\n";
+    s += std::format("data = {}\niso = {}\n", c.dataDir, c.isoPath);
+    return s;
+}
+
+const std::string& Config_Path() { return s_path; }
+
+bool Config_Save()
+{
+    if (s_path.empty()) return false;
+    // write-then-rename so a crash never leaves a truncated file
+    std::string tmp = s_path + ".tmp";
+    FILE* f = fopen(tmp.c_str(), "wb");
+    if (!f) { LOG_WARN("config: cannot write {}", tmp); return false; }
+    std::string text = Config_Text(g_config);
+    bool ok = fwrite(text.data(), 1, text.size(), f) == text.size();
+    ok = fclose(f) == 0 && ok;
+    if (ok) ok = MoveFileExA(tmp.c_str(), s_path.c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
+    if (!ok) LOG_WARN("config: cannot save {}", s_path);
+    return ok;
+}
 
 static std::string Trim(std::string s)
 {
@@ -90,10 +101,9 @@ static bool ParseBool(const std::string& v)
 
 static int ParseLanguage(const std::string& v)
 {
-    static const char* names[] = { "japanese", "english", "german", "french", "spanish", "italian", "dutch" };
     std::string l = Lower(v);
     for (int i = 0; i < 7; i++)
-        if (l == names[i]) return i;
+        if (l == kLanguages[i]) return i;
     if (!l.empty() && isdigit((unsigned char)l[0])) return std::clamp(atoi(l.c_str()), 0, 6);
     LOG_WARN("config: unknown language '{}', using english", v);
     return 1;
@@ -101,14 +111,11 @@ static int ParseLanguage(const std::string& v)
 
 void Config_Load(const std::string& path)
 {
+    s_path = path;
     std::ifstream f(path);
     if (!f)
     {
-        if (FILE* o = fopen(path.c_str(), "wb"))
-        {
-            fputs(kDefaultIni, o);
-            fclose(o);
-        }
+        Config_Save();   // first run: write the defaults
         return;
     }
     std::string line, section;

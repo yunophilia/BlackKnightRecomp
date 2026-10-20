@@ -2,7 +2,9 @@
 #include "gamepad.h"
 #include "../config.h"
 #include "../tas/tas.h"
+#include "../ui/overlay.h"
 
+#include <atomic>
 #include <cmath>
 #include <windows.h>
 #include <Xinput.h>
@@ -56,15 +58,14 @@ static uint32_t PhysicalBit(const std::string& name)
     return 0;
 }
 
+static std::atomic<bool> s_bindingsChanged{ true };
+void Gamepad_ReloadBindings() { s_bindingsChanged = true; }
+
 static void ApplyBindings(GamepadState& out, uint32_t phys, float lt, float rt)
 {
     static uint32_t mask[12];
-    static bool init = false;
-    if (!init)
-    {
+    if (s_bindingsChanged.exchange(false))
         for (int i = 0; i < 12; i++) mask[i] = PhysicalBit(g_config.bind[i]);
-        init = true;
-    }
     static const uint16_t logical[10] = { PAD_A, PAD_X, PAD_B, PAD_Y, PAD_RB, PAD_LB, PAD_START, PAD_BACK, PAD_LTHUMB, PAD_RTHUMB };
     uint16_t b = (uint16_t)(phys & (PAD_DPAD_UP | PAD_DPAD_DOWN | PAD_DPAD_LEFT | PAD_DPAD_RIGHT));
     for (int i = 0; i < 10; i++)
@@ -166,6 +167,29 @@ void Gamepad_Poll(int index, GamepadState& out)
         out.connected = true;
         float lt = st.Gamepad.bLeftTrigger / 255.0f, rt = st.Gamepad.bRightTrigger / 255.0f;
         uint32_t phys = st.Gamepad.wButtons & ~PAD_HOME;
+        if (index == 0)
+        {
+            // View (Back) toggles the settings overlay when released, unless Start was
+            // pressed with it (View + Start is the Wii HOME button)
+            static bool viewHeld = false, viewCombo = false;
+            if (phys & PAD_BACK)
+            {
+                viewHeld = true;
+                if (phys & PAD_START) viewCombo = true;
+            }
+            else if (viewHeld)
+            {
+                if (!viewCombo) Overlay_Toggle();
+                viewHeld = viewCombo = false;
+            }
+            if (Overlay_IsOpen())
+            {
+                // the overlay has the controller; the game keeps running with no input
+                out = GamepadState();
+                out.connected = true;
+                return;
+            }
+        }
         if (lt > 0.6f) phys |= 1u << 16;
         if (rt > 0.6f) phys |= 1u << 17;
         // Back+Start together act as the Wii Remote HOME button
@@ -182,6 +206,20 @@ void Gamepad_Poll(int index, GamepadState& out)
     }
     if (index != 0)
         return;
+    // "Wii HOME Menu" button in the overlay: hold HOME for a moment
+    static DWORD homeUntil = 0;
+    if (Overlay_TakeHomePress()) homeUntil = GetTickCount() + 250;
+    if (homeUntil && GetTickCount() < homeUntil)
+    {
+        out.buttons |= PAD_HOME;
+        out.connected = true;
+    }
+    if (Overlay_IsOpen())
+    {
+        out = GamepadState();
+        out.connected = true;
+        return;
+    }
     // keyboard (only when our window has focus)
     if (GetForegroundWindow() != (HWND)Video_HWND())
         return;

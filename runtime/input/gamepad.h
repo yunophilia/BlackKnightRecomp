@@ -24,3 +24,4 @@ void Gamepad_Poll(int index, GamepadState& out);
 bool Gamepad_IsConnected(int index);
 bool Gamepad_RumbleAllowed();   // a person is playing: no input script, window focused
 void Gamepad_StopRumble();      // all motors off
+void Gamepad_ReloadBindings();  // config.ini bindings changed (settings UI)

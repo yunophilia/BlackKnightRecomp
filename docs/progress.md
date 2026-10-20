@@ -33,23 +33,26 @@
 - [x] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison for every location,
       mission type, boss and Battle arena, plus a full-settings pass (see "60 FPS verification")
 - [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
-- [ ] Launcher GUI in BlackKnightRecomp.exe, shown on every start (simple window and buttons
-      to start with):
-  - [ ] Play button; settings page that edits config.ini, including button bindings
-  - [ ] Asks for the disc image and installs it only when needed: first start, game/ has no
+- [x] Launcher GUI in BlackKnightRecomp.exe, shown on every start (Dear ImGui):
+  - [x] Play button; settings page that edits config.ini, including button bindings
+  - [x] Asks for the disc image and installs it only when needed: first start, game/ has no
         extracted game (e.g. deleted), or the installed files are corrupt
-  - [ ] Corrupt-file check: quick (every FST file present with the right size, main.dol
-        SHA-1) on each start, full hash check of every file on request
-- [ ] In-game settings overlay (Dusklight-style), opened with the controller's View button
-      (PS5: Create) and from the keyboard; the game keeps running underneath (no pause):
-  - [ ] Tabs for video, input, audio and gameplay settings, written back to config.ini
-  - [ ] Settings apply live where possible (bindings, rumble, vsync, fullscreen,
-        anisotropy, texture packs, internal resolution)
-  - [ ] Restart-only settings (frame rate, language, paths) ask "This setting needs a
-        restart. Restart the game?" and restart on yes
-  - [ ] View opens the overlay; Wii "-" is unbound by default (tested: "-" has no effect on
+  - [x] Corrupt-file check: quick (every file present with the right size, main.dol SHA-1)
+        on each start, full SHA-1 check of every file on request (known-good list in
+        runtime/install/rene8p_files.inc; also `bkr_install --verify`)
+- [x] In-game settings overlay (Dusklight-style), opened with the controller's View button
+      (PS5: Create) or F1; the game keeps running underneath (no pause):
+  - [x] Tabs for video, input, audio and system settings, written back to config.ini
+  - [x] Settings apply live where possible (bindings, rumble, remote speaker, vsync,
+        fullscreen, window size, anisotropy, async shaders, pause on focus loss)
+  - [x] Restart-only settings (frame rate, internal resolution, widescreen, language,
+        texture packs, graphics thread) ask "This setting needs a restart. Restart the
+        game?" and restart on yes
+  - [x] View opens the overlay; Wii "-" is unbound by default (tested: "-" has no effect on
         the title, menus, world map, mission select, gameplay or pause menu; "+" pauses) but
-        stays assignable; the HOME Menu stays on View+Start / H
+        stays assignable; the HOME Menu stays on View+Start / H and is in the overlay
+- [ ] Live internal resolution and texture pack changes (they restart the game for now)
+- [ ] Play-test the launcher and overlay by hand (controller navigation, live settings)
 
 ## 60 FPS verification
 

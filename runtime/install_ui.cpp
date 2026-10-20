@@ -78,15 +78,18 @@ InstallResult RunWithProgress(const fs::path& image, const fs::path& dest, std::
 }   // namespace
 
 // Returns true once the data is installed in dest. foundImage: a disc image found next to
-// the game, offered first.
-bool InstallUI_Run(const fs::path& dest, const std::string& foundImage)
+// the game, offered first. damage: why the existing install needs replacing (empty when
+// nothing is installed yet).
+bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const std::string& damage)
 {
+    std::wstring why = damage.empty() ? L"The game data is not installed yet."
+                                      : L"The installed game data is damaged (" + Widen(damage) + L") and needs reinstalling.";
     HRESULT co = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     bool installed = false;
     fs::path image;
     if (!foundImage.empty() && Install_GameId(foundImage) == "RENE8P")
     {
-        std::wstring msg = L"The game data is not installed yet. Install it from\n\n" + Widen(foundImage) +
+        std::wstring msg = why + L" Install it from\n\n" + Widen(foundImage) +
                            L"?\n\nChoose No to select a different disc image.";
         int r = MessageBoxW(nullptr, msg.c_str(), kTitle, MB_YESNOCANCEL | MB_ICONQUESTION);
         if (r == IDYES) image = foundImage;
@@ -95,9 +98,9 @@ bool InstallUI_Run(const fs::path& dest, const std::string& foundImage)
     else
     {
         int r = MessageBoxW(nullptr,
-                            L"The game data is not installed yet.\n\nSelect your own disc image of Sonic and the "
+                            (why + L"\n\nSelect your own disc image of Sonic and the "
                             L"Black Knight (PAL, RENE8P) to install it. ISO, RVZ, WIA and WBFS images work. "
-                            L"This takes a minute and needs about 3.5 GB; the image is not needed afterwards.",
+                            L"This takes a minute and needs about 3.5 GB; the image is not needed afterwards.").c_str(),
                             kTitle, MB_OKCANCEL | MB_ICONINFORMATION);
         if (r != IDOK) goto done;
     }

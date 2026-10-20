@@ -52,7 +52,7 @@ if(WIN32)
     FetchContent_MakeAvailable(nod_prebuilt)
     find_package(nod REQUIRED CONFIG PATHS ${nod_prebuilt_SOURCE_DIR} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
-    add_library(bkr_installer STATIC runtime/install/install.cpp)
+    add_library(bkr_installer STATIC runtime/install/install.cpp runtime/install/verify.cpp)
     target_include_directories(bkr_installer PUBLIC runtime)
     target_compile_definitions(bkr_installer PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
     target_link_libraries(bkr_installer PUBLIC nod::nod_static)
@@ -71,6 +71,21 @@ if(WIN32)
     set_target_properties(bkr_install PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                  RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
                                                  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
+endif()
+
+# ---------------------------------------------------------------- Dear ImGui (launcher, settings overlay)
+# https://github.com/ocornut/imgui (MIT), downloaded at configure time
+if(WIN32)
+    FetchContent_Declare(imgui
+        URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.9b.tar.gz
+        URL_HASH SHA256=21d8a0a565e85dce943e375db00812c2f3f0ab21f3f0f7964e364a63422d7f99
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+    FetchContent_MakeAvailable(imgui)
+    add_library(imgui STATIC ${imgui_SOURCE_DIR}/imgui.cpp ${imgui_SOURCE_DIR}/imgui_draw.cpp
+                             ${imgui_SOURCE_DIR}/imgui_tables.cpp ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+                             ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp)
+    target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+    target_compile_definitions(imgui PUBLIC IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
 endif()
 
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/generated/sources.cmake)
@@ -109,7 +124,7 @@ list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "/runtime/install/")
 add_executable(BlackKnightRecomp ${RUNTIME_SOURCES})
 target_include_directories(BlackKnightRecomp PRIVATE runtime runtime/cpu generated)
 target_sources(BlackKnightRecomp PRIVATE $<TARGET_OBJECTS:ppcrecomp>)
-target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
+target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
 # the scripts in tools/ and the shader cache expect the game in out/
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out

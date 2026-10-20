@@ -904,6 +904,14 @@ static ID3D11RasterizerState* GetRasterState(uint32_t cull)
     return s;
 }
 
+// Settings changed (anisotropy): samplers are recreated on next use. Render thread only.
+void Renderer_ResetSamplers()
+{
+    for (auto& kv : s_samplerCache)
+        if (kv.second) kv.second->Release();
+    s_samplerCache.clear();
+}
+
 static ID3D11SamplerState* GetSampler(uint32_t mode0, uint32_t mode1, bool hasMips)
 {
     uint64_t key = (uint64_t)mode0 | ((uint64_t)mode1 << 32);

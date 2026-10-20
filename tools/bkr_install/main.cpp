@@ -2,7 +2,9 @@
 // first run. Needed before tools/build_generated.py, which reads sys/main.dol.
 //
 //   bkr_install <disc image> [destination, default game/extracted/DATA]
+//   bkr_install --verify [data, default game/extracted/DATA]   full file check
 #include "install/install.h"
+#include "install/verify.h"
 
 #include <chrono>
 #include <cstdio>
@@ -16,6 +18,19 @@ int wmain(int argc, wchar_t** argv)
     {
         fprintf(stderr, "usage: bkr_install <disc image (ISO, RVZ, WBFS, ...)> [destination, default game/extracted/DATA]\n");
         return 2;
+    }
+    if (wcscmp(argv[1], L"--verify") == 0)
+    {
+        std::filesystem::path data = argc > 2 ? std::filesystem::path(argv[2]) : std::filesystem::path("game/extracted/DATA");
+        VerifyProgress progress;
+        std::string problem;
+        DataStatus r = DataStatus::Ok;
+        std::thread worker([&] { r = Install_FullCheck(data, progress, problem); });
+        while (WaitForSingleObject(worker.native_handle(), 500) == WAIT_TIMEOUT)
+            if (progress.total) fprintf(stderr, "\rchecking: %3d%%", (int)(progress.done * 100 / progress.total));
+        worker.join();
+        fprintf(stderr, "\r%-40s\n", r == DataStatus::Ok ? "all game files are intact" : r == DataStatus::Missing ? "not installed" : ("damaged: " + problem).c_str());
+        return r == DataStatus::Ok ? 0 : 1;
     }
     std::filesystem::path image = argv[1];
     std::filesystem::path dest = argc > 2 ? std::filesystem::path(argv[2]) : std::filesystem::path("game/extracted/DATA");

@@ -2,6 +2,7 @@
 #include "video.h"
 #include "../config.h"
 #include "../log.h"
+#include "../ui/overlay.h"
 
 #include <atomic>
 #include <d3dcompiler.h>
@@ -25,9 +26,39 @@ static ID3D11Buffer* s_blitCB = nullptr;
 static ID3D11RasterizerState* s_blitRS = nullptr;
 static ID3D11BlendState* s_blitBS = nullptr;
 static ID3D11DepthStencilState* s_blitDS = nullptr;
+static bool s_fullscreen = false;   // window thread only
+// UI screenshots of a minimized test window (BKR_UI_SHOT_OVERLAY): drawn off screen
+static ID3D11Texture2D* s_shotTex = nullptr;
+static ID3D11RenderTargetView* s_shotRTV = nullptr;
+constexpr UINT WM_APP_FULLSCREEN = WM_APP + 1;   // wParam: 1 fullscreen, 0 windowed
+constexpr UINT WM_APP_WINDOWSIZE = WM_APP + 2;   // wParam: width, lParam: height
+
+// borderless fullscreen on the window's monitor, or back to the saved window rect
+static void SetFullscreen(HWND hwnd, bool on)
+{
+    static RECT saved;
+    if (on == s_fullscreen) return;
+    s_fullscreen = on;
+    if (on)
+    {
+        GetWindowRect(hwnd, &saved);
+        HMONITOR mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO mi{ sizeof(mi) };
+        GetMonitorInfoW(mon, &mi);
+        SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+        SetWindowPos(hwnd, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left,
+                     mi.rcMonitor.bottom - mi.rcMonitor.top, SWP_FRAMECHANGED);
+    }
+    else
+    {
+        SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+        SetWindowPos(hwnd, nullptr, saved.left, saved.top, saved.right - saved.left, saved.bottom - saved.top, SWP_FRAMECHANGED);
+    }
+}
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+    if (Overlay_WndProc(hwnd, msg, wp, lp)) return 0;   // the settings overlay has the input
     switch (msg)
     {
     case WM_CLOSE:
@@ -50,36 +81,32 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         }
         break;
     case WM_SETCURSOR:
-        // the game draws its own Wii Remote pointer
+        // the game draws its own Wii Remote pointer; the overlay needs the mouse cursor
         if (LOWORD(lp) == HTCLIENT)
         {
-            SetCursor(nullptr);
+            SetCursor(Overlay_IsOpen() ? LoadCursorW(nullptr, MAKEINTRESOURCEW(32512)) : nullptr);
             return TRUE;
         }
         break;
+    case WM_APP_FULLSCREEN:
+        SetFullscreen(hwnd, wp != 0);
+        return 0;
+    case WM_APP_WINDOWSIZE:
+        if (!s_fullscreen)
+        {
+            RECT r{ 0, 0, (LONG)wp, (LONG)lp };
+            AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
+            SetWindowPos(hwnd, nullptr, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOMOVE | SWP_NOZORDER);
+        }
+        return 0;
     case WM_KEYDOWN:
         if (wp == VK_F11 || (wp == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000)))
         {
-            // toggle borderless fullscreen
-            static RECT saved;
-            static bool fs = false;
-            fs = !fs;
-            if (fs)
-            {
-                GetWindowRect(hwnd, &saved);
-                HMONITOR mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO mi{ sizeof(mi) };
-                GetMonitorInfoW(mon, &mi);
-                SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-                SetWindowPos(hwnd, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left,
-                             mi.rcMonitor.bottom - mi.rcMonitor.top, SWP_FRAMECHANGED);
-            }
-            else
-            {
-                SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-                SetWindowPos(hwnd, nullptr, saved.left, saved.top, saved.right - saved.left, saved.bottom - saved.top, SWP_FRAMECHANGED);
-            }
+            SetFullscreen(hwnd, !s_fullscreen);
+            g_config.fullscreen = s_fullscreen;
         }
+        else if (wp == VK_F1)
+            Overlay_Toggle();
         break;
     case WM_SYSKEYDOWN:
         if (wp == VK_RETURN) { SendMessageW(hwnd, WM_KEYDOWN, VK_RETURN, lp); return 0; }
@@ -101,7 +128,7 @@ static void WindowThread(std::atomic<int>* ready)
     AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
     s_hwnd = CreateWindowW(L"BlackKnightRecomp", L"Sonic and the Black Knight - Recompiled", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                            CW_USEDEFAULT, CW_USEDEFAULT, r.right - r.left, r.bottom - r.top, nullptr, nullptr, wc.hInstance, nullptr);
-    if (s_hwnd && g_videoConfig.fullscreen) SendMessageW(s_hwnd, WM_KEYDOWN, VK_F11, 0);
+    if (s_hwnd && g_videoConfig.fullscreen) SetFullscreen(s_hwnd, true);
     *ready = s_hwnd ? 1 : -1;
     MSG msg;
     while (GetMessageW(&msg, nullptr, 0, 0) > 0)
@@ -227,6 +254,7 @@ bool Video_Init()
     g_device->CreateBlendState(&bs, &s_blitBS);
     D3D11_DEPTH_STENCIL_DESC ds{};
     g_device->CreateDepthStencilState(&ds, &s_blitDS);
+    Overlay_Init(s_hwnd, g_device, g_ctx);
     return true;
 }
 
@@ -243,11 +271,28 @@ void Video_Present(ID3D11ShaderResourceView* srv, float u0, float v0, float u1, 
     GetClientRect(s_hwnd, &rc);
     float w = (float)std::max<LONG>(1, rc.right - rc.left);
     float h = (float)std::max<LONG>(1, rc.bottom - rc.top);
+    ID3D11RenderTargetView* target = s_backbufferRTV;
+    if (Overlay_ShotPending() && w < 64)
+    {
+        if (!s_shotTex)
+        {
+            D3D11_TEXTURE2D_DESC td{};
+            td.Width = 1280; td.Height = 720; td.MipLevels = 1; td.ArraySize = 1;
+            td.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            td.SampleDesc.Count = 1;
+            td.BindFlags = D3D11_BIND_RENDER_TARGET;
+            g_device->CreateTexture2D(&td, nullptr, &s_shotTex);
+            g_device->CreateRenderTargetView(s_shotTex, nullptr, &s_shotRTV);
+        }
+        target = s_shotRTV;
+        w = 1280;
+        h = 720;
+    }
     D3D11_VIEWPORT vp{ 0, 0, w, h, 0, 1 };
     g_ctx->RSSetViewports(1, &vp);
     float black[4] = { 0, 0, 0, 1 };
-    g_ctx->OMSetRenderTargets(1, &s_backbufferRTV, nullptr);
-    g_ctx->ClearRenderTargetView(s_backbufferRTV, black);
+    g_ctx->OMSetRenderTargets(1, &target, nullptr);
+    g_ctx->ClearRenderTargetView(target, black);
     if (srv)
     {
         // letterbox to target aspect
@@ -277,8 +322,11 @@ void Video_Present(ID3D11ShaderResourceView* srv, float u0, float v0, float u1, 
         ID3D11ShaderResourceView* nullSrv = nullptr;
         g_ctx->PSSetShaderResources(0, 1, &nullSrv);
     }
+    Overlay_Render(w, h);   // in-game settings, drawn over the game while it keeps running
     s_swapchain->Present(g_videoConfig.vsync ? 1 : 0, 0);
 }
 
 bool Video_WindowClosed() { return s_closed; }
+void Video_SetFullscreen(bool on) { if (s_hwnd) PostMessageW(s_hwnd, WM_APP_FULLSCREEN, on ? 1 : 0, 0); }
+void Video_SetWindowSize(int w, int h) { if (s_hwnd) PostMessageW(s_hwnd, WM_APP_WINDOWSIZE, (WPARAM)w, (LPARAM)h); }
 void* Video_HWND() { return s_hwnd; }

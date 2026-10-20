@@ -25,8 +25,10 @@ struct Config
     bool rumble = true;
     bool remoteSpeaker = true;   // play Wii Remote speaker sounds on the PC
     // button bindings, action -> controller button name (A, B, X, Y, LB, RB, LT, RT,
-    // START, BACK, LS, RS, UP, DOWN, LEFT, RIGHT or NONE); see config.cpp for actions
-    std::string bind[12] = { "A", "X", "B", "Y", "RB", "LB", "START", "BACK", "LS", "RS", "RT", "LT" };
+    // START, BACK, LS, RS, UP, DOWN, LEFT, RIGHT or NONE); see config.cpp for actions.
+    // Wii "-" is unbound by default: the game does not use it, and BACK (the View button)
+    // opens the settings overlay.
+    std::string bind[12] = { "A", "X", "B", "Y", "RB", "LB", "START", "NONE", "LS", "RS", "RT", "LT" };
     // [Paths]
     std::string dataDir;
     std::string isoPath;
@@ -34,4 +36,11 @@ struct Config
 
 extern Config g_config;
 
+extern const char* const kBindActions[12];
+
+// Loads config.ini (writing the defaults if it does not exist) and remembers its path.
 void Config_Load(const std::string& path);
+// Writes the current g_config back to config.ini (with comments).
+bool Config_Save();
+const std::string& Config_Path();
+std::string Config_Text(const Config& c);

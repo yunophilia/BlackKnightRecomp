@@ -125,8 +125,9 @@ build steps, which sets that up.
 | Y | L | Shake Nunchuk |
 | RT / LT | U / - | Thrust Remote forward / pull back |
 | Start | Enter | Pause (+) |
-| Back | Backspace | Minus (-) |
-| Back + Start | H | HOME menu |
+| View (Back) | F1 | Settings overlay (the game keeps running) |
+| | Backspace | Wii - (unused by the game; unbound on the controller by default) |
+| View + Start | H | HOME menu |
 | Right stick (in menus) | Mouse | Pointer |
 | D-pad | Arrow keys | D-pad |
 
@@ -135,13 +136,23 @@ always drives player 1. The Wii Remote pointer follows the mouse when it moves i
 right stick moves it. Choosing "Wii Menu" in the HOME menu quits; "Reset" restarts.
 F11 or Alt+Enter toggles fullscreen.
 
-## Settings
+## Launcher and settings
 
-`config.ini` is created next to the executable on first run:
+The game opens a launcher on every start: Play, settings, and the game data status. It
+asks for your disc image only when nothing is installed yet or the installed files are
+damaged (each start checks that every file is present with the right size; "Check all
+game files" compares the hash of every file). `bkr_install --verify` does the full check
+from the command line.
 
-* `frame_rate`: `30` (original) or `60`. 60 fps uses the game's own frame-rate setting:
-  game time, movement speed and stage progress match 30 fps (checked side by side at
-  equal in-game timer values in mission 1). Later stage types are not verified yet.
+In game, View (Back) or F1 opens the same settings over the running game. Changes are
+saved to `config.ini` at once and most apply immediately; frame rate, internal
+resolution, widescreen, language, texture packs and the graphics thread ask to restart
+the game. The overlay also has the Wii HOME Menu, restart and quit.
+
+`config.ini` next to the executable holds the settings (it can also be edited by hand):
+
+* `frame_rate`: `30` (original) or `60`. Game logic runs at a fixed 60 Hz either way, so
+  game time and speed match the original in every stage type (see docs/progress.md).
 * `internal_scale`: internal resolution multiplier (default 3, about 1080p).
 * `window_width`, `window_height`, `fullscreen`, `vsync`, `widescreen`.
 * `texture_pack`, `texture_pack_dir`: Dolphin-format HD texture packs (for example the one
