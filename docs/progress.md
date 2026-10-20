@@ -32,7 +32,7 @@
       mission 1 cleared, results/save/retry/item codex/world map exercised
 - [x] Verify 60 FPS mode in all stage types: scripted 30 vs 60 comparison for every location,
       mission type, boss and Battle arena, plus a full-settings pass (see "60 FPS verification")
-- [ ] Controls tuning per stage type (on-rails runs, boss QTEs)
+- [x] Controls tuning per stage type (on-rails runs, boss QTEs): play-tested through the first boss fights at 4x
 - [x] Launcher GUI in BlackKnightRecomp.exe, shown on every start (Dear ImGui):
   - [x] Play button; settings page that edits config.ini, including button bindings
   - [x] Asks for the disc image and installs it only when needed: first start, game/ has no

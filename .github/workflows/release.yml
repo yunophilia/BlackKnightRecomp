@@ -1,0 +1,76 @@
+# Builds and publishes a release when a version tag (v*) is pushed.
+#
+# The recompiled code is generated from the game's main.dol, which is not in this
+# repository: the workflow reads it (with the other build inputs) from a private
+# repository using the PRIVATE_FILES_TOKEN secret (a fine-grained token with read-only
+# Contents access to that repository). Nothing from it is uploaded or published; only
+# the built exe goes into the release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write   # create the release
+
+jobs:
+  build:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch build inputs (private)
+        uses: actions/checkout@v4
+        with:
+          repository: yunophilia/BlackKnightRecomp-private
+          token: ${{ secrets.PRIVATE_FILES_TOKEN }}
+          path: private-inputs
+
+      - name: Place build inputs
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force game/extracted/DATA/sys, game/extracted/DATA/files, out | Out-Null
+          Copy-Item private-inputs/sys/main.dol game/extracted/DATA/sys/
+          Copy-Item private-inputs/files/BLACKKNIGHT.sel, private-inputs/files/hbm_part.rso game/extracted/DATA/files/
+          Copy-Item private-inputs/mem2_dump.bin out/
+          Remove-Item -Recurse -Force private-inputs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the recompiled code
+        shell: pwsh
+        run: |
+          python tools/rso.py
+          python tools/build_generated.py
+
+      - name: Build
+        shell: cmd
+        run: |
+          call tools\dev_build.bat || (type out\build.log & exit /b 1)
+
+      - name: Package
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File tools/package.ps1
+          $zip = "BlackKnightRecomp-${{ github.ref_name }}-windows-x64.zip"
+          Compress-Archive -Path dist/BlackKnightRecomp -DestinationPath $zip
+          "ZIP=$zip" >> $env:GITHUB_ENV
+
+      - name: Publish the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = @"
+          Sonic and the Black Knight, statically recompiled for Windows (x64).
+
+          You need your own copy of the game (PAL, RENE8P). Unzip, start BlackKnightRecomp.exe and
+          select your disc image (ISO, RVZ, WIA or WBFS) when the launcher asks; the game data is
+          installed next to the exe. This release contains no game data.
+
+          See the README for controls and settings.
+          "@
+          gh release create "${{ github.ref_name }}" "$env:ZIP" --title "${{ github.ref_name }}" --notes $notes --generate-notes
