@@ -30,7 +30,7 @@ if (Test-Path $srcCache) {
 }
 @"
 You don't need to put anything here. Start BlackKnightRecomp.exe and select your own disc
-image (PAL, RENE8P; ISO, RVZ, WIA or WBFS) in the file dialog, wherever it is on your PC.
+image (USA, RENE8P; ISO, RVZ, WIA or WBFS) in the file dialog, wherever it is on your PC.
 The launcher installs the game data into this folder; the image is not needed afterwards.
 
 Optional, if you have one:
