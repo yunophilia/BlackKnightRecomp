@@ -157,7 +157,16 @@ Byte 0x48F is not the chapter/unlock flag.
   (vkd3d-shader) had no `isnan`, so 151 of 164 vertex shaders failed to compile and their
   draws were skipped. The generator now tests NaN bits (`isNaN()` in `kVSCommon`). With
   Wine 10.0 every recorded key (164 vs, 2641 ps) compiles, and Wine 10.0 + DXVK 2.7.1
-  renders boot through gameplay.
+  renders boot through gameplay. Same with Valve's Proton Experimental
+  (experimental-11.0-20261014: Wine 11.0, DXVK 3.1.1): v1.0.0 logs the `isnan` error and
+  stays black; the fix compiles all recorded keys with Proton's compiler and renders.
+- Proton outside Steam: steamcmd `+login anonymous +app_update 1493710` gets Proton
+  Experimental (Proton 10.0 and 9.0 refuse anonymous: "No subscription"). Run with
+  `proton waitforexitandrun <exe>`, `STEAM_COMPAT_DATA_PATH`,
+  `STEAM_COMPAT_CLIENT_INSTALL_PATH` set to the steamcmd dir, and
+  `~/.steam/sdk64/steamclient.so` linked to steamcmd's `linux64/steamclient.so` (without it
+  Proton's steam.exe asserts and the game never starts). The first run creates the prefix
+  for several minutes. Under Proton the Xvfb 0 Hz problem did not occur.
 - Releases ship `shadercache/` compiled by `tools/package.ps1` (`--precompile-shaders`)
   from `data/shadercache/*_keys.bin`, so Proton normally uses Microsoft-compiled bytecode.
   Keys whose blob is missing (a new key list, or a generator change) compile in the

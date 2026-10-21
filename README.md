@@ -63,8 +63,9 @@ played (issue #5): Wine's HLSL compiler rejected the game's vertex shaders. Late
 avoid that, and releases include precompiled shaders in `shadercache/`, so keep that folder
 next to the exe.
 
-Tested so far: Wine 10.0 with DXVK 2.7.1 on desktop Linux (software Vulkan), from boot
-into gameplay. **Not yet tested on a Steam Deck**; reports are welcome. Setup:
+Tested so far: Valve's Proton Experimental (Wine 11.0 based) and Wine 10.0 with DXVK 2.7.1,
+on desktop Linux with software Vulkan, from boot into gameplay. **Not yet tested on a Steam
+Deck**; reports are welcome. Setup:
 
 1. In Desktop Mode, unzip the release somewhere in your home folder (for example
    `~/Games/BlackKnightRecomp`), and put your disc image there in `game/` (an `.iso`
