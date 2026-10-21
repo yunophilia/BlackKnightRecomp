@@ -1,6 +1,6 @@
 # BlackKnightRecomp
 
-A static recompilation of **Sonic and the Black Knight** (Wii, PAL `RENE8P`) to native
+A static recompilation of **Sonic and the Black Knight** (Wii, USA `RENE8P`) to native
 Windows x64, in the spirit of [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp).
 The goal: play it natively on PC with a normal controller instead of Wii Remote motion
 controls.
@@ -49,7 +49,7 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 
 ## Playing
 
-Run `BlackKnightRecomp.exe`. On first run it asks for your own disc image of the game (PAL,
+Run `BlackKnightRecomp.exe`. On first run it asks for your own disc image of the game (USA,
 `RENE8P`; ISO, RVZ, WIA or WBFS): select it in the file dialog, wherever it is on your PC.
 There is no need to copy it anywhere. The launcher installs the game data from it into
 `game/extracted/` next to the exe, which takes about a minute and 3.5 GB. After that the
