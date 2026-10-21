@@ -55,6 +55,37 @@ There is no need to copy it anywhere. The launcher installs the game data from i
 `game/extracted/` next to the exe, which takes about a minute and 3.5 GB. After that the
 image is no longer needed. Mods can replace files under `game/extracted/DATA/files/`.
 
+### Steam Deck and Linux (Proton)
+
+There is no native Linux build (see [docs/linux-native.md](docs/linux-native.md)); the
+Windows build runs through Proton. v1.0.0 showed a black screen under Proton while the audio
+played (issue #5): Wine's HLSL compiler rejected the game's vertex shaders. Later builds
+avoid that, and releases include precompiled shaders in `shadercache/`, so keep that folder
+next to the exe.
+
+Tested so far: Wine 10.0 with DXVK 2.7.1 on desktop Linux (software Vulkan), from boot
+into gameplay. **Not yet tested on a Steam Deck**; reports are welcome. Setup:
+
+1. In Desktop Mode, unzip the release somewhere in your home folder (for example
+   `~/Games/BlackKnightRecomp`), and put your disc image there in `game/` (an `.iso`
+   there is offered automatically; RVZ, WIA or WBFS can be picked in the file dialog).
+2. In Steam: *Games > Add a Non-Steam Game to My Library*, browse to
+   `BlackKnightRecomp.exe` (set the file type filter to "All files").
+3. In the shortcut's *Properties > Compatibility*, tick *Force the use of a specific Steam
+   Play compatibility tool* and pick a current Proton (Proton 10, or Proton Experimental;
+   untested which older versions work).
+4. Start it once in Desktop Mode: the launcher installs the game data from your image.
+   After that it can be started from Game Mode.
+
+Controls (Steam's defaults for non-Steam games, not checked on a Deck yet): the Deck acts
+as an Xbox controller, so the table under [Controls](#controls-default) applies (View = the button left
+of the screen, Start = the menu button right of it). In the launcher, the D-pad/left stick
+and A work; the touchscreen or the right trackpad act as a mouse.
+
+If it still shows a black screen, `BlackKnightRecomp.log` next to the exe says why (it
+logs "running under Wine", the HLSL compiler in use, and any shader or D3D error); please
+attach it to an issue.
+
 ## Building
 
 Requirements:
@@ -106,7 +137,10 @@ build steps, which sets that up.
    only the build command is needed (`tools/dev_build.bat` runs it). Other presets:
    `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`,
    which only builds the recompiled code until the runtime is ported off D3D11/XAudio2.
-   `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`.
+   `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`, with a
+   shader cache precompiled from the GX states recorded in `data/shadercache/`
+   (`BlackKnightRecomp.exe --precompile-shaders <dir>` compiles every recorded key that has
+   no blob yet).
 5. Run `out/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
    repo root, or pass `--data <dir>`). Data extracted earlier with DolphinTool
    (`DolphinTool extract -i RENE8P.iso -o game/extracted -g`) still works; keep the

@@ -68,19 +68,46 @@ struct KeyHash
 
 // Compiled shaders are cached on disk (shadercache/ next to the exe), keyed by a hash
 // of the generated source, so areas seen before do not stutter on compilation.
-static std::filesystem::path ShaderCachePath(const std::string& src, const char* target)
+static std::filesystem::path s_shaderCacheDir;   // --precompile-shaders <dir>
+
+static std::filesystem::path ShaderCacheDir()
 {
     static std::filesystem::path dir;
     if (dir.empty())
     {
-        wchar_t buf[MAX_PATH];
-        GetModuleFileNameW(nullptr, buf, MAX_PATH);
-        dir = std::filesystem::path(buf).parent_path() / "shadercache";
+        if (!s_shaderCacheDir.empty()) dir = s_shaderCacheDir;
+        else
+        {
+            wchar_t buf[MAX_PATH];
+            GetModuleFileNameW(nullptr, buf, MAX_PATH);
+            dir = std::filesystem::path(buf).parent_path() / "shadercache";
+        }
         std::error_code ec;
         std::filesystem::create_directories(dir, ec);
     }
+    return dir;
+}
+
+static std::filesystem::path ShaderCachePath(const std::string& src, const char* target)
+{
     uint64_t h = Hash64(src.data(), src.size(), 0x5ADE0001ull);
-    return dir / std::format("{}_{:016x}_{:x}.cso", target, h, src.size());
+    return ShaderCacheDir() / std::format("{}_{:016x}_{:x}.cso", target, h, src.size());
+}
+
+// The first few compile failures are logged with their source, later ones by message.
+// Under Wine/Proton D3DCompile is a reimplementation (vkd3d-shader), which has rejected
+// generated shaders before: every draw was skipped, a black screen with audio playing.
+static std::atomic<int> s_shaderFailures{ 0 };
+static void LogShaderFailure(const char* target, HRESULT hr, ID3DBlob* err, const std::string& src)
+{
+    int n = ++s_shaderFailures;
+    const char* msg = err ? (const char*)err->GetBufferPointer() : "(no message)";
+    if (n == 1)
+        LOG_ERROR("shader compilation failed: draws that need the shader are skipped (missing graphics or a black screen)");
+    if (n <= 3)
+        LOG_ERROR("HLSL compile error {:08x} ({}):\n{}\n---- source ----\n{}", (uint32_t)hr, target, msg, src);
+    else if (n <= 100)
+        LOG_ERROR("HLSL compile error {:08x} ({}, failure {}): {}", (uint32_t)hr, target, n, msg);
 }
 
 static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
@@ -105,7 +132,7 @@ static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
                             D3DCOMPILE_OPTIMIZATION_LEVEL2 | D3DCOMPILE_IEEE_STRICTNESS, 0, &blob, &err);
     if (FAILED(hr))
     {
-        LOG_ERROR("HLSL compile error ({}):\n{}\n---- source ----\n{}", target, err ? (const char*)err->GetBufferPointer() : "?", src);
+        LogShaderFailure(target, hr, err, src);
         if (err) err->Release();
         return nullptr;
     }
@@ -402,12 +429,15 @@ static bool InitDevice()
         return b;
     };
     ID3DBlob* b = cvs("vsmain", "vs_5_0");
+    if (!b) return false;
     g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &s_quadVS);
     b->Release();
     b = cvs("psclear", "ps_5_0");
+    if (!b) return false;
     g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &s_clearPS);
     b->Release();
     b = cvs("pscopy", "ps_5_0");
+    if (!b) return false;
     g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &s_copyPS);
     b->Release();
 
@@ -513,13 +543,6 @@ static void BuildPSKey(PSKey& k)
 // tens of milliseconds per shader, which hitched the game and its audio when entering
 // new areas. Shaders already on disk load synchronously (fast), and every key ever
 // seen is remembered so the whole set is created at startup.
-static std::filesystem::path ShaderCacheDir()
-{
-    wchar_t buf[MAX_PATH];
-    GetModuleFileNameW(nullptr, buf, MAX_PATH);
-    return std::filesystem::path(buf).parent_path() / "shadercache";
-}
-
 static ID3DBlob* LoadCachedBlob(const std::string& src, const char* target)
 {
     std::filesystem::path cachePath = ShaderCachePath(src, target);
@@ -546,6 +569,24 @@ static void RememberKey(const char* file, const K& k)
     if (FILE* f = _wfopen(p.c_str(), L"ab")) { fwrite(&k, sizeof(K), 1, f); fclose(f); }
 }
 
+template <typename S>
+static S* CreateFromBlob(ID3DBlob* b)
+{
+    S* sh = nullptr;
+    HRESULT hr;
+    if constexpr (std::is_same_v<S, ID3D11VertexShader>) hr = g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &sh);
+    else hr = g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &sh);
+    if (FAILED(hr))
+    {
+        static std::atomic<int> n{ 0 };
+        if (n++ < 20)
+            LOG_ERROR("Create{}Shader failed {:08x} ({} bytes of bytecode)", std::is_same_v<S, ID3D11VertexShader> ? "Vertex" : "Pixel",
+                      (uint32_t)hr, b->GetBufferSize());
+        return nullptr;
+    }
+    return sh;
+}
+
 struct CompileJob { bool vs; std::string src; std::vector<uint8_t> key; };
 struct CompileDone { bool vs; std::vector<uint8_t> key; ID3D11DeviceChild* shader; };
 static std::mutex s_compileMutex;
@@ -570,8 +611,8 @@ static void CompileWorker()
         ID3D11DeviceChild* sh = nullptr;
         if (ID3DBlob* b = CompileHLSL(j.src, j.vs ? "vs_5_0" : "ps_5_0"))
         {
-            if (j.vs) { ID3D11VertexShader* v = nullptr; g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &v); sh = v; }
-            else { ID3D11PixelShader* ps = nullptr; g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &ps); sh = ps; }
+            if (j.vs) sh = CreateFromBlob<ID3D11VertexShader>(b);
+            else sh = CreateFromBlob<ID3D11PixelShader>(b);
             b->Release();
         }
         std::lock_guard lk(s_compileMutex);
@@ -601,16 +642,20 @@ static void StartShaderWorkers()
     for (unsigned i = 0; i < n; i++) std::thread(CompileWorker).detach();
 }
 
-template <typename S>
-static S* CreateFromBlob(ID3DBlob* b)
+template <typename K>
+static void QueueCompile(bool vs, std::string src, const K& k)
 {
-    S* sh = nullptr;
-    if constexpr (std::is_same_v<S, ID3D11VertexShader>) g_device->CreateVertexShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &sh);
-    else g_device->CreatePixelShader(b->GetBufferPointer(), b->GetBufferSize(), nullptr, &sh);
-    return sh;
+    CompileJob j{ vs, std::move(src), std::vector<uint8_t>((const uint8_t*)&k, (const uint8_t*)&k + sizeof(K)) };
+    s_compilePending++;
+    {
+        std::lock_guard lk(s_compileMutex);
+        s_compileJobs.push_back(std::move(j));
+    }
+    s_compileCv.notify_one();
 }
 
-// Creates every shader recorded in shadercache/*_keys.bin whose compiled blob exists.
+// Creates every shader recorded in shadercache/*_keys.bin. Keys whose blob is missing
+// (the generator changed, or a fresh key list) are compiled in the background.
 template <typename K, typename S>
 static int PreloadKind(const char* file, std::unordered_map<K, S*, KeyHash<K>>& cache, std::string (*gen)(const K&), const char* target)
 {
@@ -622,18 +667,25 @@ static int PreloadKind(const char* file, std::unordered_map<K, S*, KeyHash<K>>& 
     while (fread(&k, sizeof(K), 1, f) == 1)
         if (!cache.count(k)) { cache[k] = nullptr; keys.push_back(k); }
     fclose(f);
-    int n = 0;
+    int n = 0, queued = 0;
     for (auto& key : keys)
     {
-        ID3DBlob* b = LoadCachedBlob(gen(key), target);
-        if (!b) { cache.erase(key); continue; }
+        std::string src = gen(key);
+        ID3DBlob* b = LoadCachedBlob(src, target);
+        if (!b)
+        {
+            if (g_asyncShaders) { QueueCompile(std::is_same_v<S, ID3D11VertexShader>, std::move(src), key); queued++; }
+            else cache.erase(key);   // compiled on first use
+            continue;
+        }
         cache[key] = CreateFromBlob<S>(b);
         b->Release();
         n++;
     }
+    if (queued) LOG_INFO("shader cache: compiling {} {} shaders without a cached blob in the background", queued, target);
     if (FILE* o = _wfopen(p.c_str(), L"wb"))   // rewrite without duplicates
     {
-        for (auto& kv : cache) if (kv.second) fwrite(&kv.first, sizeof(K), 1, o);
+        for (auto& kv : cache) fwrite(&kv.first, sizeof(K), 1, o);
         fclose(o);
     }
     return n;
@@ -644,6 +696,62 @@ static void PreloadShaders()
     int nv = PreloadKind("vs_keys.bin", s_vsCache, &GenerateVertexShader, "vs_5_0");
     int np = PreloadKind("ps_keys.bin", s_psCache, &GeneratePixelShader, "ps_5_0");
     if (nv || np) LOG_INFO("shader cache: preloaded {} vertex and {} pixel shaders", nv, np);
+}
+
+// --precompile-shaders <dir>: compiles every key in <dir>/*_keys.bin that has no blob yet,
+// with no window or device. Packages ship this cache, so players never depend on the
+// system's HLSL compiler for the shaders it covers (Wine's differs from Microsoft's).
+template <typename K>
+static int PrecompileKind(const char* file, std::string (*gen)(const K&), const char* target, int& compiled)
+{
+    std::filesystem::path p = ShaderCacheDir() / file;
+    std::vector<K> keys;
+    if (FILE* f = _wfopen(p.c_str(), L"rb"))
+    {
+        std::unordered_map<K, int, KeyHash<K>> seen;
+        K k;
+        while (fread(&k, sizeof(K), 1, f) == 1)
+            if (seen.emplace(k, 0).second) keys.push_back(k);
+        fclose(f);
+    }
+    // many keys generate the same source (fields the generator ignores)
+    std::vector<std::string> sources;
+    {
+        std::unordered_map<std::string, int> seen;
+        for (auto& k : keys)
+            if (std::string src = gen(k); seen.emplace(src, 0).second) sources.push_back(std::move(src));
+    }
+    std::atomic<size_t> next{ 0 };
+    std::atomic<int> done{ 0 }, failed{ 0 };
+    auto work = [&] {
+        for (size_t i; (i = next++) < sources.size();)
+        {
+            if (ID3DBlob* b = LoadCachedBlob(sources[i], target)) { b->Release(); continue; }
+            if (ID3DBlob* b = CompileHLSL(sources[i], target)) { b->Release(); done++; }
+            else failed++;
+        }
+    };
+    std::vector<std::thread> pool;
+    for (unsigned t = 0; t < std::max(1u, std::thread::hardware_concurrency()); t++) pool.emplace_back(work);
+    for (auto& t : pool) t.join();
+    LOG_INFO("{}: {} keys, {} shaders, {} compiled, {} failed", file, keys.size(), sources.size(), done.load(), failed.load());
+    if (FILE* o = _wfopen(p.c_str(), L"wb"))   // rewrite without duplicates
+    {
+        fwrite(keys.data(), sizeof(K), keys.size(), o);
+        fclose(o);
+    }
+    compiled += done;
+    return failed;
+}
+
+int Renderer_PrecompileShaders(const std::string& dir)
+{
+    s_shaderCacheDir = dir;
+    int compiled = 0;
+    int failed = PrecompileKind<VSKey>("vs_keys.bin", &GenerateVertexShader, "vs_5_0", compiled) +
+                 PrecompileKind<PSKey>("ps_keys.bin", &GeneratePixelShader, "ps_5_0", compiled);
+    LOG_INFO("shader cache {}: {} shaders compiled, {} failed", ShaderCacheDir().string(), compiled, failed);
+    return failed;
 }
 
 template <typename K, typename S>
@@ -673,14 +781,7 @@ static S* GetShader(const K& k, std::unordered_map<K, S*, KeyHash<K>>& cache, st
         return sh;
     }
     cache[k] = nullptr;   // pending
-    CompileJob j{ std::is_same_v<S, ID3D11VertexShader>, std::move(src),
-                  std::vector<uint8_t>((const uint8_t*)&k, (const uint8_t*)&k + sizeof(K)) };
-    s_compilePending++;
-    {
-        std::lock_guard lk(s_compileMutex);
-        s_compileJobs.push_back(std::move(j));
-    }
-    s_compileCv.notify_one();
+    QueueCompile(std::is_same_v<S, ID3D11VertexShader>, std::move(src), k);
     return nullptr;
 }
 

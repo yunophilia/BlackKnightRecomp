@@ -65,6 +65,12 @@ int main(int argc, char** argv)
         pt.StateMask = 0;
         SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &pt, sizeof(pt));
     }
+    // packaging: fill the shader cache that ships with the exe (no window, no game data)
+    if (argc == 3 && std::string(argv[1]) == "--precompile-shaders")
+    {
+        extern int Renderer_PrecompileShaders(const std::string& dir);
+        return Renderer_PrecompileShaders(argv[2]) ? 1 : 0;
+    }
     std::string root = ExeDir();
     Log_Open((root + "/BlackKnightRecomp.log").c_str());
     Config_Load(root + "/config.ini");

@@ -150,3 +150,19 @@ ON command completes and an UNMUTE succeeds (state machine around 0x801355A0).
 following bytes (`-(sum(b[4:])) & 0xFFFFFFFF`). Clearing missions changes a handful of
 bytes around 0x48F-0x600 (per-mission records start as 0xFFFF) and 0x163F-0x170B.
 Byte 0x48F is not the chapter/unlock flag.
+
+## Wine / Proton notes
+
+- Issue #5 (black screen on the Steam Deck, audio playing): Wine's `d3dcompiler_47`
+  (vkd3d-shader) had no `isnan`, so 151 of 164 vertex shaders failed to compile and their
+  draws were skipped. The generator now tests NaN bits (`isNaN()` in `kVSCommon`). With
+  Wine 10.0 every recorded key (164 vs, 2641 ps) compiles, and Wine 10.0 + DXVK 2.7.1
+  renders boot through gameplay.
+- Releases ship `shadercache/` compiled by `tools/package.ps1` (`--precompile-shaders`)
+  from `data/shadercache/*_keys.bin`, so Proton normally uses Microsoft-compiled bytecode.
+  Keys whose blob is missing (a new key list, or a generator change) compile in the
+  background at startup instead of being dropped.
+- Testing without a Deck: Wine + official DXVK release DLLs next to the exe
+  (`WINEDLLOVERRIDES=d3d11,dxgi=n,b`), lavapipe (`VK_ICD_FILENAMES=.../lvp_icd.json`),
+  under Xvfb. Run inside `wine explorer /desktop=...`: Xvfb reports a 0 Hz display mode and
+  DXVK's `Present` then divides by zero.

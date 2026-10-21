@@ -177,12 +177,34 @@ static void CreateBackbufferRTV()
     bb->Release();
 }
 
+// What a bug report needs to tell graphics problems apart: Wine/Proton (its D3D11 is DXVK
+// or wined3d, its HLSL compiler vkd3d-shader) and which d3dcompiler DLL is loaded.
+static void LogPlatform()
+{
+    using WineVersionFn = const char*(__cdecl*)();
+    if (auto wineVersion = (WineVersionFn)(void*)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version"))
+        LOG_INFO("running under Wine {}", wineVersion());
+    if (HMODULE dc = GetModuleHandleW(L"d3dcompiler_47.dll"))
+    {
+        wchar_t path[MAX_PATH];
+        char utf8[MAX_PATH * 3];
+        GetModuleFileNameW(dc, path, MAX_PATH);
+        WideCharToMultiByte(CP_UTF8, 0, path, -1, utf8, sizeof(utf8), nullptr, nullptr);
+        LOG_INFO("HLSL compiler: {}", utf8);
+    }
+}
+
 bool Video_Init()
 {
+    LogPlatform();
     std::atomic<int> ready{ 0 };
     std::thread(WindowThread, &ready).detach();
     while (ready == 0) Sleep(1);
-    if (ready < 0) return false;
+    if (ready < 0)
+    {
+        LOG_ERROR("CreateWindow failed ({})", GetLastError());
+        return false;
+    }
 
     UINT flags = 0;
 #ifdef _DEBUG
@@ -205,7 +227,7 @@ bool Video_Init()
     adapter->GetDesc(&ad);
     char name[128];
     WideCharToMultiByte(CP_UTF8, 0, ad.Description, -1, name, sizeof(name), nullptr, nullptr);
-    LOG_INFO("D3D11 adapter: {}", name);
+    LOG_INFO("D3D11 adapter: {} (feature level {:x})", name, (uint32_t)g_device->GetFeatureLevel());
 
     DXGI_SWAP_CHAIN_DESC1 sd{};
     sd.Width = 0;
@@ -229,7 +251,11 @@ bool Video_Init()
 
     ID3DBlob* vs = Compile(kBlitHLSL, "vs", "vs_5_0");
     ID3DBlob* ps = Compile(kBlitHLSL, "ps", "ps_5_0");
-    if (!vs || !ps) return false;
+    if (!vs || !ps)
+    {
+        LOG_ERROR("present shaders failed to compile");
+        return false;
+    }
     g_device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, &s_blitVS);
     g_device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, &s_blitPS);
     vs->Release();
@@ -323,7 +349,13 @@ void Video_Present(ID3D11ShaderResourceView* srv, float u0, float v0, float u1, 
         g_ctx->PSSetShaderResources(0, 1, &nullSrv);
     }
     Overlay_Render(w, h);   // in-game settings, drawn over the game while it keeps running
-    s_swapchain->Present(g_videoConfig.vsync ? 1 : 0, 0);
+    HRESULT hr = s_swapchain->Present(g_videoConfig.vsync ? 1 : 0, 0);
+    if (FAILED(hr))
+    {
+        static int failures = 0;
+        if (failures++ < 5)
+            LOG_ERROR("Present failed {:08x} (device removed reason {:08x})", (uint32_t)hr, (uint32_t)g_device->GetDeviceRemovedReason());
+    }
 }
 
 bool Video_WindowClosed() { return s_closed; }

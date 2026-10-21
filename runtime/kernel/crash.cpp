@@ -137,7 +137,13 @@ static LONG CrashReport(EXCEPTION_POINTERS* ep)
         si->MaxNameLen = 255;
         DWORD64 disp = 0;
         const char* nm = SymFromAddr(GetCurrentProcess(), (DWORD64)frames[i], &disp, si) ? si->Name : "?";
-        LOG_ERROR("  host frame {:2}: {} {}+{:x}", i, frames[i], nm, disp);
+        // the module, for frames in system or driver DLLs without symbols (Wine, DXVK)
+        char mod[MAX_PATH] = "?";
+        HMODULE hm = nullptr;
+        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)frames[i], &hm))
+            GetModuleFileNameA(hm, mod, sizeof(mod));
+        const char* base = strrchr(mod, '\\') ? strrchr(mod, '\\') + 1 : mod;
+        LOG_ERROR("  host frame {:2}: {} {}+{:x} ({}+{:x})", i, frames[i], nm, disp, base, hm ? (uintptr_t)frames[i] - (uintptr_t)hm : 0);
     }
     if (g_curThread)
         DumpContext(g_curThread->ctx);
