@@ -131,6 +131,8 @@ build steps, which sets that up.
 | View + Start | H | HOME menu |
 | Right stick (in menus) | Mouse | Pointer |
 | D-pad | Arrow keys | D-pad |
+| Left stick click | | Wii Remote 1 |
+| Right stick click | | Wii Remote 2 (e.g. deleting a save file) |
 
 Controller, keyboard and mouse bindings can be changed in the settings (launcher or in
 game) or in `config.ini` (`[Input]` and `[Keyboard]`; a keyboard action can have several
