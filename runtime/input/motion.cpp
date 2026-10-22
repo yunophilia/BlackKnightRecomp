@@ -43,6 +43,7 @@ struct State
     float xHeld = 0.0f;     // seconds X has been held (auto-repeat slashes)
     float ptrX = 0.5f, ptrY = 0.5f;   // pointer position 0..1 (right stick / mouse)
     POINT lastMouse{ -1, -1 };
+    float pitch = 0.0f, roll = 0.0f;   // Remote tilt (radians, forward / right), follows the right stick
 };
 
 State s_state[4];
@@ -112,6 +113,14 @@ void Motion_Step(int chan, float dt)
     // Y: shake the Nunchuk
     if ((p.buttons & PAD_Y) && !(s.prevPad.buttons & PAD_Y)) StartPulse(s.nunchuk, 3.0f, 0.0f, 3.0f, 0.2f);
 
+    // Right stick held: tilt the Remote (like Dolphin's Tilt input: up to 85 degrees,
+    // eased towards the stick so it does not snap); levels out when released.
+    // Same directions as the usual Dolphin profile: stick down tilts forward.
+    constexpr float kMaxTilt = 85.0f * 3.14159265f / 180.0f;
+    float ease = 1.0f - std::exp(-dt / 0.05f);
+    s.pitch += (-p.ry * kMaxTilt - s.pitch) * ease;
+    s.roll += (p.rx * kMaxTilt - s.roll) * ease;
+
     // Pointer: the right stick moves it; moving the mouse inside the window takes over.
     s.ptrX = std::clamp(s.ptrX + p.rx * dt * 0.9f, 0.0f, 1.0f);
     s.ptrY = std::clamp(s.ptrY - p.ry * dt * 0.9f, 0.0f, 1.0f);
@@ -167,10 +176,14 @@ void Motion_FillStatus(int chan, uint32_t st, bool connected)
     if (p.buttons & PAD_DPAD_RIGHT) b |= WPB_RIGHT;
     Write16(st + 0x00, b);
 
+    // gravity as seen by the tilted Remote (as Dolphin computes it): forward tilt moves
+    // it into +Y, a roll to the right into +X
+    float up = std::cos(s.pitch);
+    float gx = up * std::sin(s.roll), gy = std::sin(s.pitch), gz = up * std::cos(s.roll);
     float k = PulseShape(s.remote);
-    int ax = (int)(s.remote.ax * k * G);
-    int ay = (int)(s.remote.ay * k * G);
-    int az = G + (int)(s.remote.az * k * G);
+    int ax = (int)((gx + s.remote.ax * k) * G);
+    int ay = (int)((gy + s.remote.ay * k) * G);
+    int az = (int)((gz + s.remote.az * k) * G);
     Write16(st + 0x02, (uint16_t)(int16_t)std::clamp(ax, -511, 511));
     Write16(st + 0x04, (uint16_t)(int16_t)std::clamp(ay, -511, 511));
     Write16(st + 0x06, (uint16_t)(int16_t)std::clamp(az, -511, 511));
