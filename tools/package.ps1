@@ -10,24 +10,22 @@ New-Item -ItemType Directory -Force (Join-Path $dist "game") | Out-Null
 Copy-Item $exe $dist -Force
 Copy-Item (Join-Path $root "README.md") $dist -Force
 Copy-Item (Join-Path $root "LICENSE") $dist -Force   # GPL-2.0: the licence travels with the binary
-# Seed the shader cache from the development build so a fresh package does not compile
-# everything on first play (existing entries in dist are kept).
-$srcCache = Join-Path $root "out\shadercache"
-if (Test-Path $srcCache) {
-    $dstCache = Join-Path $dist "shadercache"
-    New-Item -ItemType Directory -Force $dstCache | Out-Null
-    Get-ChildItem $srcCache -Filter *.cso | Where-Object { -not (Test-Path (Join-Path $dstCache $_.Name)) } | Copy-Item -Destination $dstCache
-    foreach ($k in "vs_keys.bin", "ps_keys.bin") {
-        $s = Join-Path $srcCache $k
-        $d = Join-Path $dstCache $k
-        if (Test-Path $s) {
-            # appended keys are de-duplicated by the game at startup
-            $bytes = [IO.File]::ReadAllBytes($s)
-            if (Test-Path $d) { $bytes = [IO.File]::ReadAllBytes($d) + $bytes }
-            [IO.File]::WriteAllBytes($d, $bytes)
-        }
+# Ship a precompiled shader cache: the GX states recorded in data/shadercache (plus any the
+# development build has seen in out/shadercache), compiled here with Microsoft's HLSL
+# compiler. A fresh install then does not compile on first play, and under Wine/Proton the
+# game does not depend on Wine's own HLSL compiler for these shaders.
+$dstCache = Join-Path $dist "shadercache"
+New-Item -ItemType Directory -Force $dstCache | Out-Null
+Get-ChildItem $dstCache -Filter *.cso | Remove-Item   # blobs of an earlier package; rebuilt below
+foreach ($k in "vs_keys.bin", "ps_keys.bin") {
+    $bytes = [byte[]]@()
+    foreach ($src in (Join-Path $root "data\shadercache\$k"), (Join-Path $root "out\shadercache\$k"), (Join-Path $dstCache $k)) {
+        if (Test-Path $src) { $bytes += [IO.File]::ReadAllBytes($src) }
     }
+    [IO.File]::WriteAllBytes((Join-Path $dstCache $k), $bytes)   # de-duplicated by the precompile step
 }
+& $exe --precompile-shaders $dstCache
+if ($LASTEXITCODE -ne 0) { throw "shader precompilation failed" }
 @"
 You don't need to put anything here. Start BlackKnightRecomp.exe and select your own disc
 image (USA, RENE8P; ISO, RVZ, WIA or WBFS) in the file dialog, wherever it is on your PC.

@@ -21,6 +21,8 @@ float4 xrow(uint r) { uint b = r * 4; return float4(xf[b], xf[b + 1], xf[b + 2],
 float3 nrow(uint b) { return float3(xf[b], xf[b + 1], xf[b + 2]); }
 float3 xf3(uint b) { return float3(xf[b], xf[b + 1], xf[b + 2]); }
 uint xfu(uint b) { return asuint(xf[b]); }
+// bit test instead of isnan(): Wine's d3dcompiler (vkd3d-shader, used by Proton) has no isnan
+bool isNaN(float x) { return (asuint(x) & 0x7FFFFFFF) > 0x7F800000; }
 int4 lightColor(uint i) { uint c = xfu(0x600 + i * 16 + 3); return int4(c >> 24, (c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF); }
 struct VSIn
 {
@@ -170,7 +172,7 @@ std::string GenerateVertexShader(const VSKey& k)
         }
         }
         if (inputForm == 0) W(s, "\t\tcoord.z = 1.0;\n");
-        W(s, "\t\tif (isnan(coord.x)) coord.x = 1.0; if (isnan(coord.y)) coord.y = 1.0; if (isnan(coord.z)) coord.z = 1.0;\n");
+        W(s, "\t\tif (isNaN(coord.x)) coord.x = 1.0; if (isNaN(coord.y)) coord.y = 1.0; if (isNaN(coord.z)) coord.z = 1.0;\n");
         W(s, "\t\tfloat3 r;\n");
         if (type == 0)
         {
