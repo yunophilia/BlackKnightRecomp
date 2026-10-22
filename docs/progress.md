@@ -166,7 +166,19 @@ Byte 0x48F is not the chapter/unlock flag.
   `STEAM_COMPAT_CLIENT_INSTALL_PATH` set to the steamcmd dir, and
   `~/.steam/sdk64/steamclient.so` linked to steamcmd's `linux64/steamclient.so` (without it
   Proton's steam.exe asserts and the game never starts). The first run creates the prefix
-  for several minutes. Under Proton the Xvfb 0 Hz problem did not occur.
+  for several minutes. Proton Experimental did not hit the Xvfb 0 Hz problem; Proton 10.0
+  (DXVK 2.6.2) and 9.0 (DXVK 2.5.1) do, also inside `explorer /desktop=` under 9.0. Use a
+  headless Xorg with the dummy driver and a 60 Hz modeline (`xserver-xorg-video-dummy`)
+  instead of Xvfb.
+- Proton 10.0 (proton-10.0-4b) and 9.0 (proton-9.0-4f) need a logged-in steamcmd
+  (anonymous: "No subscription"). Both reproduce the v1.0.0 `isnan` failure and compile
+  every recorded key after the fix. 9.0 renders correctly. 10.0 renders correctly with the
+  bundled Microsoft-compiled cache, but pixel shaders compiled by 10.0's own compiler give
+  wrong colours (texture colour replaced by red/green gradients in movies, menus and
+  stages). Bisected with mixed caches: Microsoft VS + Proton 10 PS is wrong, Proton 10 VS +
+  Microsoft PS is right. The disassembly and signatures of the affected shaders look
+  equivalent to Experimental's, so the cause (its vkd3d-shader or its DXVK 2.6.2) is not
+  found yet. Replacing the texture arrays and the `switch` in `sampleTex` did not help.
 - Releases ship `shadercache/` compiled by `tools/package.ps1` (`--precompile-shaders`)
   from `data/shadercache/*_keys.bin`, so Proton normally uses Microsoft-compiled bytecode.
   Keys whose blob is missing (a new key list, or a generator change) compile in the

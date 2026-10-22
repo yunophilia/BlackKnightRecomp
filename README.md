@@ -63,9 +63,12 @@ played (issue #5): Wine's HLSL compiler rejected the game's vertex shaders. Late
 avoid that, and releases include precompiled shaders in `shadercache/`, so keep that folder
 next to the exe.
 
-Tested so far: Valve's Proton Experimental (Wine 11.0 based) and Wine 10.0 with DXVK 2.7.1,
-on desktop Linux with software Vulkan, from boot into gameplay. **Not yet tested on a Steam
-Deck**; reports are welcome. Setup:
+Tested so far: Valve's Proton Experimental, Proton 10.0 and Proton 9.0, and Wine 10.0 with
+DXVK 2.7.1, on desktop Linux with software Vulkan, from boot into gameplay. With Proton 10.0,
+shaders that the game compiles itself (those not in the bundled `shadercache/`) showed wrong
+colours in testing; the bundled ones are fine. Proton Experimental and 9.0 had no such
+problem, so prefer one of those. **Not yet tested on a Steam Deck**; reports are welcome.
+Setup:
 
 1. In Desktop Mode, unzip the release somewhere in your home folder (for example
    `~/Games/BlackKnightRecomp`), and put your disc image there in `game/` (an `.iso`
@@ -73,8 +76,8 @@ Deck**; reports are welcome. Setup:
 2. In Steam: *Games > Add a Non-Steam Game to My Library*, browse to
    `BlackKnightRecomp.exe` (set the file type filter to "All files").
 3. In the shortcut's *Properties > Compatibility*, tick *Force the use of a specific Steam
-   Play compatibility tool* and pick a current Proton (Proton 10, or Proton Experimental;
-   untested which older versions work).
+   Play compatibility tool* and pick Proton Experimental or Proton 9.0 (see above about
+   10.0).
 4. Start it once in Desktop Mode: the launcher installs the game data from your image.
    After that it can be started from Game Mode.
 
