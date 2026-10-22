@@ -6,6 +6,14 @@
 # secret of the "release" environment (a fine-grained token with read-only Contents access
 # to that repository). Nothing from it is uploaded or published; only the built exe goes
 # into the release.
+#
+# The inputs are pinned to a tag of the private repository (PRIVATE_INPUTS_REF below), so
+# every release rebuilds from exactly the inputs it was made with. Whenever the inputs
+# change, create a new annotated tag in the private repository (inputs-<name>) and bump
+# PRIVATE_INPUTS_REF to it in the same PR as the change that needs them. Releases tagged
+# before this pinning (v1.0.0) keep their old workflow, which reads the private repository's
+# default branch; that still gives their inputs, because the top-level USA files are never
+# moved or changed (they are tagged inputs-v1.0.0).
 name: Release
 
 on:
@@ -14,6 +22,10 @@ on:
 
 permissions:
   contents: write   # create the release
+
+env:
+  # build inputs: tag in yunophilia/BlackKnightRecomp-private (see the header)
+  PRIVATE_INPUTS_REF: inputs-multiregion-1
 
 jobs:
   build:
@@ -29,6 +41,7 @@ jobs:
         with:
           repository: yunophilia/BlackKnightRecomp-private
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
+          ref: ${{ env.PRIVATE_INPUTS_REF }}
           path: private-inputs
 
       # Private repository layout, one folder per release (the USA files may also be at the
