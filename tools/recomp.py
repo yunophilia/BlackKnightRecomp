@@ -1,15 +1,20 @@
-"""Static recompiler: PPC (Gekko/Broadway) DOL -> C++.
+"""Static recompiler: PPC (Gekko/Broadway) DOL -> C++, one release at a time.
 
-Every guest function becomes extern "C" void fn_XXXXXXXX(PPCContext& ctx, uint8_t* base)
+  python tools/recomp.py GAMEID      (tools/build_generated.py runs it for every release)
 
-unless the runtime overrides it (listed in out/overrides.txt), in which case the body is
-emitted as fn_XXXXXXXX_impl so the runtime version can still call the original.
+Every guest function becomes void fn_XXXXXXXX(PPCContext& ctx, uint8_t* base) in the
+release's namespace (rene8p, renp8p, renj8p) in generated/<namespace>/, unless the
+runtime overrides it with PPC_OVERRIDE(NAME) (NAME from runtime/game_addrs.inc; the list
+is in out/<id>/overrides.txt). Then the body is emitted as fn_XXXXXXXX_impl, which the
+runtime calls as PPC_ORIGINAL(NAME), and fn_XXXXXXXX forwards to the runtime's ovr_NAME.
 """
 import json
 import os
 import sys
 
-from dol import Dol
+from dol import Dol, Section
+from game_addrs import load_inc
+from regions import ROOT, by_id
 from ppc import decode
 
 MMIO_SAFE_BASES = (1, 2, 13)   # r1 stack, r2/r13 small data: never MMIO
@@ -141,18 +146,18 @@ class FuncGen:
             self.emit(self.tailcall(self.end))
         name = self.f.get('name')
         hdr = f'// {name}\n' if name else ''
-        macro = 'PPC_FUNC_IMPL' if self.start in self.rc.overrides else 'PPC_FUNC'
-        if any(self.start <= pa < self.end for pa in PATCHES):
+        suffix = '_impl' if self.start in self.rc.overrides else ''
+        if any(self.start <= pa < self.end for pa in self.rc.patches):
             hdr = 'extern "C" uint32_t g_cfgFrameRate;\n' + hdr
-        return hdr + f'{macro}(fn_{self.start:08X}) {{\n\tPPC_FUNC_PROLOGUE(); PPC_COUNT_CALL(0x{self.start:08X});\n' + '\n'.join(body) + '\n}\n'
+        return hdr + f'PPC_GEN_FUNC(fn_{self.start:08X}{suffix}) {{\n\tPPC_FUNC_PROLOGUE(); PPC_COUNT_CALL(0x{self.start:08X});\n' + '\n'.join(body) + '\n}\n'
 
     def insn(self, a, i):
         """Emit one instruction. Returns True if control never falls through."""
-        if a in PROBES:
-            n, reg = PROBES[a]
+        if a in self.rc.probes:
+            n, reg = self.rc.probes[a]
             self.emit(f'g_tasProbe[{n}] = ctx.r[{reg}];   // read-only test probe')
-        if a in PATCHES:
-            self.emit(PATCHES[a])
+        if a in self.rc.patches:
+            self.emit(self.rc.patches[a])
             return False
         op = i.op
         e = self.emit
@@ -745,21 +750,21 @@ class FuncGen:
         return False
 
 
-# Read-only test probes (address -> (slot, register)): record a register, usually an
-# object's address, into g_tasProbe[slot] before the instruction runs, for TAS-script
-# telemetry (docs/tas.md). They change no guest state.
+# Read-only test probes (game address name -> (slot, register)): record a register,
+# usually an object's address, into g_tasProbe[slot] before the instruction runs, for
+# TAS-script telemetry (docs/tas.md). They change no guest state.
 PROBES = {
-    0x800A68D0: (0, 3),   # stage timer update: r3 = timer {u8 ?, min, sec, csec; f32 frac}
-    0x800A723C: (1, 3),   # rings add: r3 = {s32 rings, ?, s32 max}
-    0x800A72B8: (1, 3),   # rings subtract
-    0x800A6860: (2, 3),   # score add: r3 = {?, s32 score}
-    0x800A716C: (3, 3),   # soul gauge add: r3 = {f32 value, f32 max}
-    0x800A71B4: (3, 3),   # soul gauge subtract
+    'ProbeStageTimer': (0, 3),   # stage timer update: r3 = timer {u8 ?, min, sec, csec; f32 frac}
+    'ProbeRingsAdd': (1, 3),     # rings add: r3 = {s32 rings, ?, s32 max}
+    'ProbeRingsSub': (1, 3),     # rings subtract
+    'ProbeScoreAdd': (2, 3),     # score add: r3 = {?, s32 score}
+    'ProbeSoulAdd': (3, 3),      # soul gauge add: r3 = {f32 value, f32 max}
+    'ProbeSoulSub': (3, 3),      # soul gauge subtract
 }
 
-# Instruction replacements (address -> C++). Used for runtime-configurable tweaks.
+# Instruction replacements (game address name -> C++). Used for runtime-configurable tweaks.
 PATCHES = {
-    0x800887D8: 'ctx.r[0] = g_cfgFrameRate;   // li r0,30: target frame rate (30 or 60)',
+    'FrameRateTarget': 'ctx.r[0] = g_cfgFrameRate;   // li r0,30: target frame rate (30 or 60)',
 }
 
 X_LDST = {
@@ -786,17 +791,28 @@ def write_if_changed(path, text):
 
 
 class Recompiler:
-    def __init__(self, dol, funcs, overrides=()):
+    def __init__(self, region, dol, funcs, addrs, overrides=()):
+        """addrs: [(name, kind, address)] of this release (runtime/game_addrs.inc);
+        overrides: names of the functions the runtime overrides."""
+        self.region = region
         self.dol = dol
         self.funcs = funcs
         self.starts = {f['start'] for f in funcs}
-        self.overrides = set(overrides)
+        self.addrs = addrs
+        at = {name: a for name, _, a in addrs}
+        self.overrides = {at[n]: n for n in overrides}
+        self.probes = {at[n]: v for n, v in PROBES.items()}
+        self.patches = {at[n]: v for n, v in PATCHES.items()}
+        for a, n in self.overrides.items():
+            if a not in self.starts:
+                sys.exit(f'{region.game_id}: override {n} ({a:08X}) is not a function start')
 
     def is_func(self, a):
         return a in self.starts
 
-    def run(self, outdir, per_file=6000):
+    def run(self, outdir, rso=None, per_file=6000):
         os.makedirs(outdir, exist_ok=True)
+        ns = self.region.ns
         files = []
         chunk, count, idx = [], 0, 0
 
@@ -805,7 +821,8 @@ class Recompiler:
             if not chunk:
                 return
             name = f'ppc_recomp.{idx}.cpp'
-            write_if_changed(os.path.join(outdir, name), '#include "ppc_recomp_shared.h"\n\n' + ''.join(chunk))
+            write_if_changed(os.path.join(outdir, name), f'#include "ppc_recomp_shared.h"\n\nnamespace {ns} {{\n\n'
+                             + ''.join(chunk) + f'}}   // namespace {ns}\n')
             files.append(name)
             chunk, count = [], 0
             idx += 1
@@ -818,15 +835,36 @@ class Recompiler:
                 flush()
         flush()
 
-        hdr = ['#pragma once\n#include "ppc_context.h"\n\n']
+        hdr = [f'#pragma once\n// {self.region.name} release ({self.region.game_id})\n#include "ppc_context.h"\n\n']
+        for a, n in sorted(self.overrides.items()):
+            hdr.append(f'PPC_EXTERN_FUNC(ovr_{n});\n')
+        hdr.append(f'\nnamespace {ns} {{\n')
         for f in self.funcs:
-            hdr.append(f'PPC_EXTERN_FUNC(fn_{f["start"]:08X}); PPC_EXTERN_FUNC(fn_{f["start"]:08X}_impl);\n')
+            a = f['start']
+            if a in self.overrides:
+                hdr.append(f'PPC_GEN_FUNC(fn_{a:08X}_impl); '
+                           f'PPC_FORCEINLINE PPC_GEN_FUNC(fn_{a:08X}) {{ ovr_{self.overrides[a]}(ctx, base); }}\n')
+            else:
+                hdr.append(f'PPC_GEN_FUNC(fn_{a:08X});\n')
+        hdr.append(f'}}   // namespace {ns}\n')
         write_if_changed(os.path.join(outdir, 'ppc_recomp_shared.h'), ''.join(hdr))
 
-        m = ['#include "ppc_recomp_shared.h"\n\nextern "C" const PPCFuncMapping PPCFuncMappings[] = {\n']
+        m = [f'#include "ppc_recomp_shared.h"\n\nnamespace {ns} {{\n\nstatic const PPCFuncMapping FuncMappings[] = {{\n']
         for f in self.funcs:
             m.append(f'\t{{ 0x{f["start"]:08X}, fn_{f["start"]:08X} }},\n')
-        m.append('\t{ 0, nullptr }\n};\n')
+        m.append('\t{ 0, nullptr }\n};\n\n')
+        m.append('// recompiled originals of the functions the runtime overrides, in runtime/game_addrs.inc order\n')
+        m.append('static const PPCFunc Originals[] = {\n')
+        for name, _, a in self.addrs:
+            m.append(f'\tfn_{a:08X}_impl,   // {name}\n' if a in self.overrides else f'\tnullptr,   // {name}\n')
+        m.append('};\n\n')
+        rso_init = (f'0x{rso["text"]:08X}u, 0x{rso["text"] + rso["size"]:08X}u, 0x{rso["hash"]:016X}ull'
+                    if rso else '0, 0, 0')
+        m.append('// last three: the HOME menu module recompiled at its boot-time link address (tools/rso.py),\n'
+                 '// text begin, end and FNV-1a hash; used only once the module in memory matches\n'
+                 f'extern const PPCRegionCode Code = {{ "{self.region.game_id}", FuncMappings, Originals, '
+                 f'{len(self.addrs)}, {rso_init} }};\n\n'
+                 f'}}   // namespace {ns}\n')
         write_if_changed(os.path.join(outdir, 'ppc_func_mapping.cpp'), ''.join(m))
 
         sym = ['#pragma once\n// Known symbol addresses\n']
@@ -842,7 +880,7 @@ class Recompiler:
             sym.append(f'#define SYM_{cid} 0x{f["start"]:08X}\n')
         write_if_changed(os.path.join(outdir, 'ppc_symbols.h'), ''.join(sym))
 
-        src = ['set(PPC_RECOMP_SOURCES\n']
+        src = [f'set(PPC_RECOMP_SOURCES_{self.region.game_id}\n']
         for n in files + ['ppc_func_mapping.cpp']:
             src.append(f'\t${{CMAKE_CURRENT_LIST_DIR}}/{n}\n')
         src.append(')\n')
@@ -850,28 +888,27 @@ class Recompiler:
         return files
 
 
-if __name__ == '__main__':
-    dol = Dol(sys.argv[1])
-    funcs = json.load(open(sys.argv[2]))
-    overrides = []
-    if len(sys.argv) > 4:
-        overrides = [int(x, 16) for x in open(sys.argv[4]).read().split()]
+def main():
+    region = by_id(sys.argv[1])
+    dol = Dol(region.dol())
+    funcs = json.load(open(region.out('functions.json')))
+    ovr_path = region.out('overrides.txt')
+    overrides = open(ovr_path).read().split() if os.path.exists(ovr_path) else []
+    addrs = [(name, kind, cols[region.game_id]) for name, kind, cols in load_inc()]
     # Optional: the linked HOME menu module (see tools/rso.py), appended as an extra
     # text section; the runtime only uses it after checking the code in memory.
-    rso_info = os.path.join(os.path.dirname(sys.argv[2]), 'rso_info.json')
     rso = None
-    if os.path.exists(rso_info):
-        from dol import Section
-        rso = json.load(open(rso_info))
-        img = open(os.path.join(os.path.dirname(sys.argv[2]), 'rso_image.bin'), 'rb').read()
+    if os.path.exists(region.out('rso_info.json')):
+        rso = json.load(open(region.out('rso_info.json')))
+        img = open(region.out('rso_image.bin'), 'rb').read()
         dol.sections.append(Section('text', 7, 0, rso['text'], img))
         dol.text = [x for x in dol.sections if x.kind == 'text']
-        funcs = funcs + json.load(open(os.path.join(os.path.dirname(sys.argv[2]), 'rso_functions.json')))
-    info = ['#pragma once\n// HOME menu module recompiled at its boot-time link address (tools/rso.py)\n']
-    if rso:
-        info.append(f'#define PPC_RSO_TEXT_BEGIN 0x{rso["text"]:08X}u\n#define PPC_RSO_TEXT_END 0x{rso["text"] + rso["size"]:08X}u\n'
-                    f'#define PPC_RSO_TEXT_HASH 0x{rso["hash"]:016X}ull\n')
-    write_if_changed(os.path.join(sys.argv[3], 'ppc_rso_info.h'), ''.join(info))
-    rc = Recompiler(dol, funcs, overrides)
-    files = rc.run(sys.argv[3])
-    print(f'wrote {len(files)} source files ({len(overrides)} overrides)', file=sys.stderr)
+        funcs = funcs + json.load(open(region.out('rso_functions.json')))
+    rc = Recompiler(region, dol, funcs, addrs, overrides)
+    files = rc.run(os.path.join(ROOT, 'generated', region.ns), rso)
+    print(f'{region.game_id}: wrote {len(files)} source files ({len(overrides)} overrides'
+          f'{", HOME menu module" if rso else ""})', file=sys.stderr)
+
+
+if __name__ == '__main__':
+    main()

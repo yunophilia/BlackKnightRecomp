@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "../log.h"
 #include "../cpu/cpu.h"
+#include "../region.h"
 
 #include <algorithm>
 #include <atomic>
@@ -16,13 +17,12 @@
 #include <timeapi.h>
 #pragma comment(lib, "dbghelp.lib")
 
-extern "C" const PPCFuncMapping PPCFuncMappings[];
 
 static std::vector<std::pair<uintptr_t, uint32_t>> s_hostToGuest;
 
 static void BuildMap()
 {
-    for (const PPCFuncMapping* m = PPCFuncMappings; m->host; m++)
+    for (const PPCFuncMapping* m = Region_Code().funcs; m->host; m++)
         s_hostToGuest.push_back({ (uintptr_t)m->host, m->guest });
     std::sort(s_hostToGuest.begin(), s_hostToGuest.end());
 }

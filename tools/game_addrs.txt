@@ -1,0 +1,64 @@
+# Game addresses the runtime, the recompiler and TAS scripts use, written down for the
+# USA release (RENE8P). tools/game_addrs.py finds each one in the other releases and
+# writes runtime/game_addrs.inc; refer to them by name, never by number.
+#
+#   NAME  KIND  RENE8P-ADDRESS  [description]
+#
+# KIND: func  function start, overridden in the runtime (PPC_OVERRIDE(NAME)) or called;
+#             its code must be the same in every release
+#       code  instruction (recompiler patches and probes); must be the same instruction
+#       data  variable in main.dol's data or bss
+
+# ---------------------------------------------------------------- OS (runtime/kernel)
+OSSaveContext            func 8053DAB0
+OSLoadContext            func 8053DB30
+OSInitContext            func 8053DC94
+OSEnableInterrupts       func 80541740
+OSReport                 func 8053E07C
+OSPanic                  func 8053E10C
+OSFatal                  func 8054024C
+VIGetRetraceCount        func 80554C58
+OSExceptionTable         data 80805028   pointer to the exception handler table (r13 - 5784)
+
+# ---------------------------------------------------------------- WPAD/KPAD (runtime/input/wpad_hle.cpp)
+WPADInit                 func 803D3750
+WPADGetStatus            func 803D37D0
+WPADGetRadioSensitivity  func 803D37D4
+WPADGetAccGravityUnit    func 803D4910
+WPADDisconnect           func 803D4A0C
+WPADProbe                func 803D4B58
+WPADSetSamplingCallback  func 803D4BE4
+WPADSetConnectCallback   func 803D4C6C
+WPADSetExtensionCallback func 803D4CF4
+WPADGetDataFormat        func 803D4D50
+WPADSetDataFormat        func 803D4D94
+WPADGetInfoAsync         func 803D4EA0
+WPADControlMotor         func 803D50C0
+WPADEnableMotor          func 803D518C
+WPADIsMotorEnabled       func 803D51C0
+WPADRead                 func 803D5488
+WPADIsSpeakerEnabled     func 803D58E0
+WPADControlSpeaker       func 803D5924
+WPADGetSpeakerVolume     func 803D6F40
+WPADCanSendStreamData    func 803D70FC
+WPADSendStreamData       func 803D7180
+WPADIsDpdEnabled         func 803D73C4
+WPADControlDpd           func 803D7498
+WPADControlExtension     func 803D8518   WPAD control with a callback (MotionPlus/BLC)
+KPADReadCore             func 80574558   KPADReadEx-like core read
+
+# ---------------------------------------------------------------- recompiler hooks (tools/recomp.py)
+FrameRateTarget          code 800887D8   li r0,30: target frame rate (30 or 60)
+ProbeStageTimer          code 800A68D0   stage timer update: r3 = timer
+ProbeRingsAdd            code 800A723C   rings add: r3 = rings
+ProbeRingsSub            code 800A72B8   rings subtract
+ProbeScoreAdd            code 800A6860   score add: r3 = score
+ProbeSoulAdd             code 800A716C   Soul gauge add: r3 = gauge
+ProbeSoulSub             code 800A71B4   Soul gauge subtract
+
+# ---------------------------------------------------------------- TAS scripts and notes (docs/tas.md)
+PlayerPtr                data 8072BFBC   [PlayerPtr]+380/+384/+388: Sonic's position in normal stages
+PlayerObjPtr             data 80803E10   [PlayerObjPtr]+2050/+2054/+2058: player position
+KPADState                data 80781580   KPAD per-channel state, 1472 bytes per channel; +2: u16 buttons
+TimeScale                data 807FEEE4   f32 per-step time scale (1.0)
+CriFrameCounter          data 80753EFC   CRI middleware vsync frame counter

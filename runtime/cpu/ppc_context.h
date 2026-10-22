@@ -65,9 +65,22 @@ struct PPCFuncMapping
     PPCFunc host;
 };
 
+// The recompiled code of one release (tools/recomp.py), in that release's namespace
+struct PPCRegionCode
+{
+    const char* gameId;              // RENE8P, RENP8P, RENJ8P
+    const PPCFuncMapping* funcs;     // every function, ends with { 0, nullptr }
+    const PPCFunc* originals;        // per runtime/game_addrs.inc entry: the recompiled
+                                     // original of a function the runtime overrides, or null
+    uint32_t addrCount;              // entries in runtime/game_addrs.inc at generation
+    uint32_t rsoTextBegin, rsoTextEnd;   // HOME menu module recompiled at its link address
+    uint64_t rsoTextHash;                // (tools/rso.py), all 0 if not recompiled
+};
+
 #define PPC_EXTERN_FUNC(x) extern "C" void x(PPCContext& __restrict ctx, uint8_t* __restrict base)
-#define PPC_FUNC_IMPL(x) extern "C" void x##_impl(PPCContext& __restrict ctx, uint8_t* __restrict base)
 #define PPC_FUNC(x) extern "C" void x(PPCContext& __restrict ctx, uint8_t* __restrict base)
+// a recompiled function, inside its release's namespace
+#define PPC_GEN_FUNC(x) void x(PPCContext& __restrict ctx, uint8_t* __restrict base)
 #define PPC_FUNC_PROLOGUE() uint32_t ea; (void)ea
 // Optional call counting for frame-rate analysis (BKR_CALL_COUNTS builds only):
 // one counter per main.dol function entry, indexed by address.

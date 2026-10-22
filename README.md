@@ -1,9 +1,12 @@
 # BlackKnightRecomp
 
-A static recompilation of **Sonic and the Black Knight** (Wii, USA `RENE8P`) to native
-Windows x64, in the spirit of [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp).
+A static recompilation of **Sonic and the Black Knight** (Wii) to native Windows x64, in the
+spirit of [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp).
 The goal: play it natively on PC with a normal controller instead of Wii Remote motion
 controls.
+
+Supported discs: USA (`RENE8P`), Europe (`RENP8P`) and Japan (`RENJ8P`). One exe plays all
+three: it contains the recompiled code of each, and the installed disc picks which runs.
 
 **You must own the game.** Nothing from the game is in this repository; the build reads your
 own disc image.
@@ -11,16 +14,21 @@ own disc image.
 ## How it works
 
 ```
-main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generated/*.cpp ─┐
- (PowerPC)    function discovery    PPC → C++ codegen   (28k functions)  ├─► BlackKnightRecomp.exe
-                                                        runtime/ ────────┘
+main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generated/<release>/*.cpp ─┐
+ (PowerPC)    function discovery    PPC → C++ codegen   (28k functions each)       ├─► BlackKnightRecomp.exe
+ per release                                            runtime/ ──────────────────┘
 ```
 
 * **Recompiler** (`tools/`): decodes every Gekko/Broadway instruction (incl. paired singles
   and quantized loads/stores) and emits one C++ function per guest function. Guest RAM is a
   4 GiB host reservation with MEM1/MEM2 mirrored at their cached/uncached addresses, so
   guest pointers map directly to host memory. Function names come from the disc's
-  `BLACKKNIGHT.sel` symbol table and Dolphin's signature database.
+  `BLACKKNIGHT.sel` symbol table and Dolphin's signature database. Each release's code is
+  in its own namespace with its own dispatch table. The releases differ only slightly (the
+  code is a few hundred bytes longer or shorter, so most addresses move), so the runtime
+  refers to game functions and variables by name: `tools/game_addrs.txt` lists them for
+  the USA release, and `tools/game_addrs.py` finds them in the others by matching code
+  (`runtime/game_addrs.inc`).
 * **CPU runtime** (`runtime/cpu`): SPRs, time base / decrementer, exact `fres`/`frsqrte`
   tables, indirect call dispatch.
 * **OS** (`runtime/kernel`): the game's *own* Revolution OS (scheduler, alarms, interrupt
@@ -31,7 +39,8 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
   the Hollywood IPC registers, modelled on Dolphin's behaviour.
 * **IOS** (`runtime/ios`): high-level `/dev/di` (served from the installed disc files, which
   the installer decrypts once with nod), `/dev/fs` (NAND in `nand/` next to the exe; saves land in
-  `nand/title/00010000/52454e45/data`), `/dev/es`, `/dev/stm`.
+  `nand/title/00010000/<id>/data`: `52454e45` USA, `52454e50` Europe, `52454e4a` Japan),
+  `/dev/es`, `/dev/stm`.
 * **Graphics** (`runtime/gx`): the GX command FIFO is decoded and rendered with Direct3D 11
   on a separate thread (the CPU thread only fills a ring buffer, like Dolphin's dual-core
   mode).
@@ -49,11 +58,14 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
 
 ## Playing
 
-Run `BlackKnightRecomp.exe`. On first run it asks for your own disc image of the game (USA,
-`RENE8P`; ISO, RVZ, WIA or WBFS): select it in the file dialog, wherever it is on your PC.
+Run `BlackKnightRecomp.exe`. On first run it asks for your own disc image of the game (USA
+`RENE8P`, Europe `RENP8P` or Japan `RENJ8P`; ISO, RVZ, WIA or WBFS): select it in the file
+dialog, wherever it is on your PC.
 There is no need to copy it anywhere. The launcher installs the game data from it into
 `game/extracted/` next to the exe, which takes about a minute and 3.5 GB. After that the
-image is no longer needed. Mods can replace files under `game/extracted/DATA/files/`.
+image is no longer needed. Mods can replace files under `game/extracted/DATA/files/`. To
+switch to another release, choose "Reinstall from disc image..." in the launcher and select
+that disc; each release keeps its own saves.
 
 ### Steam Deck and Linux (Proton)
 
@@ -114,24 +126,32 @@ build steps, which sets that up.
    cmake --preset windows-clang
    cmake --build --preset windows-clang
    ```
-2. Install the game data from your disc image into `game/extracted/DATA`:
+2. Install the game data of each release you have into `game/<game ID>`:
 
    ```
-   out/bkr_install path/to/your/disc.iso
+   out/bkr_install path/to/your/usa-disc.iso game/RENE8P
+   out/bkr_install path/to/your/europe-disc.rvz game/RENP8P
+   out/bkr_install path/to/your/japan-disc.rvz game/RENJ8P
    ```
+   One is enough: the exe then contains only that release's code. `game/extracted/DATA`
+   (the default destination, where the game itself installs) also counts for the release
+   installed there.
 3. Generate the recompiled sources:
 
    ```
    python tools/build_generated.py
    ```
+   It generates the code of every release whose data is there, into `generated/<release>/`;
+   per-release intermediate files go to `out/<game ID>/`. With all three releases it also
+   refreshes `runtime/game_addrs.inc`, the game addresses the runtime uses in each release.
    The analysis names the SDK functions (for `tools/xref.py` and reports) from
    `tools/sdk_names.txt`, recorded once from Dolphin's signature database; pass
    `--dsy <totaldb.dsy>` to rematch. The generated code is the same either way.
    Optional: the HOME menu module (`hbm_part.rso`) runs in the built-in interpreter
-   unless it is recompiled too. Run the game once with `BKR_DUMPMEM2=1` set (it writes
-   `mem2_dump.bin` next to the exe when the module is first called; move it to `out/`),
-   then `python tools/rso.py` and rerun `python tools/build_generated.py`. The runtime
-   only uses the recompiled module if the code in memory matches it exactly.
+   unless it is recompiled too. For each release, run the game once with `BKR_DUMPMEM2=1`
+   set and open the HOME menu (it writes `mem2_dump.bin` next to the exe when the module is
+   first called; move it to `out/<game ID>/`), then rerun `python tools/build_generated.py`.
+   The runtime only uses the recompiled module if the code in memory matches it exactly.
 4. Build the game (CMake reconfigures by itself now that `generated/` exists):
 
    ```
@@ -145,10 +165,10 @@ build steps, which sets that up.
    shader cache precompiled from the GX states recorded in `data/shadercache/`
    (`BlackKnightRecomp.exe --precompile-shaders <dir>` compiles every recorded key that has
    no blob yet).
-5. Run `out/BlackKnightRecomp.exe` (it finds `game/` relative to the exe or the
-   repo root, or pass `--data <dir>`). Data extracted earlier with DolphinTool
-   (`DolphinTool extract -i RENE8P.iso -o game/extracted -g`) still works; keep the
-   `.iso` in `game/` in that case, it is used for raw disc reads.
+5. Run `out/BlackKnightRecomp.exe` (it finds `game/extracted/DATA` relative to the exe or
+   the repo root, or pass `--data <dir>`, e.g. `--data game/RENP8P`). Data extracted earlier
+   with DolphinTool (`DolphinTool extract -i RENE8P.iso -o game/extracted -g`) still works;
+   keep the `.iso` in `game/` in that case, it is used for raw disc reads.
 
 ## Controls (default)
 
@@ -200,9 +220,10 @@ the game. The overlay also has the Wii HOME Menu, restart and quit.
 * `internal_scale`: internal resolution multiplier (default 3, about 1080p).
 * `window_width`, `window_height`, `fullscreen`, `vsync`, `widescreen`.
 * `texture_pack`, `texture_pack_dir`: Dolphin-format HD texture packs (for example the one
-  in the GameBanana "Ai HD Texture Overhaul" mod). Put the pack's `RENE8P` folder in
-  `textures/` next to the exe or in `game/textures/`; packs installed in Dolphin's
-  `Load/Textures` are picked up too. PNG and DDS (BC1/2/3/7) are supported.
+  in the GameBanana "Ai HD Texture Overhaul" mod). Put the pack's folder (named by the game ID,
+  e.g. `RENE8P`) in `textures/` next to the exe or in `game/textures/`; packs installed in
+  Dolphin's `Load/Textures` are picked up too. A pack made for another release is used when
+  there is none for the installed one. PNG and DDS (BC1/2/3/7) are supported.
   `--dump-textures` writes the game's textures under Dolphin's names to `dump/textures`.
 * `anisotropy`: force anisotropic filtering (1, 2, 4, 8 or 16).
 * `gpu_thread`: run GX command processing and rendering on a second core (default on;

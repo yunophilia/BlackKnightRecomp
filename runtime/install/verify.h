@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <string>
 
-// Integrity checks of installed game data against the known RENE8P file list
-// (rene8p_files.inc: path, size and SHA-1 of every file the installer writes).
+// Integrity checks of installed game data against the known file list of its release
+// (files_<game id>.inc: path, size and SHA-1 of every file the installer writes).
 
 enum class DataStatus
 {

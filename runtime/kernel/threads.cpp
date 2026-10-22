@@ -5,7 +5,7 @@
 #include "../cpu/cpu.h"
 #include "../hw/hw.h"
 #include "../log.h"
-#include "../../generated/ppc_recomp_shared.h"
+#include "../game_addrs.h"
 
 #include <atomic>
 #include <unordered_map>
@@ -17,10 +17,9 @@ static GuestThread s_mainThread;
 static std::unordered_map<uint32_t, GuestThread*> s_byContext;
 static std::vector<GuestThread*> s_graveyard;
 
-// Addresses in this executable (RENE8P)
+// OS globals in low memory (the same in every release)
 static constexpr uint32_t ADDR_OS_CURRENT_THREAD = 0x800000E4;
 static constexpr uint32_t ADDR_OS_CURRENT_CONTEXT = 0x800000D4;
-static constexpr uint32_t ADDR_EXCEPTION_TABLE_PTR = 0x80805028;   // r13 - 5784
 
 static constexpr SIZE_T FIBER_STACK = 256 * 1024 * 1024;
 
@@ -107,10 +106,10 @@ static GuestThread* CreateFromContext(uint32_t oc)
 
 // ------------------------------------------------------------- HLE: context primitives
 // OSSaveContext(OSContext*) -> 0 now; "returns 1" later via fiber resumption.
-PPC_FUNC(fn_8053DAB0)
+PPC_OVERRIDE(OSSaveContext)
 {
     uint32_t oc = ctx.r[3];
-    fn_8053DAB0_impl(ctx, base);
+    PPC_ORIGINAL(OSSaveContext);
     auto it = s_byContext.find(oc);
     if (it != s_byContext.end() && it->second != g_curThread)
     {
@@ -122,7 +121,7 @@ PPC_FUNC(fn_8053DAB0)
 }
 
 // OSLoadContext(OSContext*) -- never returns on hardware.
-PPC_FUNC(fn_8053DB30)
+PPC_OVERRIDE(OSLoadContext)
 {
     uint32_t oc = ctx.r[3];
     GuestThread* self = g_curThread;
@@ -145,7 +144,7 @@ PPC_FUNC(fn_8053DB30)
 }
 
 // OSInitContext(OSContext*, pc, sp): a context is being (re)initialised for a new thread.
-PPC_FUNC(fn_8053DC94)
+PPC_OVERRIDE(OSInitContext)
 {
     uint32_t oc = ctx.r[3];
     auto it = s_byContext.find(oc);
@@ -159,16 +158,16 @@ PPC_FUNC(fn_8053DC94)
             s_graveyard.push_back(old);
         }
     }
-    fn_8053DC94_impl(ctx, base);
+    PPC_ORIGINAL(OSInitContext);
 }
 
 // OSEnableInterrupts: when called with no current thread we are in the scheduler's
 // idle loop -- block the host thread until something can wake the guest.
-PPC_FUNC(fn_80541740)
+PPC_OVERRIDE(OSEnableInterrupts)
 {
     if (Read32(ADDR_OS_CURRENT_THREAD) == 0)
         Sched_IdleWait();
-    fn_80541740_impl(ctx, base);
+    PPC_ORIGINAL(OSEnableInterrupts);
 }
 
 // ------------------------------------------------------------- exceptions
@@ -177,7 +176,7 @@ static void TakeException(PPCContext& ctx, uint8_t* base, uint32_t exc)
 {
     g_excCount[exc & 15]++;
     GuestThread* t = g_curThread;
-    uint32_t table = Read32(ADDR_EXCEPTION_TABLE_PTR);
+    uint32_t table = Read32(GameAddr(GA::OSExceptionTable));
     uint32_t handler = table ? Read32(table + 4 * exc) : 0;
     uint32_t context = Read32(ADDR_OS_CURRENT_CONTEXT);
     if (!handler || !context)

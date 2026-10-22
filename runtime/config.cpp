@@ -44,7 +44,7 @@ std::string Config_Text(const Config& c)
     s += std::format("gpu_thread = {}\n", Bool(c.gpuThread));
     s += "; compile new shaders in the background: no hitches, objects may appear a frame late\n";
     s += std::format("async_shaders = {}\n", Bool(c.asyncShaders));
-    s += "; Dolphin-format HD texture packs: <dir>/RENE8P/**/tex1_*.png|dds. Empty dir searches\n";
+    s += "; Dolphin-format HD texture packs: <dir>/<game ID>/**/tex1_*.png|dds. Empty dir searches\n";
     s += "; textures/ next to the exe, game/textures and Documents/Dolphin Emulator/Load/Textures\n";
     s += std::format("texture_pack = {}\ntexture_pack_dir = {}\n\n", Bool(c.texturePack), c.texturePackDir);
     s += "[System]\n";

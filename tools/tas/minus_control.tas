@@ -1,7 +1,7 @@
 # What does the Wii Remote "-" button (BACK) do? Screenshot before/after pressing it in
 # each context: title, main menu, world map, mission select, gameplay, pause menu.
 include watches.tas
-watch btn u16 80781582
+watch btn u16 KPADState+2
 log boot
 wait 2
 until file adv_title_eng mash A+B timeout 80

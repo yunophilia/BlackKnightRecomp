@@ -1,7 +1,7 @@
 // High-level replacements for a few SDK functions that only exist for debugging output.
 #include "memory.h"
 #include "../log.h"
-#include "../../generated/ppc_recomp_shared.h"
+#include "../game_addrs.h"
 
 #include <string>
 
@@ -95,7 +95,7 @@ static void TrimNewline(std::string& s)
 }
 
 // OSReport(const char* fmt, ...)
-PPC_FUNC(fn_8053E07C)
+PPC_OVERRIDE(OSReport)
 {
     std::string s = GuestFormat(ctx, ctx.r[3], 4);
     TrimNewline(s);
@@ -103,7 +103,7 @@ PPC_FUNC(fn_8053E07C)
 }
 
 // OSPanic(const char* file, int line, const char* fmt, ...)
-PPC_FUNC(fn_8053E10C)
+PPC_OVERRIDE(OSPanic)
 {
     std::string s = GuestFormat(ctx, ctx.r[5], 6);
     TrimNewline(s);
@@ -111,7 +111,7 @@ PPC_FUNC(fn_8053E10C)
 }
 
 // OSFatal(GXColor fg, GXColor bg, const char* msg)
-PPC_FUNC(fn_8054024C)
+PPC_OVERRIDE(OSFatal)
 {
     std::string s = (const char*)GuestPtr(ctx.r[5]);
     FATAL("OSFatal (called from {:08x}): {}", ctx.lr, s);
@@ -121,10 +121,10 @@ PPC_FUNC(fn_8054024C)
 // retraces have passed; once the value stops changing, sleep until the next interrupt
 // instead of burning a host core.
 #include "scheduler.h"
-PPC_FUNC(fn_80554C58)
+PPC_OVERRIDE(VIGetRetraceCount)
 {
     static uint32_t last = ~0u, repeats = 0;
-    fn_80554C58_impl(ctx, base);
+    PPC_ORIGINAL(VIGetRetraceCount);
     if (ctx.r[3] != last)
     {
         last = ctx.r[3];

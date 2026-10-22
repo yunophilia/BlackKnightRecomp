@@ -1,11 +1,12 @@
 # Runs a TAS script (docs/tas.md) on a fresh copy of a test save folder and collects the
 # log and telemetry in out/tas/<Tag>.log / .csv. The window starts minimized; scripted
 # input never rumbles the controller.
-#   powershell -ExecutionPolicy Bypass -File tools/tas_run.ps1 -Script tools/tas/x.tas [-Fps60] [-Save base] [-Tag name] [-Seconds 600]
+#   powershell -ExecutionPolicy Bypass -File tools/tas_run.ps1 -Script tools/tas/x.tas [-Fps60] [-Save base] [-Tag name] [-Seconds 600] [-Region RENP8P]
 param(
     [Parameter(Mandatory)][string]$Script,
     [switch]$Fps60,
-    [string]$Save = "base",           # out/tasnand/<Save> is copied for each run
+    [string]$Save = "base",           # out/tasnand/<Save> is copied for each run; "none": empty save folder
+    [string]$Region = "",             # play the release in game/<Region> (default: game/extracted/DATA)
     [string]$Tag = "",
     [int]$Seconds = 600,
     [switch]$Full,
@@ -19,15 +20,23 @@ if (-not $Exe) { $Exe = Join-Path $out "BlackKnightRecomp.exe" }
 if (-not $Tag) { $Tag = [IO.Path]::GetFileNameWithoutExtension($Script) + $(if ($Fps60) { "_60" } else { "_30" }) }
 $tasDir = Join-Path $out "tas"
 New-Item -ItemType Directory -Force $tasDir | Out-Null
-$saveSrc = Join-Path $out "tasnand\$Save"
-if (-not (Test-Path $saveSrc)) { throw "missing test save folder $saveSrc" }
 $nand = Join-Path $out "tasnand\run_$Tag"
 if (Test-Path $nand) { Remove-Item -Recurse -Force $nand }
-Copy-Item -Recurse $saveSrc $nand
+if ($Save -eq "none") { New-Item -ItemType Directory -Force $nand | Out-Null }
+else {
+    $saveSrc = Join-Path $out "tasnand\$Save"
+    if (-not (Test-Path $saveSrc)) { throw "missing test save folder $saveSrc" }
+    Copy-Item -Recurse $saveSrc $nand
+}
 $csv = Join-Path $tasDir "$Tag.csv"
 if (-not (Test-Path $Script)) { throw "TAS script not found: $Script" }
 $scriptPath = (Resolve-Path $Script).Path
 $gameArgs = "--nobox --skip-launcher --tas `"$scriptPath`" --telemetry `"$csv`" --nand `"$nand`""
+if ($Region) {
+    $data = Join-Path $root "game\$Region"
+    if (-not (Test-Path (Join-Path $data "sys\main.dol"))) { throw "no game data in $data" }
+    $gameArgs += " --data `"$data`""
+}
 if ($Fps60) { $gameArgs += " --60fps" }
 if (-not $Full) { $gameArgs += " --mute --scale $Scale" }
 if ($ExtraArgs) { $gameArgs += " $ExtraArgs" }

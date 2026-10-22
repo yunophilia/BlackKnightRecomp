@@ -1,4 +1,5 @@
 #include "install.h"
+#include "releases.h"
 
 #include <nod.h>
 
@@ -6,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <span>
 #include <vector>
 #include <windows.h>
 #include <bcrypt.h>
@@ -16,10 +18,6 @@ const wchar_t* const kInstallImageFilter = L"*.iso;*.rvz;*.wia;*.wbfs;*.ciso;*.g
 
 namespace
 {
-constexpr char kGameId[] = "RENE8P";
-// SHA-1 of RENE8P's main.dol, the binary the recompiled code is generated from
-constexpr uint8_t kDolSha1[20] = { 0x86, 0xf9, 0x9c, 0xdc, 0xf7, 0xf8, 0x41, 0x17, 0x27, 0xe6,
-                                   0x35, 0xe9, 0x0c, 0xef, 0xf3, 0x6e, 0xa1, 0x54, 0x19, 0x38 };
 constexpr uint64_t kUnencryptedSize = 0x50000;
 
 struct NodDeleter { void operator()(NodHandle* h) const { nod_free(h); } };
@@ -103,9 +101,10 @@ InstallResult Install_Run(const fs::path& image, const fs::path& dest, InstallPr
         error = NodError();
         return InstallResult::OpenFailed;
     }
-    if (memcmp(header.game_id, kGameId, 6) != 0)
+    const GameRelease* rel = Release_Find(std::string(header.game_id, 6));
+    if (!rel)
     {
-        error = "the disc is " + std::string(header.game_id, 6) + ", not Sonic and the Black Knight (" + kGameId + ")";
+        error = "the disc is " + std::string(header.game_id, 6) + ", not Sonic and the Black Knight (" + kReleaseNames + ")";
         return InstallResult::WrongGame;
     }
 
@@ -130,10 +129,18 @@ InstallResult Install_Run(const fs::path& image, const fs::path& dest, InstallPr
         error = "cannot read the partition headers: " + NodError();
         return InstallResult::OpenFailed;
     }
+    // the recompiled code is generated from exactly this main.dol
     uint8_t sha[20];
-    if (!Sha1(meta.raw_dol.data, meta.raw_dol.size, sha) || memcmp(sha, kDolSha1, 20) != 0)
+    char hex[41] = {};
+    const KnownFile* dol = nullptr;
+    for (auto& k : std::span(rel->files, rel->fileCount))
+        if (strcmp(k.path, "sys/main.dol") == 0) dol = &k;
+    if (Sha1(meta.raw_dol.data, meta.raw_dol.size, sha))
+        for (int i = 0; i < 20; i++) snprintf(hex + 2 * i, 3, "%02x", sha[i]);
+    if (!dol || strcmp(hex, dol->sha1) != 0)
     {
-        error = "this version of the game is not supported (main.dol differs from the PAL release this build is made for)";
+        error = std::string("this version of the game is not supported (main.dol differs from the ") + rel->name +
+                " release this build is made for)";
         return InstallResult::WrongVersion;
     }
 

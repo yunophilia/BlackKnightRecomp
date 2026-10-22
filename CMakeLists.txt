@@ -52,7 +52,7 @@ if(WIN32)
     FetchContent_MakeAvailable(nod_prebuilt)
     find_package(nod REQUIRED CONFIG PATHS ${nod_prebuilt_SOURCE_DIR} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
-    add_library(bkr_installer STATIC runtime/install/install.cpp runtime/install/verify.cpp)
+    add_library(bkr_installer STATIC runtime/install/install.cpp runtime/install/verify.cpp runtime/install/releases.cpp)
     target_include_directories(bkr_installer PUBLIC runtime)
     target_compile_definitions(bkr_installer PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
     target_link_libraries(bkr_installer PUBLIC nod::nod_static)

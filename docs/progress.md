@@ -39,7 +39,7 @@
         extracted game (e.g. deleted), or the installed files are corrupt
   - [x] Corrupt-file check: quick (every file present with the right size, main.dol SHA-1)
         on each start, full SHA-1 check of every file on request (known-good list in
-        runtime/install/rene8p_files.inc; also `bkr_install --verify`)
+        runtime/install/files_<game id>.inc; also `bkr_install --verify`)
 - [x] In-game settings overlay (Dusklight-style), opened with the controller's View button
       (PS5: Create) or F1; the game keeps running underneath (no pause):
   - [x] Tabs for video, input, audio and system settings, written back to config.ini
@@ -52,6 +52,35 @@
         the title, menus, world map, mission select, gameplay or pause menu; "+" pauses) but
         stays assignable; the HOME Menu stays on View+Start / H and is in the overlay
 - [ ] Live internal resolution and texture pack changes (they restart the game for now)
+- [x] One exe for the USA (RENE8P), Europe (RENP8P) and Japan (RENJ8P) discs (see "Releases")
+
+## Releases
+
+The three releases are built from nearly the same code. Compared with USA, the Europe
+text is 192 bytes shorter and the Japan text 192 bytes longer; every data section after
+the text (and the bss) moves by -0xC0 / +0xC0, the sections before it stay. With branch
+displacements and address immediates masked, 28,815 of 28,819 USA functions pair with a
+Europe function and 28,812 with a Japan one; only 32 / 37 differ beyond addresses. All 33
+functions the runtime overrides are identical. `tools/region_map.py` does this alignment
+and learns the data shifts from the address loads of identical code; `tools/game_addrs.py`
+uses it to write every named game address for each release (`runtime/game_addrs.inc`).
+
+Each release's code is generated into its own namespace (`generated/rene8p` etc.) with its
+own dispatch table; the installed disc's game ID (`sys/boot.bin`) selects one at start.
+Per release: title ID and save folder (`52454e45`, `52454e50`, `52454e4a`), setting.txt
+area and SYSCONF country of that region, and a MEM2 dump for the recompiled HOME menu module
+(`hbm_part.rso` is the same file, but it is linked against each release's main.dol).
+
+Verified with scripted runs (muted, 1x, below-normal priority):
+- USA: missions from the 99% test save at 30 and 60 fps, same results as before; a fresh
+  save goes through name entry, the intro and into Misty Lake; HOME menu (recompiled).
+- Europe and Japan: fresh save through name entry, the intro and into Misty Lake at 30 and
+  60 fps (60 held, time scale 1.0, stage timer in step with game time), HOME menu opens
+  and closes with the recompiled module, saves in their own title folder.
+- Open: from the fresh-save start, the intro sequence (movie and story scenes) takes
+  longer in game time in Europe and Japan than in USA before the first stage loads; both
+  behave the same, gameplay timing is the same. Not investigated further (no reference
+  capture of the PAL/Japanese releases).
 - [ ] Play-test the launcher and overlay by hand (controller navigation, live settings)
 
 ## 60 FPS verification

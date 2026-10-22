@@ -10,7 +10,8 @@ import array, csv, glob, json, math, os, re, struct, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TAS = os.path.join(ROOT, 'out', 'tas')
 DUMPS = os.path.join(ROOT, 'out', 'dumps')
-FUNCS = json.load(open(os.path.join(ROOT, 'out', 'functions.json')))
+# call counts are per address: the runs are of the USA release (out/RENE8P)
+FUNCS = json.load(open(os.path.join(ROOT, 'out', 'RENE8P', 'functions.json')))
 
 
 def load_csv(name):

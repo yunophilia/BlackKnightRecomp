@@ -3,6 +3,7 @@
 #include "disc.h"
 #include "../kernel/memory.h"
 #include "../log.h"
+#include "../region.h"
 
 #include <vector>
 #include <windows.h>
@@ -28,7 +29,6 @@
     ExitProcess(0);
 }
 
-static constexpr uint64_t TITLE_ID = 0x00010000'52454E45ull;   // RENE
 
 static std::vector<uint8_t> LoadFile(const std::string& p)
 {
@@ -62,11 +62,11 @@ public:
             out32(0, 0x0403AC68);
             return { IPC_SUCCESS };
         case 0x20:   // GetTitleID
-            out64(0, TITLE_ID);
+            out64(0, Region_Current().titleId);
             return { IPC_SUCCESS };
         case 0x1D:   // GetTitleDir
         {
-            uint64_t tid = r.in.empty() ? TITLE_ID : Read64(0x80000000 | r.in[0].addr);
+            uint64_t tid = r.in.empty() ? Region_Current().titleId : Read64(0x80000000 | r.in[0].addr);
             char buf[32];
             snprintf(buf, sizeof(buf), "/title/%08x/%08x/data", (uint32_t)(tid >> 32), (uint32_t)tid);
             if (!r.io.empty())

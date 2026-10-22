@@ -1,15 +1,17 @@
 """Prepare the HOME menu module (hbm_part.rso) for static recompilation.
 
 The game links the module at boot with OSLink, so its relocated code sits at a fixed
-MEM2 address. Given a MEM2 dump taken after linking (BKR_DUMPMEM2=1 writes
-out/mem2_dump.bin on the first call into MEM2 code), this finds the module, runs the
-normal function analysis over its text and writes:
+MEM2 address. hbm_part.rso is the same file in every release, but where it is loaded
+and the main.dol addresses it is linked against are not, so each release needs its own
+MEM2 dump taken after linking: BKR_DUMPMEM2=1 writes mem2_dump.bin next to the exe on
+the first call into MEM2 code; copy it to out/<game ID>/mem2_dump.bin. This finds the
+module in it, runs the normal function analysis over its text and writes, to out/<id>/:
 
-  out/rso_image.bin       relocated text section
-  out/rso_info.json       {"text": addr, "size": n, "hash": fnv1a64, "data": [[addr, size], ...]}
-  out/rso_functions.json  function list (same format as functions.json)
+  rso_image.bin       relocated text section
+  rso_info.json       {"text": addr, "size": n, "hash": fnv1a64, "data": [[addr, size], ...]}
+  rso_functions.json  function list (same format as functions.json)
 
-  python tools/rso.py
+  python tools/rso.py GAMEID      (tools/build_generated.py runs it when there is a dump)
 """
 import json
 import os
@@ -19,12 +21,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dol import Section          # noqa: E402
 from analyze import Analyzer, cross_targets, data_code_pointers   # noqa: E402
+from regions import by_id                                         # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RSO = os.path.join(ROOT, 'game', 'extracted', 'DATA', 'files', 'hbm_part.rso')
-DUMP = os.path.join(ROOT, 'out', 'mem2_dump.bin')
 DUMP_BASE = 0x90000000
-OUT = os.path.join(ROOT, 'out')
 
 
 def fnv1a64(b):
@@ -65,8 +64,9 @@ class Image:
 
 
 def main():
-    rso = open(RSO, 'rb').read()
-    mem = open(DUMP, 'rb').read()
+    region = by_id(sys.argv[1])
+    rso = open(region.rso(), 'rb').read()
+    mem = open(region.out('mem2_dump.bin'), 'rb').read()
     nsec, secoff = struct.unpack_from('>II', rso, 8)
     secs = [struct.unpack_from('>II', rso, secoff + 8 * i) for i in range(nsec)]
     text_off, text_size = secs[1]
@@ -99,11 +99,11 @@ def main():
         an.starts |= extra
     funcs = [f for f in funcs if text_addr <= f.start < text_addr + text_size]
     print(f'{len(funcs)} functions')
-    open(os.path.join(OUT, 'rso_image.bin'), 'wb').write(img)
+    open(region.out('rso_image.bin'), 'wb').write(img)
+    json.dump([f.to_json() for f in funcs], open(region.out('rso_functions.json'), 'w'))
     json.dump({'text': text_addr, 'size': text_size, 'hash': fnv1a64(img),
                'data': [[s.addr, s.size] for s in data]},
-              open(os.path.join(OUT, 'rso_info.json'), 'w'))
-    json.dump([f.to_json() for f in funcs], open(os.path.join(OUT, 'rso_functions.json'), 'w'))
+              open(region.out('rso_info.json'), 'w'))
 
 
 if __name__ == '__main__':

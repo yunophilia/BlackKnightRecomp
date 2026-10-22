@@ -125,7 +125,7 @@ void VideoTab(SettingsHost host)
           "Avoids hitches when new effects appear; an object may then show up a frame late.");
     Check(host, "Graphics on a second CPU core", c.gpuThread, true, "Like Dolphin's dual core mode. Leave on unless debugging.");
     Check(host, "HD texture packs", c.texturePack, true,
-          "Dolphin-format packs in textures/RENE8P next to the game, game/textures or Dolphin's Load/Textures.");
+          "Dolphin-format packs in textures/<game ID> (e.g. RENE8P) next to the game, game/textures or Dolphin's Load/Textures.");
 }
 
 void InputTab(SettingsHost host)

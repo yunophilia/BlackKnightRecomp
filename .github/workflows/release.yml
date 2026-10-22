@@ -1,10 +1,11 @@
 # Builds and publishes a release when a version tag (v*.*.*) is pushed.
 #
-# The recompiled code is generated from the game's main.dol, which is not in this
-# repository: the workflow reads it (with the other build inputs) from a private
-# repository using the PRIVATE_FILES_TOKEN secret of the "release" environment (a
-# fine-grained token with read-only Contents access to that repository). Nothing from it is uploaded or published; only
-# the built exe goes into the release.
+# The recompiled code is generated from the game's main.dol of each release (USA RENE8P,
+# Europe RENP8P, Japan RENJ8P), which is not in this repository: the workflow reads them
+# (with the other build inputs) from a private repository using the PRIVATE_FILES_TOKEN
+# secret of the "release" environment (a fine-grained token with read-only Contents access
+# to that repository). Nothing from it is uploaded or published; only the built exe goes
+# into the release.
 name: Release
 
 on:
@@ -30,13 +31,20 @@ jobs:
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
           path: private-inputs
 
+      # Private repository layout, one folder per release (the USA files may also be at the
+      # top level, as before):
+      #   <ID>/sys/main.dol  <ID>/files/BLACKKNIGHT.sel  <ID>/files/hbm_part.rso  <ID>/mem2_dump.bin
       - name: Place build inputs
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force game/extracted/DATA/sys, game/extracted/DATA/files, out | Out-Null
-          Copy-Item private-inputs/sys/main.dol game/extracted/DATA/sys/
-          Copy-Item private-inputs/files/BLACKKNIGHT.sel, private-inputs/files/hbm_part.rso game/extracted/DATA/files/
-          Copy-Item private-inputs/mem2_dump.bin out/
+          foreach ($id in "RENE8P", "RENP8P", "RENJ8P") {
+            $src = "private-inputs/$id"
+            if (-not (Test-Path $src) -and $id -eq "RENE8P") { $src = "private-inputs" }
+            New-Item -ItemType Directory -Force game/$id/sys, game/$id/files, out/$id | Out-Null
+            Copy-Item $src/sys/main.dol game/$id/sys/
+            Copy-Item $src/files/BLACKKNIGHT.sel, $src/files/hbm_part.rso game/$id/files/
+            Copy-Item $src/mem2_dump.bin out/$id/
+          }
           Remove-Item -Recurse -Force private-inputs
 
       - uses: actions/setup-python@v5
@@ -46,8 +54,8 @@ jobs:
       - name: Generate the recompiled code
         shell: pwsh
         run: |
-          python tools/rso.py
-          python tools/build_generated.py
+          python tools/build_generated.py --require-all
+          git diff --exit-code runtime/game_addrs.inc   # the committed address table matches
 
       - name: Build
         shell: cmd
@@ -74,7 +82,7 @@ jobs:
           $notes = @"
           Sonic and the Black Knight (Wii), statically recompiled to run natively on Windows.
 
-          **This release contains no game data.** You need your own copy of the PAL version (RENE8P) as a disc image: ISO, RVZ, WIA or WBFS. Unzip, start ``BlackKnightRecomp.exe`` and select the image when the launcher asks; the game data is installed next to the exe.
+          **This release contains no game data.** You need your own copy of the game as a disc image (USA RENE8P, Europe RENP8P or Japan RENJ8P): ISO, RVZ, WIA or WBFS. Unzip, start ``BlackKnightRecomp.exe`` and select the image when the launcher asks; the game data is installed next to the exe.
 
           See the [README](https://github.com/${{ github.repository }}#readme) for controls and settings.
           "@
