@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Sonic and the Black Knight - Recompiled
+Comment=Static recompilation of Sonic and the Black Knight (needs your own disc image)
+Exec=BlackKnightRecomp
+Icon=blackknightrecomp
+Categories=Game;
+Terminal=false

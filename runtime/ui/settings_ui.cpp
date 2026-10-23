@@ -3,9 +3,9 @@
 #include "../gx/video.h"
 #include "../input/gamepad.h"
 #include "../version.h"
+#include "../platform/input.h"
 
 #include <imgui.h>
-#include <windows.h>
 
 #include <algorithm>
 #include <format>
@@ -175,7 +175,7 @@ void InputTab(SettingsHost host)
         // waiting for a key: wait until everything is released (the click on "Set"), then
         // take the next key or mouse button; Escape cancels
         int held = Gamepad_HeldKey();
-        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) s_capture = -1;
+        if (Key_Down(VK_ESCAPE)) s_capture = -1;
         else if (!s_captureArmed) s_captureArmed = held == 0;
         else if (held)
         {

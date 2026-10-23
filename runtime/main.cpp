@@ -12,11 +12,11 @@
 #include "ios/disc.h"
 #include "ios/ios.h"
 #include "region.h"
+#include "platform/platform.h"
 
 #include <algorithm>
 #include <filesystem>
 #include <string>
-#include <windows.h>
 
 void Log_Open(const char* path);
 void NAND_InitSystemFiles();
@@ -28,52 +28,52 @@ extern bool g_noMessageBox;
 extern int g_logLevel;
 extern "C" uint32_t g_cfgFrameRate;
 
-static std::string ExeDir()
-{
-    wchar_t buf[MAX_PATH];
-    GetModuleFileNameW(nullptr, buf, MAX_PATH);
-    return std::filesystem::path(buf).parent_path().string();
-}
-
 // Restarts the game (settings that need a restart): same command line, no launcher.
 void App_Restart()
 {
-    std::wstring cmd = GetCommandLineW();
-    if (cmd.find(L"--skip-launcher") == std::wstring::npos) cmd += L" --skip-launcher";
-    wchar_t exe[MAX_PATH];
-    GetModuleFileNameW(nullptr, exe, MAX_PATH);
-    STARTUPINFOW si{ sizeof(si) };
-    PROCESS_INFORMATION pi{};
     LOG_INFO("restarting");
-    if (CreateProcessW(exe, cmd.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi))
-    {
-        CloseHandle(pi.hThread);
-        CloseHandle(pi.hProcess);
-    }
-    else
-        LOG_WARN("restart failed ({})", GetLastError());
-    { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
-    TerminateProcess(GetCurrentProcess(), 0);
+    Platform_Restart(true, true);
+}
+
+// What the game thread needs from main()
+static std::string s_dataDir, s_isoPath, s_nand;
+static uint32_t s_watchAddr = 0;
+static int s_profStart = -1, s_profDur = 0;
+
+static void RunGame()
+{
+    if (!Memory_Init()) FATAL("memory init failed");
+    Crash_Init();
+    Cpu_Init();
+    Sched_Init();
+    Threads_Init();
+    HW_Init();
+    Renderer_Init();
+    AudioOut_Init();
+    { extern bool g_gpuThread; if (g_gpuThread) GX_StartThread(); }
+    if (!Disc_Open(s_dataDir, s_isoPath)) FATAL("cannot open disc data");
+    std::filesystem::create_directories(s_nand);
+    IOS_Init(s_nand);
+    NAND_InitSystemFiles();
+
+    uint32_t entry = Boot_Setup(s_dataDir);
+    if (s_watchAddr) { extern void Crash_SetWatch(uint32_t); Crash_SetWatch(s_watchAddr); }
+    if (!entry) FATAL("boot failed");
+    Crash_StartWatchdog();
+    if (s_profStart >= 0) { extern void Crash_StartProfiler(int, int); Crash_StartProfiler(s_profStart, s_profDur); }
+    Threads_RunMain(entry);
 }
 
 int main(int argc, char** argv)
 {
-    // Keep full timer resolution and CPU speed even when the window is minimized or in
-    // the background (Windows 11 power throttling would coarsen all waits to ~15.6 ms).
-    {
-        PROCESS_POWER_THROTTLING_STATE pt{};
-        pt.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
-        pt.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION;
-        pt.StateMask = 0;
-        SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &pt, sizeof(pt));
-    }
+    Platform_Init(argc, argv);
     // packaging: fill the shader cache that ships with the exe (no window, no game data)
     if (argc == 3 && std::string(argv[1]) == "--precompile-shaders")
     {
         extern int Renderer_PrecompileShaders(const std::string& dir);
         return Renderer_PrecompileShaders(argv[2]) ? 1 : 0;
     }
-    std::string root = ExeDir();
+    std::string root = Platform_UserDir().string();   // the exe directory on Windows
     Log_Open((root + "/BlackKnightRecomp.log").c_str());
     Config_Load(root + "/config.ini");
     std::string dataDir = g_config.dataDir, isoPath = g_config.isoPath;
@@ -176,26 +176,11 @@ int main(int argc, char** argv)
         std::string error;
         if (!Region_Select(Release_InstalledId(dataDir), error)) FATAL("Cannot start the game: {}", error);
     }
-    if (!Memory_Init()) FATAL("memory init failed");
-    Crash_Init();
-    Cpu_Init();
-    Sched_Init();
-    Threads_Init();
-    HW_Init();
-    Renderer_Init();
-    AudioOut_Init();
-    { extern bool g_gpuThread; if (g_gpuThread) GX_StartThread(); }
-    if (!Disc_Open(dataDir, isoPath)) FATAL("cannot open disc data");
-    std::string nand = nandDir.empty() ? root + "/nand" : nandDir;
-    std::filesystem::create_directories(nand);
-    IOS_Init(nand);
-    NAND_InitSystemFiles();
-
-    uint32_t entry = Boot_Setup(dataDir);
-    if (watchAddr) { extern void Crash_SetWatch(uint32_t); Crash_SetWatch(watchAddr); }
-    if (!entry) FATAL("boot failed");
-    Crash_StartWatchdog();
-    if (profStart >= 0) { extern void Crash_StartProfiler(int, int); Crash_StartProfiler(profStart, profDur); }
-    Threads_RunMain(entry);
-    return 0;
+    s_dataDir = dataDir;
+    s_isoPath = isoPath;
+    s_nand = nandDir.empty() ? root + "/nand" : nandDir;
+    s_watchAddr = watchAddr;
+    s_profStart = profStart;
+    s_profDur = profDur;
+    Platform_RunGame(RunGame);
 }

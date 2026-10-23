@@ -6,11 +6,12 @@
 #include "../hw/hw.h"
 #include "../log.h"
 #include "../game_addrs.h"
+#include "../platform/fiber.h"
 
+#include <algorithm>
 #include <atomic>
 #include <unordered_map>
 #include <vector>
-#include <windows.h>
 
 GuestThread* g_curThread = nullptr;
 static GuestThread s_mainThread;
@@ -21,7 +22,7 @@ static std::vector<GuestThread*> s_graveyard;
 static constexpr uint32_t ADDR_OS_CURRENT_THREAD = 0x800000E4;
 static constexpr uint32_t ADDR_OS_CURRENT_CONTEXT = 0x800000D4;
 
-static constexpr SIZE_T FIBER_STACK = 256 * 1024 * 1024;
+static constexpr size_t FIBER_STACK = 256 * 1024 * 1024;
 
 // ------------------------------------------------------------- context helpers
 static void LoadCtxFromGuest(PPCContext& c, uint32_t oc)
@@ -63,21 +64,21 @@ static void SwitchTo(GuestThread* t)
     if (g_irqDeferred) g_ppcIrqPending = 1;
     GuestThread* self = g_curThread;
     g_curThread = t;
-    SwitchToFiber(t->fiber);
+    Fiber_Switch(t->fiber);
     // resumed: whoever switched to us set g_curThread = self
     g_curThread = self;
     for (GuestThread* d : s_graveyard)
     {
         if (d != self && d->fiber)
         {
-            DeleteFiber(d->fiber);
+            Fiber_Delete(d->fiber);
             delete d;
         }
     }
     s_graveyard.erase(std::remove_if(s_graveyard.begin(), s_graveyard.end(), [&](GuestThread* d) { return d != self; }), s_graveyard.end());
 }
 
-static void WINAPI ThreadFiberProc(void* param)
+static void ThreadFiberProc(void* param)
 {
     GuestThread* t = (GuestThread*)param;
     g_curThread = t;
@@ -98,8 +99,8 @@ static GuestThread* CreateFromContext(uint32_t oc)
     t->osContext = oc;
     t->entry = t->ctx.srr0;
     t->exitLr = t->ctx.lr;
-    t->fiber = CreateFiberEx(64 * 1024, FIBER_STACK, FIBER_FLAG_FLOAT_SWITCH, ThreadFiberProc, t);
-    if (!t->fiber) FATAL("CreateFiberEx failed ({})", GetLastError());
+    t->fiber = Fiber_Create(FIBER_STACK, ThreadFiberProc, t);
+    if (!t->fiber) FATAL("cannot create a fiber for guest thread {:08x}", oc);
     s_byContext[oc] = t;
     return t;
 }
@@ -255,7 +256,7 @@ void Irq_Update()
 // ------------------------------------------------------------- boot
 void Threads_Init()
 {
-    s_mainThread.fiber = ConvertThreadToFiberEx(nullptr, FIBER_FLAG_FLOAT_SWITCH);
+    s_mainThread.fiber = Fiber_FromThread();
     strcpy_s(s_mainThread.name, "main");
     g_curThread = &s_mainThread;
 }

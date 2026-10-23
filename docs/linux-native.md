@@ -1,8 +1,8 @@
 # Native Linux / SteamOS: assessment
 
-Status: assessment only, nothing here is implemented. Written for issue #5 (black screen on
-the Steam Deck under Proton). The Proton cause is fixed separately; this document answers
-whether a native Linux build is worth doing as well.
+Status: implemented (issue #14) along the dxvk-native route recommended below; see
+[linux.md](linux.md) for the result. This assessment was written for issue #5 (black screen
+on the Steam Deck under Proton) and is kept as the background of that choice.
 
 ## Where things stand
 
