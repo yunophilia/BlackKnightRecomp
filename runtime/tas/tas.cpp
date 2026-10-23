@@ -282,6 +282,7 @@ void LoadFile(const std::filesystem::path& path, int depth)
     while (std::getline(f, line))
     {
         n++;
+        if (!line.empty() && line.back() == '\r') line.pop_back();   // CRLF files outside Windows
         if (auto h = line.find('#'); h != std::string::npos) line.resize(h);
         std::istringstream ss(line);
         std::string w;

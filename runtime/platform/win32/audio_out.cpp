@@ -1,6 +1,6 @@
 // Audio output through XAudio2.
-#include "audio_out.h"
-#include "../log.h"
+#include "../../audio/audio_out.h"
+#include "../../log.h"
 
 #include <algorithm>
 #include <cstdlib>

@@ -171,6 +171,20 @@ std::string Platform_UiFont()
     return {};
 }
 
+std::string Platform_Utf8(const wchar_t* s)
+{
+    std::string out;
+    for (; *s; s++)
+    {
+        uint32_t c = (uint32_t)*s;
+        if (c < 0x80) out += (char)c;
+        else if (c < 0x800) { out += (char)(0xC0 | c >> 6); out += (char)(0x80 | (c & 0x3F)); }
+        else if (c < 0x10000) { out += (char)(0xE0 | c >> 12); out += (char)(0x80 | (c >> 6 & 0x3F)); out += (char)(0x80 | (c & 0x3F)); }
+        else { out += (char)(0xF0 | c >> 18); out += (char)(0x80 | (c >> 12 & 0x3F)); out += (char)(0x80 | (c >> 6 & 0x3F)); out += (char)(0x80 | (c & 0x3F)); }
+    }
+    return out;
+}
+
 // ---------------------------------------------------------------- time
 static uint64_t NowNs()
 {

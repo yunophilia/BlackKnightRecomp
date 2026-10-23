@@ -19,8 +19,6 @@ extern ID3D11DeviceContext* g_ctx;
 bool Video_Init();
 // Presents the given texture region (an XFB copy) to the window.
 void Video_Present(ID3D11ShaderResourceView* srv, float u0, float v0, float u1, float v1);
-bool Video_WindowClosed();
 // Applied on the window thread (settings changed while the game runs)
 void Video_SetFullscreen(bool on);
 void Video_SetWindowSize(int width, int height);
-void* Video_HWND();
