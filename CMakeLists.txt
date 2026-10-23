@@ -132,7 +132,7 @@ if(LINUX)
         DOWNLOAD_EXTRACT_TIMESTAMP FALSE
         CONFIGURE_COMMAND <SOURCE_DIR>/configure --disable-tests --disable-demos --disable-doxygen-doc --enable-static
                           --without-ncurses --without-opengl --without-xcb --with-spirv-tools=no
-                          CC=${CMAKE_C_COMPILER} "CFLAGS=-O2 -fPIC"
+                          CC=${CMAKE_C_COMPILER} "CFLAGS=-O2 -fPIC -fno-lto"
         BUILD_COMMAND make -j8
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS <BINARY_DIR>/.libs/libvkd3d-shader.a)
