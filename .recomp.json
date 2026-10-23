@@ -1,6 +1,7 @@
 {
   "$schema": "https://recomp.fyi/schema/v1.json",
   "game": "Sonic and the Black Knight",
+  "project": "BlackKnightRecomp",
   "wikidata": "Q2454500",
   "system": "Wii",
   "type": "recomp",
@@ -11,5 +12,6 @@
     {"region": "USA", "serial": "RENE8P"},
     {"region": "Europe", "serial": "RENP8P"},
     {"region": "Japan", "serial": "RENJ8P"}
-  ]
+  ],
+  "notes": "v1.0.1: one exe plays the USA, Europe and Japan discs; fixes the black screen under Proton (tested with Proton Experimental, 10.0 and 9.0, not yet on a Steam Deck). Played with a controller, including Wii Remote tilt on the right stick; 60 FPS option, higher internal resolution, Dolphin-format HD texture packs."
 }
