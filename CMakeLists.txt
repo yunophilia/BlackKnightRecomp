@@ -124,15 +124,28 @@ if(LINUX)
     target_include_directories(dxvk SYSTEM INTERFACE ${dxvk_native_SOURCE_DIR}/include/dxvk)
     target_link_libraries(dxvk INTERFACE ${DXVK_LIBS})
 
-    # autotools build; needs bison, flex, Perl's JSON module and the SPIR-V headers
+    # autotools build; needs bison, flex and Perl's JSON module. It wants newer Vulkan and
+    # SPIR-V headers than older distributions have (Khronos, Apache-2.0/MIT, headers only).
+    FetchContent_Declare(vulkan_headers
+        URL https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/vulkan-sdk-1.4.341.0.tar.gz
+        URL_HASH SHA256=d73bc5036b6556b741f6985ff600ca720308c5f2850e4a43ceb498bd3de069e7
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+        SOURCE_SUBDIR none)   # headers only: no add_subdirectory
+    FetchContent_Declare(spirv_headers
+        URL https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/vulkan-sdk-1.4.341.0.tar.gz
+        URL_HASH SHA256=cab0a654c4917e16367483296b44cdb1d614e3120c721beafcd37e3a8580486c
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+        SOURCE_SUBDIR none)
+    FetchContent_MakeAvailable(vulkan_headers spirv_headers)
     include(ExternalProject)
     ExternalProject_Add(vkd3d_build
         URL https://dl.winehq.org/vkd3d/source/vkd3d-1.19.tar.xz
         URL_HASH SHA256=034613605baab8ba84674f8d272cf22b5e86bc6bc03fc5728ef9bce07308baa6
-        DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE   # the archive's times: else make reruns autotools
         CONFIGURE_COMMAND <SOURCE_DIR>/configure --disable-tests --disable-demos --disable-doxygen-doc --enable-static
                           --without-ncurses --without-opengl --without-xcb --with-spirv-tools=no
                           CC=${CMAKE_C_COMPILER} "CFLAGS=-O2 -fPIC -fno-lto"
+                          "CPPFLAGS=-I${vulkan_headers_SOURCE_DIR}/include -I${spirv_headers_SOURCE_DIR}/include"
         BUILD_COMMAND make -j8
         INSTALL_COMMAND ""
         BUILD_BYPRODUCTS <BINARY_DIR>/.libs/libvkd3d-shader.a)
@@ -245,6 +258,8 @@ if(LINUX)
     # MSVC runtime names (compat.h) everywhere; type punning as with MSVC
     target_compile_options(BlackKnightRecomp PRIVATE -include ${CMAKE_SOURCE_DIR}/runtime/platform/compat.h
                            -fno-strict-aliasing -Wno-unused-function -Wno-unused-variable)
+    # the C++ runtime inside the exe: it runs on distributions with an older libstdc++
+    target_link_options(BlackKnightRecomp PRIVATE -static-libstdc++ -static-libgcc)
     # finds libSDL3 and dxvk next to itself (out/ and the AppImage)
     set_target_properties(BlackKnightRecomp PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
     add_custom_command(TARGET BlackKnightRecomp POST_BUILD

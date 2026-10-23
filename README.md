@@ -1,7 +1,8 @@
 # BlackKnightRecomp
 
-A static recompilation of **Sonic and the Black Knight** (Wii) to native Windows x64, in the
-spirit of [UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp).
+A static recompilation of **Sonic and the Black Knight** (Wii) to native Windows x64 and
+Linux x86-64 (including the Steam Deck), in the spirit of
+[UnleashedRecomp](https://github.com/hedge-dev/UnleashedRecomp).
 The goal: play it natively on PC with a normal controller instead of Wii Remote motion
 controls.
 
@@ -42,7 +43,7 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
   `nand/title/00010000/<id>/data`: `52454e45` USA, `52454e50` Europe, `52454e4a` Japan),
   `/dev/es`, `/dev/stm`.
 * **Graphics** (`runtime/gx`): the GX command FIFO is decoded and rendered with Direct3D 11
-  on a separate thread (the CPU thread only fills a ring buffer, like Dolphin's dual-core
+  (on Linux through dxvk-native, on Vulkan) on a separate thread (the CPU thread only fills a ring buffer, like Dolphin's dual-core
   mode).
   Vertex and pixel shaders are generated per GX state (transform/lighting/texgen and the
   integer-exact TEV combiner with indirect texturing, alpha test, fog, z-textures). EFB
@@ -50,11 +51,14 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
   a read-back snapshot. Renders at 3x internal resolution, 16:9. Compiled shaders are
   cached in `shadercache/`, and Dolphin-format HD texture packs are supported.
 * **Input** (`runtime/input`): the WPAD library is replaced at the API level; KPAD runs
-  recompiled on top of it. XInput controllers (and the keyboard) become Wii Remotes with a
+  recompiled on top of it. Controllers (XInput; SDL3 on Linux) and the keyboard become Wii Remotes with a
   Nunchuk: sword swings are synthesised as accelerometer pulses, the IR pointer comes
   from the mouse or right stick, and the remote speaker stream is decoded and played.
 * **Audio** (`runtime/audio`): the AX DSP microcode is replaced by a port of Dolphin's AX
-  HLE; output goes through XAudio2.
+  HLE; output goes through XAudio2 (SDL3 on Linux).
+* **Platform** (`runtime/platform`): everything specific to Windows or Linux (window, input,
+  audio output, guest memory mapping, fibers, crash handler, dialogs), one implementation
+  per platform; see [docs/linux.md](docs/linux.md).
 
 ## Playing
 
@@ -67,10 +71,15 @@ image is no longer needed. Mods can replace files under `game/extracted/DATA/fil
 switch to another release, choose "Reinstall from disc image..." in the launcher and select
 that disc; each release keeps its own saves.
 
-### Steam Deck and Linux (Proton)
+### Linux and Steam Deck
 
-There is no native Linux build (see [docs/linux-native.md](docs/linux-native.md)); the
-Windows build runs through Proton. v1.0.0 showed a black screen under Proton while the audio
+Releases include a native Linux AppImage: make it executable and start it; the game data,
+saves and settings go to `~/.local/share/BlackKnightRecomp`. Requirements, the Steam Deck
+setup and building it yourself are in [docs/linux.md](docs/linux.md).
+
+### Windows build under Proton
+
+The Windows build also runs through Proton. v1.0.0 showed a black screen under Proton while the audio
 played (issue #5): Wine's HLSL compiler rejected the game's vertex shaders. Later builds
 avoid that, and releases include precompiled shaders in `shadercache/`, so keep that folder
 next to the exe.
@@ -159,8 +168,8 @@ build steps, which sets that up.
    ```
    The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
    only the build command is needed (`tools/dev_build.bat` runs it). Other presets:
-   `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`,
-   which only builds the recompiled code until the runtime is ported off D3D11/XAudio2.
+   `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`
+   (the Linux build; packages and details in [docs/linux.md](docs/linux.md)).
    `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`, with a
    shader cache precompiled from the GX states recorded in `data/shadercache/`
    (`BlackKnightRecomp.exe --precompile-shaders <dir>` compiles every recorded key that has

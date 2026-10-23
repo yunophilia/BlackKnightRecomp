@@ -5,6 +5,7 @@
 #include "vertex_loader.h"
 #include "hires.h"
 #include "../tas/tas.h"
+#include <algorithm>
 #include <type_traits>
 #include <thread>
 #include <deque>
