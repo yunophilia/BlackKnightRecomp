@@ -1,4 +1,5 @@
-// BlackKnightRecomp: statically recompiled Sonic and the Black Knight (RENE8P)
+// BlackKnightRecomp: statically recompiled Sonic and the Black Knight (USA RENE8P,
+// Europe RENP8P, Japan RENJ8P; the installed disc picks the recompiled code)
 #include "log.h"
 #include "config.h"
 #include "gx/video.h"
@@ -10,6 +11,7 @@
 #include "hw/hw.h"
 #include "ios/disc.h"
 #include "ios/ios.h"
+#include "region.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -119,7 +121,6 @@ int main(int argc, char** argv)
         }
     };
     pick(dataDir, "game/extracted/DATA");
-    pick(isoPath, "game/RENE8P_Sonic_and_the_Black_Knight.iso");
     if (isoPath.empty())
     {
         // any disc image in game/ next to the exe or the repo root
@@ -171,6 +172,10 @@ int main(int argc, char** argv)
         dataDir = installDest.string();
     }
 
+    {
+        std::string error;
+        if (!Region_Select(Release_InstalledId(dataDir), error)) FATAL("Cannot start the game: {}", error);
+    }
     if (!Memory_Init()) FATAL("memory init failed");
     Crash_Init();
     Cpu_Init();

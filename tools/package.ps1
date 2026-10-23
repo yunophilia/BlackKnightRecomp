@@ -28,10 +28,11 @@ foreach ($k in "vs_keys.bin", "ps_keys.bin") {
 if ($LASTEXITCODE -ne 0) { throw "shader precompilation failed" }
 @"
 You don't need to put anything here. Start BlackKnightRecomp.exe and select your own disc
-image (USA, RENE8P; ISO, RVZ, WIA or WBFS) in the file dialog, wherever it is on your PC.
+image (USA, Europe or Japan; ISO, RVZ, WIA or WBFS) in the file dialog, wherever it is on your PC.
 The launcher installs the game data into this folder; the image is not needed afterwards.
 
 Optional, if you have one:
-  textures\RENE8P\...                       (Dolphin-format HD texture pack)
+  textures\RENE8P\...                       (Dolphin-format HD texture pack; the folder is
+                                            named by the game ID: RENE8P, RENP8P or RENJ8P)
 "@ | Set-Content (Join-Path $dist "game\ABOUT_THIS_FOLDER.txt")
 "packaged to $dist"

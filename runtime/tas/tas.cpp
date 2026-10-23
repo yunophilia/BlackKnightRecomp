@@ -1,5 +1,6 @@
 #include "tas.h"
 #include "../cpu/cpu.h"
+#include "../game_addrs.h"
 #include "../input/gamepad.h"
 #include "../kernel/memory.h"
 #include "../log.h"
@@ -23,8 +24,9 @@ extern "C" uint32_t g_callCounts[0x200000] = {};
 namespace
 {
 // ------------------------------------------------------------------ guest values
-// Address expressions: hex constants, probes (p0..p15), "+"/"-" offsets and [expr]
-// for reading a pointer, e.g. "[p2+0x10]+0x44".
+// Address expressions: hex constants, game address names (tools/game_addrs.txt, the
+// installed release's value), probes (p0..p15), "+"/"-" offsets and [expr] for reading a
+// pointer, e.g. "[p2+0x10]+0x44" or "[PlayerPtr]+380".
 bool ValidGuest(uint32_t a, uint32_t size)
 {
     uint32_t seg = a >> 28, phys = a & 0x0FFFFFFF;
@@ -35,8 +37,34 @@ bool ValidGuest(uint32_t a, uint32_t size)
 
 bool EvalAddr(const std::string& s, size_t& i, uint32_t& out);
 
+bool GameAddrByName(const std::string& name, uint32_t& out)
+{
+    static const char* const kNames[] = {
+#define GAME_ADDR(name, kind, ...) #name,
+#include "../game_addrs.inc"
+#undef GAME_ADDR
+    };
+    for (size_t k = 0; k < std::size(kNames); k++)
+        if (name == kNames[k])
+        {
+            out = g_gameAddrs[k];
+            return true;
+        }
+    return false;
+}
+
 bool EvalTerm(const std::string& s, size_t& i, uint32_t& out)
 {
+    if (i < s.size() && (isalpha((unsigned char)s[i]) || s[i] == '_'))
+    {
+        size_t j = i;
+        while (j < s.size() && (isalnum((unsigned char)s[j]) || s[j] == '_')) j++;
+        if (GameAddrByName(s.substr(i, j - i), out))
+        {
+            i = j;
+            return true;
+        }
+    }
     if (i < s.size() && s[i] == '[')
     {
         i++;

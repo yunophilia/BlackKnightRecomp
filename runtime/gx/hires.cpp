@@ -3,6 +3,7 @@
 #include "video.h"
 #include "texture_decode.h"
 #include "../log.h"
+#include "../region.h"
 
 #include <algorithm>
 #include <cstring>
@@ -210,10 +211,16 @@ void HiRes_Init(const std::string& configuredDir)
         if (const char* up = getenv("USERPROFILE"))
             roots.push_back(fs::path(up) / "Documents" / "Dolphin Emulator" / "Load" / "Textures");
     }
+    // the installed release's pack (Dolphin's folder names: game ID, its first four or three
+    // characters); else another release's: the textures are the same
     std::error_code ec;
-    for (auto& r : roots)
-        for (const char* id : { "RENE8P", "RENE", "REN" })
-            if (fs::is_directory(r / id, ec)) Scan(r / id);
+    std::string id = Region_Current().gameId;
+    std::vector<std::string> ids = { id, id.substr(0, 4), id.substr(0, 3) };
+    for (auto& r : kReleases)
+        if (r.gameId != id) ids.push_back(r.gameId);
+    for (size_t own = 3, i = 0; i < ids.size() && (i < own || s_files.empty()); i++)
+        for (auto& r : roots)
+            if (fs::is_directory(r / ids[i], ec)) Scan(r / ids[i]);
     if (s_files.empty()) return;
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&s_wic));
@@ -291,7 +298,7 @@ void HiRes_Dump(const uint8_t* data, uint32_t dataSize, const uint8_t* tlut, uin
     {
         wchar_t buf[MAX_PATH];
         GetModuleFileNameW(nullptr, buf, MAX_PATH);
-        dir = fs::path(buf).parent_path() / "dump" / "textures" / "RENE8P";
+        dir = fs::path(buf).parent_path() / "dump" / "textures" / Region_Current().gameId;
         std::error_code ec;
         fs::create_directories(dir, ec);
         CoInitializeEx(nullptr, COINIT_MULTITHREADED);

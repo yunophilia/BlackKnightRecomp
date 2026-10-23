@@ -1,6 +1,9 @@
 #include "verify.h"
+#include "releases.h"
 
 #include <cstdio>
+#include <cstring>
+#include <span>
 #include <vector>
 #include <windows.h>
 #include <bcrypt.h>
@@ -9,17 +12,6 @@ namespace fs = std::filesystem;
 
 namespace
 {
-struct KnownFile
-{
-    const char* path;
-    uint64_t size;
-    const char* sha1;   // hex
-};
-
-constexpr KnownFile kFiles[] = {
-#include "rene8p_files.inc"
-};
-
 std::string Hex(const uint8_t* d, size_t n)
 {
     static const char* digits = "0123456789abcdef";
@@ -56,11 +48,22 @@ bool HashFile(const fs::path& p, std::string& hex, VerifyProgress* progress)
     return ok;
 }
 
-const KnownFile* Find(const char* path)
+const KnownFile* Find(const GameRelease& rel, const char* path)
 {
-    for (auto& k : kFiles)
+    for (auto& k : std::span(rel.files, rel.fileCount))
         if (strcmp(k.path, path) == 0) return &k;
     return nullptr;
+}
+
+// the release installed in data, or null with the reason
+const GameRelease* Installed(const fs::path& data, std::string& problem)
+{
+    std::string id = Release_InstalledId(data);
+    const GameRelease* rel = Release_Find(id);
+    if (!rel)
+        problem = id.empty() ? "sys/boot.bin is missing"
+                             : "the installed game (" + id + ") is not Sonic and the Black Knight (" + kReleaseNames + ")";
+    return rel;
 }
 }   // namespace
 
@@ -72,8 +75,10 @@ DataStatus Install_QuickCheck(const fs::path& data, std::string& problem)
         problem = "the game data is not installed";
         return DataStatus::Missing;
     }
+    const GameRelease* rel = Installed(data, problem);
+    if (!rel) return DataStatus::Corrupt;
     int bad = 0;
-    for (auto& k : kFiles)
+    for (auto& k : std::span(rel->files, rel->fileCount))
     {
         uint64_t size = fs::file_size(data / fs::path(std::u8string((const char8_t*)k.path)), ec);
         if (ec || size != k.size)
@@ -85,10 +90,10 @@ DataStatus Install_QuickCheck(const fs::path& data, std::string& problem)
     if (bad) return DataStatus::Corrupt;
     // the recompiled code only matches this exact main.dol
     std::string hex;
-    const KnownFile* dol = Find("sys/main.dol");
+    const KnownFile* dol = Find(*rel, "sys/main.dol");
     if (!HashFile(data / "sys" / "main.dol", hex, nullptr) || !dol || hex != dol->sha1)
     {
-        problem = "sys/main.dol does not match the supported PAL release";
+        problem = std::string("sys/main.dol does not match the supported ") + rel->name + " release";
         return DataStatus::Corrupt;
     }
     return DataStatus::Ok;
@@ -98,12 +103,14 @@ DataStatus Install_FullCheck(const fs::path& data, VerifyProgress& progress, std
 {
     DataStatus quick = Install_QuickCheck(data, problem);
     if (quick != DataStatus::Ok) return quick;
+    const GameRelease* rel = Installed(data, problem);
+    auto files = std::span(rel->files, rel->fileCount);
     uint64_t total = 0;
-    for (auto& k : kFiles) total += k.size;
+    for (auto& k : files) total += k.size;
     progress.total = total;
     progress.done = 0;
     int bad = 0;
-    for (auto& k : kFiles)
+    for (auto& k : files)
     {
         std::string hex;
         if (!HashFile(data / fs::path(std::u8string((const char8_t*)k.path)), hex, &progress))

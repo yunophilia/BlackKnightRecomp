@@ -1,5 +1,6 @@
 // First-run installer: asks for the disc image and installs the game data from it
 #include "install/install.h"
+#include "install/releases.h"
 #include "log.h"
 
 #include <filesystem>
@@ -29,7 +30,7 @@ bool PickImage(fs::path& out)
         return false;
     COMDLG_FILTERSPEC filters[] = { { L"Wii disc images", kInstallImageFilter }, { L"All files", L"*.*" } };
     dlg->SetFileTypes(2, filters);
-    dlg->SetTitle(L"Select your Sonic and the Black Knight disc image (PAL, RENE8P)");
+    dlg->SetTitle(L"Select your Sonic and the Black Knight disc image (USA, Europe or Japan)");
     bool ok = false;
     IShellItem* item = nullptr;
     if (SUCCEEDED(dlg->Show(nullptr)) && SUCCEEDED(dlg->GetResult(&item)))
@@ -87,7 +88,7 @@ bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const st
     HRESULT co = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     bool installed = false;
     fs::path image;
-    if (!foundImage.empty() && Install_GameId(foundImage) == "RENE8P")
+    if (!foundImage.empty() && Release_Find(Install_GameId(foundImage)))
     {
         std::wstring msg = why + L" Install it from\n\n" + Widen(foundImage) +
                            L"?\n\nChoose No to select a different disc image.";
@@ -99,7 +100,7 @@ bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const st
     {
         int r = MessageBoxW(nullptr,
                             (why + L"\n\nSelect your own disc image of Sonic and the "
-                            L"Black Knight (PAL, RENE8P) to install it. ISO, RVZ, WIA and WBFS images work. "
+                            L"Black Knight (USA, Europe or Japan) to install it. ISO, RVZ, WIA and WBFS images work. "
                             L"This takes a minute and needs about 3.5 GB; the image is not needed afterwards.").c_str(),
                             kTitle, MB_OKCANCEL | MB_ICONINFORMATION);
         if (r != IDOK) goto done;

@@ -26,8 +26,8 @@ enum class InstallResult
 {
     Ok,
     OpenFailed,       // not a readable disc image
-    WrongGame,        // not RENE8P
-    WrongVersion,     // RENE8P, but main.dol differs from the one this build was made from
+    WrongGame,        // not one of the supported releases (RENE8P, RENP8P, RENJ8P)
+    WrongVersion,     // a supported game ID, but main.dol differs from the one this build was made from
     WriteFailed,
     Canceled,
 };

@@ -1,6 +1,6 @@
 # Shared telemetry channels (read-only guest memory). p0..p3 come from the recompiler's
 # read-only probes (tools/recomp.py PROBES); the time step is a small-data global.
-watch dt f32 807FEEE4
+watch dt f32 TimeScale
 watch t_min u8 p0+1
 watch t_sec u8 p0+2
 watch t_cs u8 p0+3

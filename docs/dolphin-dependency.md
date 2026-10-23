@@ -94,8 +94,8 @@ Verdict: much too heavy for what it buys.
    (TwilitRealm/dusklight) reads disc images with [nod](https://github.com/encounter/nod)
    through encounter's Aurora/Borealis libraries, Wii discs included. We link nod directly:
    - `runtime/install/install.cpp` opens the image (ISO, RVZ, WIA, WBFS, CISO, GCZ, NFS),
-     checks the game ID (`RENE8P`) and the SHA-1 of `main.dol` (the recompiled code only
-     matches that exact binary), and writes the same layout DolphinTool's `extract -g`
+     checks the game ID (`RENE8P`, `RENP8P` or `RENJ8P`) and the SHA-1 of `main.dol` (the
+     recompiled code only matches that exact binary), and writes the same layout DolphinTool's `extract -g`
      produces into `game/extracted/DATA`. It also writes `disc/unencrypted.bin`, the first
      0x50000 bytes of the disc. Raw disc reads (`/dev/di` command 0x8D, which never go past
      0x50000) and the partition table now come from that file, so the image is not needed

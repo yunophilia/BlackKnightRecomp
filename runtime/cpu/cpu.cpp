@@ -5,6 +5,7 @@
 #include "../log.h"
 #include "../kernel/memory.h"
 #include "../kernel/threads.h"
+#include "../region.h"
 
 #include <atomic>
 #include <bit>
@@ -13,27 +14,24 @@
 #include <vector>
 #include <windows.h>
 
-extern "C" const PPCFuncMapping PPCFuncMappings[];
-
 static constexpr uint32_t CODE_BEGIN = 0x80004000;
 static constexpr uint32_t CODE_END = 0x80700000;
 static std::vector<PPCFunc> s_table;
 
 // The HOME menu module, recompiled at its boot-time link address. Its functions are
 // used only once the code in guest memory is verified to be that exact image.
-#include "ppc_rso_info.h"
-#ifdef PPC_RSO_TEXT_BEGIN
 static std::vector<PPCFunc> s_rsoTable;
+static uint32_t s_rsoBegin = 0, s_rsoEnd = 0;   // empty unless the release's module is recompiled
 static int s_rsoState = 0;   // 0 unchecked, 1 verified, <0 mismatch (re-check countdown)
 
 static bool RsoVerified()
 {
     if (s_rsoState > 0) return true;
     if (s_rsoState < 0 && ++s_rsoState < 0) return false;
-    const uint8_t* p = g_base + PPC_RSO_TEXT_BEGIN;
+    const uint8_t* p = g_base + s_rsoBegin;
     uint64_t h = 0xCBF29CE484222325ull;
-    for (uint32_t i = 0; i < PPC_RSO_TEXT_END - PPC_RSO_TEXT_BEGIN; i++) h = (h ^ p[i]) * 0x100000001B3ull;
-    if (h == PPC_RSO_TEXT_HASH)
+    for (uint32_t i = 0; i < s_rsoEnd - s_rsoBegin; i++) h = (h ^ p[i]) * 0x100000001B3ull;
+    if (h == Region_Code().rsoTextHash)
     {
         s_rsoState = 1;
         LOG_INFO("HOME menu module matches the recompiled image");
@@ -44,7 +42,6 @@ static bool RsoVerified()
     s_rsoState = -100000;
     return false;
 }
-#endif
 
 extern "C" volatile uint32_t g_ppcIrqPending = 0;
 extern "C" uint32_t g_cfgFrameRate = 30;
@@ -52,20 +49,19 @@ extern "C" void Interp_Run(PPCContext& ctx, uint8_t* base, uint32_t entry);
 
 void Cpu_Init()
 {
+    const PPCRegionCode& code = Region_Code();
     s_table.assign((CODE_END - CODE_BEGIN) / 4, nullptr);
     size_t n = 0;
-#ifdef PPC_RSO_TEXT_BEGIN
-    s_rsoTable.assign((PPC_RSO_TEXT_END - PPC_RSO_TEXT_BEGIN) / 4, nullptr);
-#endif
-    for (const PPCFuncMapping* m = PPCFuncMappings; m->host; m++, n++)
+    s_rsoBegin = code.rsoTextBegin;
+    s_rsoEnd = code.rsoTextEnd;
+    s_rsoTable.assign((s_rsoEnd - s_rsoBegin) / 4, nullptr);
+    for (const PPCFuncMapping* m = code.funcs; m->host; m++, n++)
     {
-#ifdef PPC_RSO_TEXT_BEGIN
-        if (m->guest >= PPC_RSO_TEXT_BEGIN && m->guest < PPC_RSO_TEXT_END)
+        if (m->guest >= s_rsoBegin && m->guest < s_rsoEnd)
         {
-            s_rsoTable[(m->guest - PPC_RSO_TEXT_BEGIN) / 4] = m->host;
+            s_rsoTable[(m->guest - s_rsoBegin) / 4] = m->host;
             continue;
         }
-#endif
         s_table[(m->guest - CODE_BEGIN) / 4] = m->host;
     }
     LOG_INFO("registered {} recompiled functions", n);
@@ -79,10 +75,8 @@ void Cpu_SetFunction(uint32_t guest, PPCFunc f)
 
 extern "C" PPCFunc ppc_lookup(uint32_t addr)
 {
-#ifdef PPC_RSO_TEXT_BEGIN
-    if (addr >= PPC_RSO_TEXT_BEGIN && addr < PPC_RSO_TEXT_END && !(addr & 3))
-        return RsoVerified() ? s_rsoTable[(addr - PPC_RSO_TEXT_BEGIN) / 4] : nullptr;
-#endif
+    if (addr >= s_rsoBegin && addr < s_rsoEnd && !(addr & 3))
+        return RsoVerified() ? s_rsoTable[(addr - s_rsoBegin) / 4] : nullptr;
     if (addr < CODE_BEGIN || addr >= CODE_END || (addr & 3))
         return nullptr;
     return s_table[(addr - CODE_BEGIN) / 4];

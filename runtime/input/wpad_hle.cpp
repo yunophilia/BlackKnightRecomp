@@ -10,7 +10,7 @@
 #include "../kernel/memory.h"
 #include "../cpu/cpu.h"
 #include "../log.h"
-#include "../../generated/ppc_recomp_shared.h"
+#include "../game_addrs.h"
 
 #include <algorithm>
 #include <deque>
@@ -140,20 +140,20 @@ void WPAD_Pump(PPCContext& ctx, uint8_t* base)
 
 // ------------------------------------------------------------------ overrides
 // WPADInit
-PPC_FUNC(fn_803D3750)
+PPC_OVERRIDE(WPADInit)
 {
     s_wpadInit = true;
     LOG_INFO("WPAD: init (Bluetooth stack replaced by HLE)");
 }
 
 // WPADGetStatus -> WPAD_STATE_SETUP
-PPC_FUNC(fn_803D37D0)
+PPC_OVERRIDE(WPADGetStatus)
 {
     ctx.r[3] = 3;
 }
 
 // s32 WPADProbe(s32 chan, u32* type)
-PPC_FUNC(fn_803D4B58)
+PPC_OVERRIDE(WPADProbe)
 {
     int chan = (int)ctx.r[3];
     uint32_t typePtr = ctx.r[4];
@@ -168,7 +168,7 @@ PPC_FUNC(fn_803D4B58)
 }
 
 // WPADSamplingCallback WPADSetSamplingCallback(s32 chan, WPADSamplingCallback cb)
-PPC_FUNC(fn_803D4BE4)
+PPC_OVERRIDE(WPADSetSamplingCallback)
 {
     int chan = (int)ctx.r[3] & 3;
     uint32_t old = s_chan[chan].samplingCb;
@@ -177,7 +177,7 @@ PPC_FUNC(fn_803D4BE4)
 }
 
 // WPADConnectCallback WPADSetConnectCallback(s32 chan, WPADConnectCallback cb)
-PPC_FUNC(fn_803D4C6C)
+PPC_OVERRIDE(WPADSetConnectCallback)
 {
     int chan = (int)ctx.r[3] & 3;
     uint32_t old = s_chan[chan].connectCb;
@@ -187,7 +187,7 @@ PPC_FUNC(fn_803D4C6C)
 }
 
 // WPADExtensionCallback WPADSetExtensionCallback(s32 chan, WPADExtensionCallback cb)
-PPC_FUNC(fn_803D4CF4)
+PPC_OVERRIDE(WPADSetExtensionCallback)
 {
     int chan = (int)ctx.r[3] & 3;
     uint32_t old = s_chan[chan].extensionCb;
@@ -197,7 +197,7 @@ PPC_FUNC(fn_803D4CF4)
 }
 
 // void WPADRead(s32 chan, void* status)
-PPC_FUNC(fn_803D5488)
+PPC_OVERRIDE(WPADRead)
 {
     int chan = (int)ctx.r[3];
     uint32_t st = ctx.r[4];
@@ -206,7 +206,7 @@ PPC_FUNC(fn_803D5488)
 }
 
 // void WPADGetAccGravityUnit(s32 chan, u32 type, WPADAcc* acc)
-PPC_FUNC(fn_803D4910)
+PPC_OVERRIDE(WPADGetAccGravityUnit)
 {
     uint32_t acc = ctx.r[5];
     if (!acc) return;
@@ -217,7 +217,7 @@ PPC_FUNC(fn_803D4910)
 }
 
 // void WPADControlMotor(s32 chan, u32 command)
-PPC_FUNC(fn_803D50C0)
+PPC_OVERRIDE(WPADControlMotor)
 {
     int chan = (int)ctx.r[3];
     bool on = ctx.r[4] != 0;
@@ -251,7 +251,7 @@ void WPAD_CheckRumble()
 }
 
 // s32 WPADGetInfoAsync(s32 chan, WPADInfo* info, WPADCallback cb)
-PPC_FUNC(fn_803D4EA0)
+PPC_OVERRIDE(WPADGetInfoAsync)
 {
     int chan = (int)ctx.r[3];
     uint32_t info = ctx.r[4], cb = ctx.r[5];
@@ -278,15 +278,15 @@ PPC_FUNC(fn_803D4EA0)
 }
 
 // u32 WPADGetDataFormat(s32 chan) (Dolphin's signature DB calls it WPADIsDpdEnabled)
-PPC_FUNC(fn_803D4D50)
+PPC_OVERRIDE(WPADGetDataFormat)
 {
     ctx.r[3] = s_chan[ctx.r[3] & 3].dataFormat;
 }
 // BOOL WPADIsDpdEnabled(s32 chan)
-PPC_FUNC(fn_803D73C4) { ctx.r[3] = 1; }
+PPC_OVERRIDE(WPADIsDpdEnabled) { ctx.r[3] = 1; }
 
 // s32 WPADDisconnect(s32 chan)
-PPC_FUNC(fn_803D4A0C)
+PPC_OVERRIDE(WPADDisconnect)
 {
     int chan = (int)(ctx.r[3] & 3);
     if (chan != 0 && !s_chan[chan].dropped)
@@ -300,7 +300,7 @@ PPC_FUNC(fn_803D4A0C)
 // s32 WPADControlSpeaker(s32 chan, u32 command, WPADCallback cb)
 // Commands complete asynchronously, in order; the speaker only counts as enabled
 // (WPADIsSpeakerEnabled) once the ON command has completed, as with a real remote.
-PPC_FUNC(fn_803D5924)
+PPC_OVERRIDE(WPADControlSpeaker)
 {
     uint32_t chan = ctx.r[3], cmd = ctx.r[4], cb = ctx.r[5];
     if (!Connected((int)chan))
@@ -322,23 +322,23 @@ PPC_FUNC(fn_803D5924)
 }
 
 // BOOL WPADCanSendStreamData(s32 chan)
-PPC_FUNC(fn_803D70FC) { ctx.r[3] = Connected((int)ctx.r[3]) ? 1 : 0; }
+PPC_OVERRIDE(WPADCanSendStreamData) { ctx.r[3] = Connected((int)ctx.r[3]) ? 1 : 0; }
 
 // BOOL WPADIsMotorEnabled(void) / void WPADEnableMotor(BOOL): the real WPADInit
 // caches SYSCONF BT.MOT (1)
 static bool s_motorEnabled = true;
-PPC_FUNC(fn_803D51C0) { ctx.r[3] = s_motorEnabled ? 1 : 0; }
-PPC_FUNC(fn_803D518C) { s_motorEnabled = ctx.r[3] != 0; }
+PPC_OVERRIDE(WPADIsMotorEnabled) { ctx.r[3] = s_motorEnabled ? 1 : 0; }
+PPC_OVERRIDE(WPADEnableMotor) { s_motorEnabled = ctx.r[3] != 0; }
 
 // u8 WPADGetSpeakerVolume(void): the real WPADInit caches SYSCONF BT.SPKV (0x58)
-PPC_FUNC(fn_803D6F40) { ctx.r[3] = 0x58; }
+PPC_OVERRIDE(WPADGetSpeakerVolume) { ctx.r[3] = 0x58; }
 
 // BOOL WPADIsSpeakerEnabled(s32 chan)
-PPC_FUNC(fn_803D58E0) { ctx.r[3] = s_chan[ctx.r[3] & 3].speaker ? 1 : 0; }
+PPC_OVERRIDE(WPADIsSpeakerEnabled) { ctx.r[3] = s_chan[ctx.r[3] & 3].speaker ? 1 : 0; }
 
 // s32 WPADSendStreamData(s32 chan, void* p, u16 len): Wii Remote speaker audio,
 // 4-bit Yamaha ADPCM (decoder as in Dolphin's WiimoteEmu speaker), played on the PC.
-PPC_FUNC(fn_803D7180)
+PPC_OVERRIDE(WPADSendStreamData)
 {
     int chan = (int)ctx.r[3] & 3;
     uint32_t p = ctx.r[4], len = ctx.r[5] & 0xFFFF;
@@ -362,17 +362,17 @@ PPC_FUNC(fn_803D7180)
 }
 
 // u8 WPADGetRadioSensitivity(s32 chan)
-PPC_FUNC(fn_803D37D4) { ctx.r[3] = 100; }
+PPC_OVERRIDE(WPADGetRadioSensitivity) { ctx.r[3] = 100; }
 
-// KPADReadEx-like core read (0x80574558): deliver due samples before KPAD reads.
-PPC_FUNC(fn_80574558)
+// KPADReadEx-like core read: deliver due samples before KPAD reads.
+PPC_OVERRIDE(KPADReadCore)
 {
     WPAD_Pump(ctx, base);
-    fn_80574558_impl(ctx, base);
+    PPC_ORIGINAL(KPADReadCore);
 }
 
 // s32 WPADSetDataFormat(s32 chan, u32 fmt)
-PPC_FUNC(fn_803D4D94)
+PPC_OVERRIDE(WPADSetDataFormat)
 {
     int chan = (int)ctx.r[3];
     if (chan < 0 || chan > 3 || !Connected(chan)) { ctx.r[3] = (uint32_t)WPAD_ERR_NO_CONTROLLER; return; }
@@ -383,7 +383,7 @@ PPC_FUNC(fn_803D4D94)
 }
 
 // s32 WPADControlDpd(s32 chan, u32 command, WPADCallback cb)
-PPC_FUNC(fn_803D7498)
+PPC_OVERRIDE(WPADControlDpd)
 {
     uint32_t chan = ctx.r[3], cb = ctx.r[5];
     if (cb) s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE });
@@ -391,7 +391,7 @@ PPC_FUNC(fn_803D7498)
 }
 
 // s32 (WPAD control with callback, e.g. MotionPlus/BLC control) - acknowledge immediately
-PPC_FUNC(fn_803D8518)
+PPC_OVERRIDE(WPADControlExtension)
 {
     uint32_t chan = ctx.r[3], cb = ctx.r[5];
     if (cb) s_pending.push_back({ cb, chan, (uint32_t)WPAD_ERR_NONE });

@@ -1,7 +1,7 @@
 include watches.tas
-watch px f32 [80803e10]+2050
-watch py f32 [80803e10]+2054
-watch pz f32 [80803e10]+2058
+watch px f32 [PlayerObjPtr]+2050
+watch py f32 [PlayerObjPtr]+2054
+watch pz f32 [PlayerObjPtr]+2058
 log boot
 wait 40
 hold 0.3 A+B

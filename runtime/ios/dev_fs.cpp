@@ -3,6 +3,7 @@
 #include "ios.h"
 #include "../kernel/memory.h"
 #include "../log.h"
+#include "../region.h"
 
 #include <filesystem>
 #include <fstream>
@@ -295,7 +296,7 @@ static std::vector<uint8_t> BuildSysconf()
     e.push_back({ 2, "IPL.NIK", nick });
     e.push_back({ 3, "IPL.LNG", { (uint8_t)g_config.language } });
     std::vector<uint8_t> sadr(0x1007 + 1);
-    sadr[0] = 0x6E;   // United Kingdom (PAL)
+    sadr[0] = Region_Current().country;   // a country of the release's region
     e.push_back({ 1, "IPL.SADR", sadr });
     std::vector<uint8_t> pc(0x49 + 1);
     pc[1] = 0x04; pc[2] = 0x14;
@@ -352,14 +353,16 @@ std::vector<uint8_t> BuildSettingTxt()
             key = (key >> 31) | (key << 1);
         }
     };
-    line("AREA=EUR\r\n");
-    line("MODEL=RVL-001(EUR)\r\n");
+    // a console of the release's region
+    const GameRelease& r = Region_Current();
+    line(std::string("AREA=") + r.area + "\r\n");
+    line(std::string("MODEL=") + r.model + "\r\n");
     line("DVD=0\r\n");
     line("MPCH=0x7FFE\r\n");
-    line("CODE=LEH\r\n");
+    line(std::string("CODE=") + r.code + "\r\n");
     line("SERNO=123456789\r\n");
-    line("VIDEO=PAL\r\n");
-    line("GAME=EU\r\n");
+    line(std::string("VIDEO=") + r.video + "\r\n");
+    line(std::string("GAME=") + r.game + "\r\n");
     return out;
 }
 
@@ -367,7 +370,7 @@ void NAND_InitSystemFiles()
 {
     std::error_code ec;
     fs::create_directories(HostPath("/shared2/sys"), ec);
-    fs::create_directories(HostPath("/title/00010000/52454e45/data"), ec);
+    fs::create_directories(HostPath(Region_TitleDataDir()), ec);
     fs::create_directories(HostPath("/title/00000001/00000002/data"), ec);
     fs::create_directories(HostPath("/tmp"), ec);
     fs::create_directories(HostPath("/meta"), ec);

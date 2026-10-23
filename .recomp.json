@@ -7,5 +7,9 @@
   "status": "released",
   "targets": ["Windows"],
   "toolchain": ["clang-cl", "CMake"],
-  "original": {"region": "USA", "serial": "RENE8P"}
+  "original": [
+    {"region": "USA", "serial": "RENE8P"},
+    {"region": "Europe", "serial": "RENP8P"},
+    {"region": "Japan", "serial": "RENJ8P"}
+  ]
 }

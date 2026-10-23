@@ -1,7 +1,7 @@
 include ../watches.tas
-watch px f32 [8072bfbc]+380
-watch py f32 [8072bfbc]+384
-watch pz f32 [8072bfbc]+388
+watch px f32 [PlayerPtr]+380
+watch py f32 [PlayerPtr]+384
+watch pz f32 [PlayerPtr]+388
 log boot
 wait 2
 # skip the strap screen, Sega logo and intro until the title screen loads

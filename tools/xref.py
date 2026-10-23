@@ -4,8 +4,12 @@ import os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from dol import Dol
 from ppc import decode, disasm
 
-D = Dol('game/extracted/DATA/sys/main.dol')
-F = json.load(open('out/functions.json'))
+from regions import REFERENCE, by_id
+
+# BKR_REGION=RENP8P|RENJ8P for another release (default: USA)
+_R = by_id(os.environ['BKR_REGION']) if os.environ.get('BKR_REGION') else REFERENCE
+D = Dol(_R.dol())
+F = json.load(open(_R.out('functions.json')))
 STARTS = [f['start'] for f in F]
 
 def func_of(a):

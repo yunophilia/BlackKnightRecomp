@@ -60,20 +60,31 @@ COND: `file TEXT` (a disc file whose path contains TEXT was read since the last
 `filemark`) or `TYPE EXPR OP VALUE` with TYPE `u8 s8 u16 s16 u32 s32 f32` and OP
 `== != < <= > >=`.
 
-EXPR: hex address, probe `p0`..`p15`, `+`/`-` offsets and `[expr]` to read a pointer,
-e.g. `[80803e10]+2050`. Unmapped addresses read as missing values.
+EXPR: hex address, game address name, probe `p0`..`p15`, `+`/`-` offsets and `[expr]` to
+read a pointer, e.g. `[PlayerObjPtr]+2050`. Unmapped addresses read as missing values.
+Names come from `tools/game_addrs.txt` and resolve to the installed release's address, so
+scripts that use names instead of hex addresses work with every release.
 
-## Known addresses (RENE8P)
+## Known addresses
 
 | what | expression |
 |---|---|
-| per-step time scale (1.0) | `f32 807FEEE4` (r13 = 0x808066C0) |
+| per-step time scale (1.0) | `f32 TimeScale` (USA: 807FEEE4, r13 = 0x808066C0) |
 | stage timer | `p0`: `u8 +1` minutes, `+2` seconds, `+3` 1/60 s, `f32 +4` |
 | rings | `s32 p1` |
 | score | `s32 p2+4` |
 | Soul gauge | `f32 p3` (max at `+4`) |
-| Sonic position | `f32 [8072bfbc]+380/+384/+388` (y up; in normal stages) |
-| buttons as the game sees them | `u16 80781582` (0x0800 = A) |
+| Sonic position | `f32 [PlayerPtr]+380/+384/+388` (y up; in normal stages) |
+| buttons as the game sees them | `u16 KPADState+2` (0x0800 = A) |
+
+The Europe and Japan values of every name are in `runtime/game_addrs.inc`.
+
+## Other releases
+
+`tas_run.ps1 -Region RENP8P` (or `RENJ8P`, `RENE8P`) plays the release installed in
+`game/<Region>` instead of `game/extracted/DATA`; `-Save none` starts from an empty save
+folder, so the game begins with its own first start (language, save file creation). The
+test saves are USA saves (title `52454e45`) and are not seen by the other releases.
 
 ## Call counting
 

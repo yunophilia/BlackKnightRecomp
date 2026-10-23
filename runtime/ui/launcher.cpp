@@ -6,6 +6,7 @@
 #include "../config.h"
 #include "../install/verify.h"
 #include "../log.h"
+#include "../region.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -61,6 +62,8 @@ struct State
     fs::path data;
     DataStatus status = DataStatus::Missing;
     std::string problem;
+    std::string release;            // "USA (RENE8P)" once installed
+    std::string releaseError;       // this build cannot play the installed release
     bool promptInstall = false;     // ask for the disc image after the window is shown
     std::thread verifyThread;
     VerifyProgress verify;
@@ -71,6 +74,14 @@ struct State
 void Check(State& st)
 {
     st.status = Install_QuickCheck(st.data, st.problem);
+    st.release.clear();
+    st.releaseError.clear();
+    if (st.status == DataStatus::Ok)
+    {
+        std::string id = Release_InstalledId(st.data);
+        if (const GameRelease* r = Release_Find(id)) st.release = std::string(r->name) + " (" + id + ")";
+        Region_Select(id, st.releaseError);
+    }
     LOG_INFO("launcher: game data {} {}", st.data.string(),
              st.status == DataStatus::Ok ? "ok" : st.status == DataStatus::Missing ? "not installed" : "damaged: " + st.problem);
 }
@@ -103,14 +114,15 @@ void DrawHome(State& st, bool& play, const std::string& isoPath, const fs::path&
     const ImVec4 green(0.45f, 0.80f, 0.40f, 1), red(0.90f, 0.40f, 0.30f, 1);
     switch (st.status)
     {
-    case DataStatus::Ok: ImGui::TextColored(green, "Game data installed"); break;
+    case DataStatus::Ok: ImGui::TextColored(green, "Game data installed: %s", st.release.c_str()); break;
     case DataStatus::Missing: ImGui::TextColored(red, "Game data not installed"); break;
     case DataStatus::Corrupt: ImGui::TextColored(red, "Game data damaged: %s", st.problem.c_str()); break;
     }
+    if (!st.releaseError.empty()) ImGui::TextColored(red, "%s", st.releaseError.c_str());
     ImGui::TextDisabled("%s", st.data.string().c_str());
     ImGui::Spacing();
 
-    bool ready = st.status == DataStatus::Ok && !st.verifying;
+    bool ready = st.status == DataStatus::Ok && st.releaseError.empty() && !st.verifying;
     ImGui::BeginDisabled(!ready);
     if (ImGui::Button("  Play  ", ImVec2(ImGui::GetFontSize() * 10, ImGui::GetFontSize() * 2.4f))) play = true;
     ImGui::EndDisabled();
