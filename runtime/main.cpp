@@ -11,6 +11,7 @@
 #include "hw/hw.h"
 #include "ios/disc.h"
 #include "ios/ios.h"
+#include "mods/mods.h"
 #include "region.h"
 
 #include <algorithm>
@@ -107,6 +108,7 @@ int main(int argc, char** argv)
         else if (a == "--tas" && i + 1 < argc) { extern void Tas_Load(const char*); Tas_Load(argv[++i]); }
         else if (a == "--telemetry" && i + 1 < argc) { extern void Tas_SetTelemetry(const char*); Tas_SetTelemetry(argv[++i]); }
         else if (a == "--nand" && i + 1 < argc) nandDir = argv[++i];
+        else if (a == "--mods" && i + 1 < argc) Mods_SetDirOverride(argv[++i]);
         else if (a == "--mute") { extern bool g_audioMute; g_audioMute = true; }
         else if (a == "--scale" && i + 1 < argc) scaleOverride = std::clamp(atoi(argv[++i]), 1, 8);
         else if (a == "--shots" && i + 1 < argc) { extern int g_screenshotEvery; g_screenshotEvery = atoi(argv[++i]); }
@@ -172,10 +174,13 @@ int main(int argc, char** argv)
         dataDir = installDest.string();
     }
 
+    std::string gameId = Release_InstalledId(dataDir);
     {
         std::string error;
-        if (!Region_Select(Release_InstalledId(dataDir), error)) FATAL("Cannot start the game: {}", error);
+        if (!Region_Select(gameId, error)) FATAL("Cannot start the game: {}", error);
     }
+    Mods_SetLoaded(Mods_Scan(Mods_Roots(g_config.modsDir), g_config.mods, gameId));
+    { extern void SettingsUI_SetRelease(const std::string&); SettingsUI_SetRelease(gameId); }
     if (!Memory_Init()) FATAL("memory init failed");
     Crash_Init();
     Cpu_Init();
@@ -185,7 +190,7 @@ int main(int argc, char** argv)
     Renderer_Init();
     AudioOut_Init();
     { extern bool g_gpuThread; if (g_gpuThread) GX_StartThread(); }
-    if (!Disc_Open(dataDir, isoPath)) FATAL("cannot open disc data");
+    if (!Disc_Open(dataDir, isoPath, Mods_Loaded())) FATAL("cannot open disc data");
     std::string nand = nandDir.empty() ? root + "/nand" : nandDir;
     std::filesystem::create_directories(nand);
     IOS_Init(nand);

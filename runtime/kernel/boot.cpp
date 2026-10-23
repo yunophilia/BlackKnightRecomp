@@ -117,7 +117,7 @@ uint32_t Boot_Setup(const std::string& dataDir)
     }
 
     // --- FST and BI2 placed at the top of MEM1
-    std::vector<uint8_t> fst = LoadHostFile(dataDir + "/sys/fst.bin");
+    const std::vector<uint8_t>& fst = Disc_Fst();   // with the mods' files (ios/disc.h)
     std::vector<uint8_t> bi2 = LoadHostFile(dataDir + "/sys/bi2.bin");
     const uint8_t* hdr = Disc_Header();
     uint32_t fstMax = BE32(hdr + 0x42C) << 2;
