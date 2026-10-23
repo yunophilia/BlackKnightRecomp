@@ -1,12 +1,12 @@
 #include "config.h"
 #include "log.h"
+#include "platform/platform.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <format>
 #include <fstream>
 #include <sstream>
-#include <windows.h>
 
 Config g_config;
 static std::string s_path;
@@ -84,7 +84,7 @@ bool Config_Save()
     std::string text = Config_Text(g_config);
     bool ok = fwrite(text.data(), 1, text.size(), f) == text.size();
     ok = fclose(f) == 0 && ok;
-    if (ok) ok = MoveFileExA(tmp.c_str(), s_path.c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
+    if (ok) ok = Platform_ReplaceFile(tmp, s_path);
     if (!ok) LOG_WARN("config: cannot save {}", s_path);
     return ok;
 }

@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
 # Build with the presets in CMakePresets.json: clang-cl + Ninja on Windows (MSVC also
-# works), clang + Ninja on Linux. The runtime is Windows-only (D3D11, XAudio2, XInput),
-# so other platforms only build the recompiled game code for now.
+# works), clang + Ninja on Linux. The runtime keeps its platform code in runtime/platform:
+# Win32, Direct3D 11, XInput and XAudio2 on Windows; SDL3, dxvk-native (Direct3D 11 on
+# Vulkan) and vkd3d-shader on Linux (docs/linux.md).
 project(BlackKnightRecomp LANGUAGES CXX)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(LINUX ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,20 +46,34 @@ endif()
 # ---------------------------------------------------------------- disc image installer
 # nod (https://github.com/encounter/nod, MIT OR Apache-2.0, used under MIT) reads the
 # user's disc image; the prebuilt package is downloaded at configure time.
+include(FetchContent)
+set(NOD_VERSION v2.0.0-alpha.12)
 if(WIN32)
-    include(FetchContent)
-    set(NOD_VERSION v2.0.0-alpha.12)
     FetchContent_Declare(nod_prebuilt
         URL https://github.com/encounter/nod/releases/download/${NOD_VERSION}/libnod-windows-x86_64.tar.gz
         URL_HASH SHA256=c9dfecf8e52066a5222f3cb1cad18d0740c958ce65bf60cb84e780a3856ed881
         DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+elseif(LINUX)
+    FetchContent_Declare(nod_prebuilt
+        URL https://github.com/encounter/nod/releases/download/${NOD_VERSION}/libnod-linux-x86_64.tar.gz
+        URL_HASH SHA256=920adb1d2386c8728e0521f8d52809057c04bd46913433a0000ee0931d08d69f
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+endif()
+if(WIN32 OR LINUX)
     FetchContent_MakeAvailable(nod_prebuilt)
     find_package(nod REQUIRED CONFIG PATHS ${nod_prebuilt_SOURCE_DIR} NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 
     add_library(bkr_installer STATIC runtime/install/install.cpp runtime/install/verify.cpp runtime/install/releases.cpp)
     target_include_directories(bkr_installer PUBLIC runtime)
-    target_compile_definitions(bkr_installer PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
     target_link_libraries(bkr_installer PUBLIC nod::nod_static)
+    if(WIN32)
+        target_compile_definitions(bkr_installer PUBLIC NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+        target_sources(bkr_installer PRIVATE runtime/platform/win32/sha1.cpp)
+    else()
+        target_compile_options(bkr_installer PRIVATE -include ${CMAKE_SOURCE_DIR}/runtime/platform/compat.h)
+        target_sources(bkr_installer PRIVATE runtime/platform/linux/sha1.cpp)
+        target_link_libraries(bkr_installer PUBLIC pthread dl m)
+    endif()
     if(MSVC_FRONTEND)
         target_compile_options(bkr_installer PRIVATE /EHsc /utf-8)
         # nod's C dependencies are built against the DLL runtime; we link the static one
@@ -73,9 +91,62 @@ if(WIN32)
                                                  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
 endif()
 
+# ---------------------------------------------------------------- Linux platform libraries
+# Downloaded at configure time, pinned like nod and ImGui; their shared libraries are copied
+# next to the executable (out/) and into the AppImage (tools/package_linux.sh).
+#   SDL3 (https://libsdl.org, zlib): window, input, audio, dialogs
+#   dxvk-native (https://github.com/doitsujin/dxvk, zlib): Direct3D 11 on Vulkan, prebuilt
+#     for the Steam Runtime; its MinGW Windows/DirectX headers are LGPL-2.1+ (data
+#     structure definitions only, see its include/dxvk/README.md)
+#   vkd3d-shader (https://gitlab.winehq.org/wine/vkd3d, LGPL-2.1+): compiles the generated
+#     HLSL to DXBC (the D3DCompile of Wine and Proton), linked statically
+if(LINUX)
+    enable_language(C)
+    set(SDL_SHARED ON CACHE BOOL "" FORCE)
+    set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(SDL3
+        URL https://github.com/libsdl-org/SDL/releases/download/release-3.4.18/SDL3-3.4.18.tar.gz
+        URL_HASH SHA256=9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+    FetchContent_MakeAvailable(SDL3)
+
+    FetchContent_Declare(dxvk_native
+        URL https://github.com/doitsujin/dxvk/releases/download/v3.1.1/dxvk-native-3.1.1-steamrt-sniper.tar.gz
+        URL_HASH SHA256=506fa1ea5bb6ce9a89e11436f7ab5191bc0196e8a577e0cf0b16a45bbc9991b7
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+    FetchContent_MakeAvailable(dxvk_native)   # the archive's usr/ becomes the source dir
+    set(DXVK_LIBS ${dxvk_native_SOURCE_DIR}/lib/libdxvk_d3d11.so.0 ${dxvk_native_SOURCE_DIR}/lib/libdxvk_dxgi.so.0)
+    add_library(dxvk INTERFACE)
+    target_include_directories(dxvk SYSTEM INTERFACE ${dxvk_native_SOURCE_DIR}/include/dxvk)
+    target_link_libraries(dxvk INTERFACE ${DXVK_LIBS})
+
+    # autotools build; needs bison, flex, Perl's JSON module and the SPIR-V headers
+    include(ExternalProject)
+    ExternalProject_Add(vkd3d_build
+        URL https://dl.winehq.org/vkd3d/source/vkd3d-1.19.tar.xz
+        URL_HASH SHA256=034613605baab8ba84674f8d272cf22b5e86bc6bc03fc5728ef9bce07308baa6
+        DOWNLOAD_EXTRACT_TIMESTAMP FALSE
+        CONFIGURE_COMMAND <SOURCE_DIR>/configure --disable-tests --disable-demos --disable-doxygen-doc --enable-static
+                          --without-ncurses --without-opengl --without-xcb --with-spirv-tools=no
+                          CC=${CMAKE_C_COMPILER} "CFLAGS=-O2 -fPIC"
+        BUILD_COMMAND make -j8
+        INSTALL_COMMAND ""
+        BUILD_BYPRODUCTS <BINARY_DIR>/.libs/libvkd3d-shader.a)
+    ExternalProject_Get_Property(vkd3d_build SOURCE_DIR BINARY_DIR)
+    file(MAKE_DIRECTORY ${SOURCE_DIR}/include)
+    add_library(vkd3d_shader INTERFACE)
+    add_dependencies(vkd3d_shader vkd3d_build)
+    target_include_directories(vkd3d_shader SYSTEM INTERFACE ${SOURCE_DIR}/include)
+    target_link_libraries(vkd3d_shader INTERFACE ${BINARY_DIR}/.libs/libvkd3d-shader.a m pthread)
+endif()
+
 # ---------------------------------------------------------------- Dear ImGui (launcher, settings overlay)
 # https://github.com/ocornut/imgui (MIT), downloaded at configure time
-if(WIN32)
+if(WIN32 OR LINUX)
     FetchContent_Declare(imgui
         URL https://github.com/ocornut/imgui/archive/refs/tags/v1.92.9b.tar.gz
         URL_HASH SHA256=21d8a0a565e85dce943e375db00812c2f3f0ab21f3f0f7964e364a63422d7f99
@@ -83,9 +154,15 @@ if(WIN32)
     FetchContent_MakeAvailable(imgui)
     add_library(imgui STATIC ${imgui_SOURCE_DIR}/imgui.cpp ${imgui_SOURCE_DIR}/imgui_draw.cpp
                              ${imgui_SOURCE_DIR}/imgui_tables.cpp ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-                             ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp)
+                             ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp)
     target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
     target_compile_definitions(imgui PUBLIC IMGUI_DISABLE_OBSOLETE_FUNCTIONS)
+    if(WIN32)
+        target_sources(imgui PRIVATE ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp)
+    else()
+        target_sources(imgui PRIVATE ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp)
+        target_link_libraries(imgui PUBLIC SDL3::SDL3 dxvk)
+    endif()
 endif()
 
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/generated/sources.cmake)
@@ -113,14 +190,22 @@ else()
     target_compile_options(ppcrecomp PRIVATE -O2 -fno-exceptions -fno-strict-aliasing -w)
 endif()
 
-if(NOT WIN32)
-    message(STATUS "The runtime is Windows-only: building the recompiled code (ppcrecomp) only")
+if(NOT WIN32 AND NOT LINUX)
+    message(STATUS "The runtime supports Windows and Linux: building the recompiled code (ppcrecomp) only")
     return()
 endif()
 
 # ---------------------------------------------------------------- runtime
+# shared code, plus one platform's implementation of runtime/platform/*.h
 file(GLOB_RECURSE RUNTIME_SOURCES CONFIGURE_DEPENDS runtime/*.cpp)
-list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "/runtime/install/")
+list(FILTER RUNTIME_SOURCES EXCLUDE REGEX "/runtime/(install|platform)/")
+if(WIN32)
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS runtime/platform/win32/*.cpp)
+else()
+    file(GLOB PLATFORM_SOURCES CONFIGURE_DEPENDS runtime/platform/linux/*.cpp)
+endif()
+list(FILTER PLATFORM_SOURCES EXCLUDE REGEX "/sha1[.]cpp$")   # in bkr_installer
+list(APPEND RUNTIME_SOURCES ${PLATFORM_SOURCES})
 add_executable(BlackKnightRecomp ${RUNTIME_SOURCES})
 target_include_directories(BlackKnightRecomp PRIVATE runtime runtime/cpu generated)
 target_sources(BlackKnightRecomp PRIVATE $<TARGET_OBJECTS:ppcrecomp>)
@@ -132,7 +217,11 @@ add_custom_target(bkr_version
     BYPRODUCTS ${BKR_VERSION_CPP} VERBATIM)
 target_sources(BlackKnightRecomp PRIVATE ${BKR_VERSION_CPP})
 add_dependencies(BlackKnightRecomp bkr_version)
-target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
+if(WIN32)
+    target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
+else()
+    target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui SDL3::SDL3 dxvk vkd3d_shader pthread dl)
+endif()
 # the scripts in tools/ and the shader cache expect the game in out/
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
@@ -140,7 +229,9 @@ set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CM
 if(BKR_CALL_COUNTS)
     set_target_properties(BlackKnightRecomp PROPERTIES OUTPUT_NAME BlackKnightRecomp_counts)
 endif()
-target_compile_definitions(BlackKnightRecomp PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+if(WIN32)
+    target_compile_definitions(BlackKnightRecomp PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+endif()
 if(MSVC_FRONTEND)
     target_compile_options(BlackKnightRecomp PRIVATE /EHsc /std:c++latest /utf-8 $<$<CONFIG:RelWithDebInfo>:/Ob2>)
     if(CLANG)
@@ -149,4 +240,14 @@ if(MSVC_FRONTEND)
         target_compile_options(BlackKnightRecomp PRIVATE /wd4611)
     endif()
     target_link_options(BlackKnightRecomp PRIVATE /STACK:268435456 /SUBSYSTEM:CONSOLE)
+endif()
+if(LINUX)
+    # MSVC runtime names (compat.h) everywhere; type punning as with MSVC
+    target_compile_options(BlackKnightRecomp PRIVATE -include ${CMAKE_SOURCE_DIR}/runtime/platform/compat.h
+                           -fno-strict-aliasing -Wno-unused-function -Wno-unused-variable)
+    # finds libSDL3 and dxvk next to itself (out/ and the AppImage)
+    set_target_properties(BlackKnightRecomp PROPERTIES BUILD_RPATH "$ORIGIN" INSTALL_RPATH "$ORIGIN")
+    add_custom_command(TARGET BlackKnightRecomp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_SONAME_FILE:SDL3-shared> ${DXVK_LIBS} $<TARGET_FILE_DIR:BlackKnightRecomp>
+        VERBATIM)
 endif()
