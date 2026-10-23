@@ -81,6 +81,7 @@ void Check(State& st)
         std::string id = Release_InstalledId(st.data);
         if (const GameRelease* r = Release_Find(id)) st.release = std::string(r->name) + " (" + id + ")";
         Region_Select(id, st.releaseError);
+        SettingsUI_SetRelease(id);
     }
     LOG_INFO("launcher: game data {} {}", st.data.string(),
              st.status == DataStatus::Ok ? "ok" : st.status == DataStatus::Missing ? "not installed" : "damaged: " + st.problem);
@@ -120,6 +121,15 @@ void DrawHome(State& st, bool& play, const std::string& isoPath, const fs::path&
     }
     if (!st.releaseError.empty()) ImGui::TextColored(red, "%s", st.releaseError.c_str());
     ImGui::TextDisabled("%s", st.data.string().c_str());
+    if (st.status == DataStatus::Ok)
+    {
+        // mods load on top of the installed files; the file checks only look at the latter
+        std::vector<std::string> mods = SettingsUI_ActiveMods();
+        std::string list;
+        for (auto& m : mods) list += (list.empty() ? "" : ", ") + m;
+        if (mods.empty()) ImGui::TextDisabled("Mods: none (see Settings > Mods)");
+        else ImGui::TextWrapped("Mods active (%d): %s", (int)mods.size(), list.c_str());
+    }
     ImGui::Spacing();
 
     bool ready = st.status == DataStatus::Ok && st.releaseError.empty() && !st.verifying;
@@ -153,6 +163,7 @@ void DrawHome(State& st, bool& play, const std::string& isoPath, const fs::path&
     else if (!st.verifyResult.empty())
         ImGui::TextWrapped("%s", st.verifyResult.c_str());
     ImGui::TextDisabled("Install reads your own disc image (ISO, RVZ, WIA, WBFS); it is not needed afterwards.");
+    ImGui::TextDisabled("The checks look at the installed files only; mods are loaded on top of them.");
 
     ImGui::Spacing();
     ImGui::SeparatorText("Controls");

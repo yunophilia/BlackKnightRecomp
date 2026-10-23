@@ -1,5 +1,8 @@
 #pragma once
+#include "mods/mods.h"
+
 #include <string>
+#include <vector>
 
 // User settings loaded from config.ini next to the executable (created with
 // defaults on first run). Command line options override them.
@@ -34,9 +37,13 @@ struct Config
     // names (SPACE, J, LSHIFT, MOUSE1, ...; see input/gamepad.cpp) or NONE.
     std::string keys[21] = { "SPACE", "J, MOUSE1", "K", "L", "LSHIFT, MOUSE2", "Q", "ENTER", "BACKSPACE", "NONE", "NONE",
                              "U", "NONE", "H", "UP", "DOWN", "LEFT", "RIGHT", "W", "S", "A", "D" };
+    // [Mods] load order and on/off state by mod folder (mods/mods.h); mods not listed load
+    // after these, enabled
+    std::vector<ModSetting> mods;
     // [Paths]
     std::string dataDir;
     std::string isoPath;
+    std::string modsDir;   // empty: mods/ next to the exe or game/mods
 };
 
 extern Config g_config;
