@@ -2,12 +2,15 @@
 #include "../config.h"
 #include "../gx/video.h"
 #include "../input/gamepad.h"
+#include "../mods/mods.h"
 #include "../version.h"
 
 #include <imgui.h>
 #include <windows.h>
+#include <shellapi.h>
 
 #include <algorithm>
+#include <filesystem>
 #include <format>
 #include <string>
 
@@ -250,7 +253,135 @@ void SystemTab(SettingsHost host)
     ImGui::Spacing();
     ImGui::TextDisabled("Settings file: %s", Config_Path().c_str());
 }
+
+// the mods folder as last scanned, in load order with the settings' on/off state
+std::vector<ModInfo> s_mods;
+bool s_modsScanned = false;
+std::string s_modsRelease;
+
+void ScanMods()
+{
+    s_mods = Mods_Scan(Mods_Roots(g_config.modsDir), g_config.mods, s_modsRelease);
+    s_modsScanned = true;
+}
+
+// mods that load with the current settings differ from the ones the game started with
+bool ModsChangedSinceStart()
+{
+    std::vector<std::string> now, loaded;
+    for (auto& m : s_mods)
+        if (m.enabled && m.forRelease) now.push_back(m.folder);
+    for (auto& m : Mods_Loaded())
+        if (m.enabled && m.forRelease) loaded.push_back(m.folder);
+    return now != loaded;
+}
+
+void ModsTab(SettingsHost host)
+{
+    if (!s_modsScanned) ScanMods();
+    std::filesystem::path dir = Mods_MainDir(g_config.modsDir);
+    auto u8 = dir.u8string();
+    std::string dirText(u8.begin(), u8.end());
+    ImGui::SeparatorText("Mods");
+    ImGui::TextWrapped("File-replacement mods (skins, HUD changes, ...): one folder per mod in %s. "
+                       "The installed game files are never changed.", dirText.c_str());
+    if (ImGui::Button("Open mods folder"))
+    {
+        std::error_code ec;
+        std::filesystem::create_directories(dir, ec);
+        ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    }
+    Help("Open the mods folder in Explorer (created if it does not exist).");
+    ImGui::SameLine();
+    if (ImGui::Button("Refresh")) ScanMods();
+    Help("Look for new or removed mods.");
+    if (host == SettingsHost::InGame && ModsChangedSinceStart())
+        ImGui::TextColored(ImGui::GetStyle().Colors[ImGuiCol_CheckMark], "Restart the game to load the changed mods.");
+
+    ImGui::SeparatorText("Load order (a mod higher in the list wins when two replace the same file)");
+    if (s_mods.empty())
+    {
+        ImGui::TextDisabled("No mods found. Put each mod's folder in the mods folder, then press Refresh.");
+        return;
+    }
+    int move = -1, moveBy = 0;
+    bool changed = false;
+    if (ImGui::BeginTable("mods", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+    {
+        ImGui::TableSetupColumn("Mod", ImGuiTableColumnFlags_WidthStretch, 3);
+        ImGui::TableSetupColumn("Author", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+        ImGui::TableSetupColumn("Version", ImGuiTableColumnFlags_WidthStretch, 1);
+        ImGui::TableSetupColumn("Order", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableHeadersRow();
+        for (int i = 0; i < (int)s_mods.size(); i++)
+        {
+            ModInfo& m = s_mods[i];
+            ImGui::PushID(m.folder.c_str());   // focus follows a mod when it moves
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            std::string help = m.description.empty() ? m.title : m.title + ": " + m.description;
+            help += " (folder " + m.folder + ", " + std::to_string(m.fileCount) + " files)";
+            if (!m.forRelease) help += " Not for this release of the game (mod.ini releases), so it is not loaded.";
+            std::string label = m.title + RestartTag(host, true);
+            if (ImGui::Checkbox(label.c_str(), &m.enabled)) changed = true;
+            if (ImGui::IsItemHovered() || ImGui::IsItemFocused())
+            {
+                static std::string s_modHelp;
+                s_modHelp = help;
+                s_help = s_modHelp.c_str();
+            }
+            if (!m.forRelease)
+            {
+                ImGui::SameLine();
+                ImGui::TextDisabled("(not for this release)");
+            }
+            ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(m.author.c_str());
+            ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(m.version.c_str());
+            ImGui::TableNextColumn();
+            ImGui::BeginDisabled(i == 0);
+            if (ImGui::ArrowButton("up", ImGuiDir_Up)) { move = i; moveBy = -1; }
+            ImGui::EndDisabled();
+            Help("Move up: load earlier (wins over the mods below).");
+            ImGui::SameLine();
+            ImGui::BeginDisabled(i + 1 == (int)s_mods.size());
+            if (ImGui::ArrowButton("down", ImGuiDir_Down)) { move = i; moveBy = 1; }
+            ImGui::EndDisabled();
+            Help("Move down: load later.");
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+    }
+    if (move >= 0)
+    {
+        std::swap(s_mods[move], s_mods[move + moveBy]);
+        changed = true;
+    }
+    if (changed)
+    {
+        g_config.mods = Mods_Settings(s_mods);
+        Changed(host, true);
+    }
+}
 }   // namespace
+
+void SettingsUI_SetRelease(const std::string& gameId)
+{
+    s_modsRelease = gameId;
+    ScanMods();
+}
+
+std::vector<std::string> SettingsUI_ActiveMods()
+{
+    if (!s_modsScanned) ScanMods();
+    std::vector<std::string> titles;
+    for (auto& m : s_mods)
+        if (m.enabled && m.forRelease) titles.push_back(m.title);
+    return titles;
+}
 
 void SettingsUI_Draw(SettingsHost host)
 {
@@ -259,7 +390,8 @@ void SettingsUI_Draw(SettingsHost host)
     if (ImGui::BeginTabBar("settings"))
     {
         struct Tab { const char* name; void (*draw)(SettingsHost); };
-        static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab } };
+        static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab },
+                                    { "Mods", ModsTab } };
         // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
         static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
         static int shotFrames = 0;

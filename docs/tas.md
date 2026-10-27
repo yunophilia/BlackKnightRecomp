@@ -20,7 +20,8 @@ python tools/tas/compare.py               # 30 vs 60 fps report -> out/tas/repor
 own `nand/` is never used), starts the game minimized and collects `out/tas/<tag>.log`
 and `<tag>.csv`. By default runs are low impact: muted, 1x internal resolution,
 below-normal priority (`-Full` uses the real settings). Game options for scripted runs:
-`--tas <script> --telemetry <csv> --nand <dir> --mute --scale <n>`.
+`--tas <script> --telemetry <csv> --nand <dir> --mute --scale <n>` (and `--mods <dir>` to load mods
+from another folder).
 
 Test saves: `out/tasnand/base` (early progress) and `out/tasnand/full` (community PAL
 99% save, every mission unlocked).

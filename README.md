@@ -210,7 +210,7 @@ from the command line.
 
 In game, View (Back) or F1 opens the same settings over the running game. Changes are
 saved to `config.ini` at once and most apply immediately; frame rate, internal
-resolution, widescreen, language, texture packs and the graphics thread ask to restart
+resolution, widescreen, language, texture packs, mods and the graphics thread ask to restart
 the game. The overlay also has the Wii HOME Menu, restart and quit.
 
 `config.ini` next to the executable holds the settings (it can also be edited by hand):
@@ -237,12 +237,47 @@ the game. The overlay also has the Wii HOME Menu, restart and quit.
   `LB`, `RB`, `LT`, `RT`, `START`, `BACK`, `LS`, `RS`, D-pad `UP`/`DOWN`/`LEFT`/`RIGHT`,
   or `NONE`).
 * `data`, `iso`: game file locations, if they are not in `game/`.
+* `[Mods]`, `mods`: mod load order and on/off state, and the mods folder if it is not
+  `mods/` (see below).
+
+## Mods
+
+Besides texture packs (above), most mods for the game replace game files: character
+skins, HUD changes and the like. Put each mod's folder in `mods/` next to the
+executable (`game/mods/` works too). The files in a mod folder mirror the disc's `files/`
+folder (`sonic.one`, `adx/`, `event/`, `sound/`, ...), either directly in the mod folder or
+in a `files/` subfolder. An optional `mod.ini` gives the mod's `name` (or `title`),
+`author`, `version` and `description`; without one the folder name is shown.
+
+Mods made for the Storybook Mod Manager (most of the game's mods on GameBanana) work as
+they are: extract the archive and drop the mod's folder (the one with `mod.ini`) into
+`mods/`. Their optional extras (the manager's "Configure" choices, usually in an
+`Additional Files` folder) are not applied; copy such a file over the one at the mod's top
+level to use it instead.
+
+* The installed game files are never changed: when the game reads a file, the first enabled
+  mod in the load order that has it supplies it, otherwise the installed file is read. A mod
+  file may be larger or smaller than the original. Mod files that are not game files are
+  ignored.
+* New mods are enabled and load after the ones already known. The Mods tab of the settings
+  (launcher and in game) lists them with author and version, turns them on or off and changes
+  the load order; changes in game ask to restart. The launcher shows which mods are active.
+* The file checks (on start and "Check all game files") look at the installed files only,
+  so mods never make the game data count as damaged.
+* Mods apply to every release (USA, Europe, Japan): most replace files that have the same
+  name in all of them. A mod for one release only can say so in its `mod.ini` with
+  `releases = RENE8P` (game IDs or `USA`, `Europe`, `Japan`, comma-separated).
+* `BlackKnightRecomp.log` lists the files each mod replaces and warns when two enabled mods
+  replace the same file (the one higher in the load order wins).
 
 ## Testing
 
 * `tools/smoke_test.ps1 [-Fps60]`: boots into mission 1 with a scripted input run and
   checks the log (no errors, expected milestones, frame rate) and screenshots.
 * `tools/gen_soak.py`: random-input scripts for long stability runs (see its header).
+* `out/bkr_mods_test.exe`: checks the mod file overlay (load order, size changes, partial
+  reads) on a small synthetic disc. `--mods <folder>` loads mods from another folder for one
+  run.
 * `--capture <frame>` writes a per-draw log, textures and EFB states for one frame;
   `--profile <start> <seconds>` (plus `--profile-gx`) prints a sampling profile.
 

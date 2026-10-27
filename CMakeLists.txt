@@ -71,6 +71,17 @@ if(WIN32)
     set_target_properties(bkr_install PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                  RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
                                                  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
+
+    # bkr_mods_test: checks the mod overlay of the disc layer on a synthetic disc (tools/mods_test)
+    add_executable(bkr_mods_test tools/mods_test/main.cpp runtime/ios/disc.cpp runtime/mods/mods.cpp)
+    target_include_directories(bkr_mods_test PRIVATE runtime)
+    target_compile_definitions(bkr_mods_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+    if(MSVC_FRONTEND)
+        target_compile_options(bkr_mods_test PRIVATE /EHsc /std:c++latest /utf-8)
+    endif()
+    set_target_properties(bkr_mods_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
+                                                   RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
+                                                   RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
 endif()
 
 # ---------------------------------------------------------------- Dear ImGui (launcher, settings overlay)
