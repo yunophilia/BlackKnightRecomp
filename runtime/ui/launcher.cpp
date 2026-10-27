@@ -2,6 +2,7 @@
 // full file check), settings, and Play. Its own small window and D3D11 device; both are
 // gone before the game creates its window.
 #include "settings_ui.h"
+#include "ui_image.h"
 #include "ui_shot.h"
 #include "../config.h"
 #include "../install/verify.h"
@@ -14,6 +15,7 @@
 
 #include <d3d11.h>
 #include <dxgi.h>
+#include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <thread>
@@ -27,6 +29,46 @@ bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const st
 
 namespace
 {
+// test aid: BKR_UI_SHOT_KEYS=<ImGui key names, comma-separated> (e.g. "DownArrow,Space" or
+// "GamepadDpadDown,GamepadFaceDown") presses those keys one after the other before the
+// screenshot (from BKR_UI_SHOT_KEYS_DELAY seconds, default 1), to check keyboard and
+// controller navigation
+void ShotKeys()
+{
+    static std::vector<ImGuiKey> keys;
+    static ULONGLONG start = 0;
+    if (!start)
+    {
+        const char* delay = getenv("BKR_UI_SHOT_KEYS_DELAY");
+        start = GetTickCount64() + (delay ? atoi(delay) : 1) * 1000ull;
+        if (const char* list = getenv("BKR_UI_SHOT_KEYS"))
+        {
+            std::string name;
+            for (const char* c = list;; c++)
+            {
+                if (*c && *c != ',') { name += *c; continue; }
+                for (int k = ImGuiKey_NamedKey_BEGIN; k < ImGuiKey_NamedKey_END; k++)
+                    if (name == ImGui::GetKeyName((ImGuiKey)k)) keys.push_back((ImGuiKey)k);
+                name.clear();
+                if (!*c) break;
+            }
+        }
+    }
+    ImGuiIO& io = ImGui::GetIO();
+    if (keys.empty() || GetTickCount64() < start) return;
+    io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+    // one key every 200 ms, held for 50 ms
+    static size_t next = 0;
+    static bool down = false;
+    static ULONGLONG at = 0;
+    ULONGLONG now = GetTickCount64();
+    if (next >= keys.size() || now < at) return;
+    io.AddKeyEvent(keys[next], !down);
+    if (down) next++;
+    at = now + (down ? 150 : 50);
+    down = !down;
+}
+
 ID3D11Device* s_dev = nullptr;
 ID3D11DeviceContext* s_ctx = nullptr;
 IDXGISwapChain* s_swap = nullptr;
@@ -81,7 +123,7 @@ void Check(State& st)
         std::string id = Release_InstalledId(st.data);
         if (const GameRelease* r = Release_Find(id)) st.release = std::string(r->name) + " (" + id + ")";
         Region_Select(id, st.releaseError);
-        SettingsUI_SetRelease(id);
+        SettingsUI_SetRelease(id, st.data.string());
     }
     LOG_INFO("launcher: game data {} {}", st.data.string(),
              st.status == DataStatus::Ok ? "ok" : st.status == DataStatus::Missing ? "not installed" : "damaged: " + st.problem);
@@ -182,9 +224,10 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
     wc.hIcon = LoadIconW(nullptr, MAKEINTRESOURCEW(32512));
     wc.lpszClassName = L"BlackKnightRecompLauncher";
     RegisterClassW(&wc);
-    int w = 900, h = 640;
     RECT wa;
     SystemParametersInfoW(SPI_GETWORKAREA, 0, &wa, 0);
+    // room for the mod browser, within the screen
+    int w = std::min(1060, (int)(wa.right - wa.left) * 9 / 10), h = std::min(740, (int)(wa.bottom - wa.top) * 9 / 10);
     HWND hwnd = CreateWindowW(wc.lpszClassName, L"Sonic and the Black Knight - Recompiled", WS_OVERLAPPEDWINDOW,
                               wa.left + (wa.right - wa.left - w) / 2, wa.top + (wa.bottom - wa.top - h) / 2, w, h,
                               nullptr, nullptr, wc.hInstance, nullptr);
@@ -217,16 +260,21 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
     UINT n = GetWindowsDirectoryA(winDir, MAX_PATH);
     std::string font = n ? std::string(winDir, n) + "\\Fonts\\segoeui.ttf" : "";
     if (!font.empty() && GetFileAttributesA(font.c_str()) != INVALID_FILE_ATTRIBUTES) io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
+    SettingsUI_AddFallbackFonts();
     SettingsUI_ApplyStyle();
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(s_dev, s_ctx);
+    UiImage_SetDevice(s_dev);
 
     State st;
     st.data = dataDir.empty() ? installDest : fs::path(dataDir);
     Check(st);
     // test aid: BKR_UI_SHOT=<file.bmp> saves the launcher (BKR_UI_SHOT_TAB=settings: the
-    // settings tab) and quits, without asking for a disc image
+    // settings tab) and quits, without asking for a disc image; BKR_UI_SHOT_WAIT=<seconds>
+    // waits that long first (downloads in the Mods tab)
     const char* shot = getenv("BKR_UI_SHOT");
+    const char* shotWait = getenv("BKR_UI_SHOT_WAIT");
+    ULONGLONG shotAt = GetTickCount64() + (shotWait ? atoi(shotWait) : 0) * 1000ull;
     const char* shotTab = getenv("BKR_UI_SHOT_TAB");
     st.promptInstall = st.status != DataStatus::Ok && !shot;
 
@@ -260,6 +308,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
+        if (shot) ShotKeys();
         if (shot)
         {
             // screenshots run minimized (no client area): lay out for the back buffer
@@ -303,7 +352,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         s_ctx->OMSetRenderTargets(1, &s_rtv, nullptr);
         s_ctx->ClearRenderTargetView(s_rtv, clear);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        if (shot && ++frames > 5)
+        if (shot && ++frames > 5 && GetTickCount64() >= shotAt)
         {
             UI_SaveBoundTarget(s_dev, s_ctx, shot);
             s_quit = true;
@@ -313,6 +362,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
 
     st.verify.cancel = true;
     if (st.verifyThread.joinable()) st.verifyThread.join();
+    UiImage_SetDevice(nullptr);
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext(imgui);

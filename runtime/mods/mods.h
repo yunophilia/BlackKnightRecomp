@@ -60,6 +60,10 @@ struct ModOverride
 std::map<std::string, ModOverride> Mods_BuildOverlay(const std::vector<ModInfo>& mods,
                                                      const std::vector<std::string>& discFiles);
 
+// p as an absolute path with Windows' long-path prefix (\\?\), so files deep inside mod
+// folders and archives open even past 260 characters
+std::filesystem::path Mods_LongPath(const std::filesystem::path& p);
+
 // The mods loaded into the running game (set at start-up, shown by the in-game settings)
 void Mods_SetLoaded(std::vector<ModInfo> mods);
 const std::vector<ModInfo>& Mods_Loaded();

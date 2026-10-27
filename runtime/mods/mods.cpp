@@ -125,12 +125,13 @@ std::vector<std::pair<std::string, fs::path>> ListFiles(const fs::path& root)
 {
     std::vector<std::pair<std::string, fs::path>> out;
     std::error_code ec;
-    for (auto it = fs::recursive_directory_iterator(root, fs::directory_options::skip_permission_denied, ec);
+    fs::path longRoot = Mods_LongPath(root);
+    for (auto it = fs::recursive_directory_iterator(longRoot, fs::directory_options::skip_permission_denied, ec);
          it != fs::recursive_directory_iterator(); it.increment(ec))
     {
         if (ec) break;
         if (!it->is_regular_file(ec)) continue;
-        std::string rel = Utf8(it->path().lexically_relative(root));
+        std::string rel = Utf8(it->path().lexically_relative(longRoot));
         std::replace(rel.begin(), rel.end(), '\\', '/');
         out.push_back({ rel, it->path() });
     }
@@ -289,6 +290,18 @@ std::map<std::string, ModOverride> Mods_BuildOverlay(const std::vector<ModInfo>&
                      mods[who[0]].title, others);
         }
     return result;
+}
+
+fs::path Mods_LongPath(const fs::path& p)
+{
+    const std::wstring prefix = LR"(\\?\)";
+    if (p.native().rfind(prefix, 0) == 0) return p;
+    std::error_code ec;
+    fs::path abs = fs::absolute(p, ec).lexically_normal();
+    abs.make_preferred();
+    const std::wstring& w = abs.native();
+    if (w.rfind(LR"(\\)", 0) == 0) return fs::path(prefix + L"UNC\\" + w.substr(2));   // \\server\share
+    return fs::path(prefix + w);
 }
 
 void Mods_SetLoaded(std::vector<ModInfo> mods) { s_loaded = std::move(mods); }

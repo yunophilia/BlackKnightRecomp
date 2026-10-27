@@ -10,6 +10,9 @@ New-Item -ItemType Directory -Force (Join-Path $dist "game") | Out-Null
 Copy-Item $exe $dist -Force
 Copy-Item (Join-Path $root "README.md") $dist -Force
 Copy-Item (Join-Path $root "LICENSE") $dist -Force   # GPL-2.0: the licence travels with the binary
+# licences of the libraries built into the exe (collected by the build)
+New-Item -ItemType Directory -Force (Join-Path $dist "licenses") | Out-Null
+Copy-Item -Force (Join-Path $root "out\licenses\*") (Join-Path $dist "licenses")
 # Ship a precompiled shader cache: the GX states recorded in data/shadercache (plus any the
 # development build has seen in out/shadercache), compiled here with Microsoft's HLSL
 # compiler. A fresh install then does not compile on first play, and under Wine/Proton the
@@ -34,5 +37,7 @@ The launcher installs the game data into this folder; the image is not needed af
 Optional, if you have one:
   textures\RENE8P\...                       (Dolphin-format HD texture pack; the folder is
                                             named by the game ID: RENE8P, RENP8P or RENJ8P)
+  mods\<mod name>\...                       (file-replacement mods; or get them in the game:
+                                            Settings > Mods > Get mods)
 "@ | Set-Content (Join-Path $dist "game\ABOUT_THIS_FOLDER.txt")
 "packaged to $dist"

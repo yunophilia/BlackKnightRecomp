@@ -180,7 +180,7 @@ int main(int argc, char** argv)
         if (!Region_Select(gameId, error)) FATAL("Cannot start the game: {}", error);
     }
     Mods_SetLoaded(Mods_Scan(Mods_Roots(g_config.modsDir), g_config.mods, gameId));
-    { extern void SettingsUI_SetRelease(const std::string&); SettingsUI_SetRelease(gameId); }
+    { extern void SettingsUI_SetRelease(const std::string&, const std::string&); SettingsUI_SetRelease(gameId, dataDir); }
     if (!Memory_Init()) FATAL("memory init failed");
     Crash_Init();
     Cpu_Init();
