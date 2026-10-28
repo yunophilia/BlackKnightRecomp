@@ -22,8 +22,10 @@ on:
   push:
     tags: ["v*.*.*"]
 
+# read-only by default: the build jobs run third-party code (the toolchain PPA, the
+# FetchContent dependencies, appimagetool); only the publish job can write (the release)
 permissions:
-  contents: write   # create the release
+  contents: read
 
 env:
   # build inputs: tag in yunophilia/BlackKnightRecomp-private (see the header)
@@ -45,6 +47,7 @@ jobs:
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
           ref: ${{ env.PRIVATE_INPUTS_REF }}
           path: private-inputs
+          persist-credentials: false   # the token is not kept in the checkout
 
       # Private repository layout, one folder per release (the USA files may also be at the
       # top level, as before):
@@ -104,6 +107,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # docs/linux.md lists the same packages. First, so the packages' install scripts (run
+      # as root) run before the private inputs or their token are on the runner.
+      - name: Install build tools and libraries
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y clang-15 g++-13 ninja-build bison flex libjson-perl libvulkan-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libxfixes-dev libxinerama-dev libwayland-dev wayland-protocols libdecor-0-dev libegl-dev libgl-dev \
+            libdrm-dev libgbm-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libudev-dev libdbus-1-dev \
+            libibus-1.0-dev libusb-1.0-0-dev
+
       - name: Fetch build inputs (private)
         uses: actions/checkout@v4
         with:
@@ -111,6 +126,7 @@ jobs:
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
           ref: ${{ env.PRIVATE_INPUTS_REF }}
           path: private-inputs
+          persist-credentials: false   # the token is not kept in the checkout
 
       - name: Place build inputs
         run: |
@@ -132,17 +148,6 @@ jobs:
         run: |
           python tools/build_generated.py --require-all
           git diff --exit-code runtime/game_addrs.inc
-
-      # docs/linux.md lists the same packages
-      - name: Install build tools and libraries
-        run: |
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          sudo apt-get install -y clang-15 g++-13 ninja-build bison flex libjson-perl libvulkan-dev \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
-            libxfixes-dev libxinerama-dev libwayland-dev wayland-protocols libdecor-0-dev libegl-dev libgl-dev \
-            libdrm-dev libgbm-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libudev-dev libdbus-1-dev \
-            libibus-1.0-dev libusb-1.0-0-dev
 
       - name: Build
         env:
@@ -182,6 +187,8 @@ jobs:
   publish:
     needs: [windows, appimage]
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write   # create the release
     steps:
       - uses: actions/download-artifact@v4
         with:
