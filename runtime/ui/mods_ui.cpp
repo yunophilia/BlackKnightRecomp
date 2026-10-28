@@ -28,7 +28,7 @@ namespace
 {
 // ---------------------------------------------------------------- installed mods
 std::vector<ModInfo> s_mods;               // the mods folder as last scanned, in load order
-std::vector<InstalledMod> s_records;       // mods/gamebanana.ini
+std::vector<InstalledMod> s_records;       // mods/gamebanana.json
 bool s_scanned = false;
 std::string s_release;                     // game ID
 fs::path s_dataDir;

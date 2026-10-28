@@ -5,7 +5,7 @@
 //    replacements (FST offsets and sizes, partial reads) and the unmodded disc;
 //  * installing archives (zip and 7z written here, RAR from data/): mod folders, files/ layouts, texture packs,
 //    variants, code mods and Dolphin-only archives (refused), unsafe paths, updates, removal;
-//  * hostile input: injected or edited gamebanana.ini records, device names, other formats,
+//  * hostile input: injected or edited install records (gamebanana.json, the old .ini), device names, other formats,
 //    entry counts, plain-http downloads;
 //  * reading GameBanana's API answers.
 // Exit code 0 when every check passes.
@@ -19,6 +19,8 @@
 #include "mods/mod_install.h"
 #include "mods/mods.h"
 #include "net/http.h"
+
+#include <nlohmann/json.hpp>
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -421,7 +423,7 @@ static void InstallTests()
     fs::remove_all(tmp, ec);
 }
 
-// --- what a hostile archive, API answer or edited gamebanana.ini can do
+// --- what a hostile archive, API answer or edited install record can do
 static void HardeningTests()
 {
     fs::path tmp = fs::temp_directory_path() / "bkr_mods_hardening_test";
@@ -448,33 +450,42 @@ static void HardeningTests()
     WriteFile(tmp / "outside" / "keep.txt", "KEEP");
     WriteFile(tmp / "textures" / "keep.txt", "KEEP");
 
-    // API text with line breaks cannot add lines to gamebanana.ini or mod.ini
+    // text from GameBanana with line breaks, quotes and paths stays plain text
     WriteArchive(arc / "inject.zip", false, { { "Inject/a.bin", "A" } });
-    InstallSource s = src(20, "Inject\nmod = ../outside");
-    s.version = "1\ntexture = RENE8P/../../outside";
-    s.fileName = "x.zip\r\n[21]\nmod = ../outside";
+    InstallSource s = src(20, "Inject\n[1]\nmod = ..\\..");
+    s.version = "1\n[1]\nmod = ..\\..\"C:/x";
+    s.fileName = "x\".zip\r\n\"mods\": [\"../outside\"]";
     s.author = "Me\nversion = 99";
     InstallResult r = ModInstall_Archive(arc / "inject.zip", s, t);
     CHECK(r.ok && r.modFolders.size() == 1 && r.modFolders[0] == "Inject");
-    std::string ini = ReadText(t.modsDir / "gamebanana.ini");
-    CHECK(ini.find("\nmod = ../") == std::string::npos && ini.find("\ntexture = ") == std::string::npos &&
-          ini.find("\n[21]") == std::string::npos);
     std::vector<InstalledMod> recs = ModInstall_Records(t.modsDir);
-    CHECK(recs.size() == 1 && recs[0].mods.size() == 1 && recs[0].mods[0] == "Inject" && recs[0].textures.empty());
+    CHECK(recs.size() == 1 && recs[0].name == s.name && recs[0].version == s.version && recs[0].fileName == s.fileName);
+    CHECK(recs[0].mods.size() == 1 && recs[0].mods[0] == "Inject" && recs[0].textures.empty());
+    CHECK(!fs::exists(t.modsDir / "gamebanana.ini") && fs::exists(t.modsDir / "gamebanana.json"));
     CHECK(ReadText(t.modsDir / "Inject" / "mod.ini").find("\nversion = 99") == std::string::npos);
 
-    // an edited record: folders outside mods/ and textures/<ID>/ are ignored...
-    {
-        std::ofstream f(t.modsDir / "gamebanana.ini", std::ios::binary | std::ios::app);
-        f << "\n[30]\nname = Thirty\nfile = 300\nmod = ../outside\nmod = " << (tmp / "outside").string()
-          << "\nmod = Inject/..\nmod = a/b\nmod = CON\nmod = .\ntexture = RENE8P/../../outside\ntexture = ..\\outside\n"
-          << "texture = RENE8P\ntexture = RENE8P/Pack\n";
-    }
+    // a hand-edited file: folders that are not right below mods/ or textures/<ID>/, and
+    // wrong types, are ignored...
+    fs::path recFile = t.modsDir / "gamebanana.json";
+    nlohmann::json doc = nlohmann::json::parse(ReadText(recFile));
+    doc["records"].push_back({ { "id", 30 }, { "name", "Thirty" }, { "file", 300 },
+                               { "mods", { "../outside", (tmp / "outside").string(), "Inject/..", "a/b", "CON", ".", "..",
+                                           "C:/x", 5, nullptr, nlohmann::json::array({ "Inject" }) } },
+                               { "textures", { "RENE8P/../../outside", "..\\outside", "RENE8P", "RENE8P/Pack", "C:/x/y" } } });
+    doc["records"].push_back({ { "id", "31" }, { "mods", nlohmann::json::array({ "Inject" }) } });          // id of the wrong type
+    doc["records"].push_back({ { "id", 32 }, { "mods", "Inject" } });                 // not a list
+    doc["records"].push_back({ { "id", 33 }, { "mods", nlohmann::json::array({ "../outside" }) }, { "textures", nlohmann::json::array({ "RENE8P/.." }) } });
+    doc["records"].push_back("not a record");
+    WriteFile(recFile, doc.dump(2));
     recs = ModInstall_Records(t.modsDir);
-    const InstalledMod* thirty = nullptr;
-    for (auto& x : recs)
-        if (x.modId == 30) thirty = &x;
-    CHECK(thirty && thirty->mods.empty() && thirty->textures.size() == 1 && thirty->textures[0] == "RENE8P/Pack");
+    auto find = [&](uint64_t id) -> const InstalledMod* {
+        for (auto& x : recs)
+            if (x.modId == id) return &x;
+        return nullptr;
+    };
+    CHECK(find(20) && find(30) && !find(31) && find(32) && find(33) && recs.size() == 4);
+    CHECK(find(30)->mods.empty() && find(30)->textures.size() == 1 && find(30)->textures[0] == "RENE8P/Pack");
+    CHECK(find(32)->mods.empty() && find(33)->mods.empty() && find(33)->textures.empty());
     // ...by an update (which replaces the record's folders)...
     WriteArchive(arc / "thirty.zip", false, { { "Thirty/a.bin", "30" }, { "RENE8P/tex1_8x8_00000000000000cc_3.png", "P" } });
     r = ModInstall_Archive(arc / "thirty.zip", src(30, "Thirty"), t);
@@ -482,15 +493,40 @@ static void HardeningTests()
           r.textureFolders[0] == "RENE8P/Pack");
     CHECK(ReadText(tmp / "outside" / "keep.txt") == "KEEP" && ReadText(tmp / "textures" / "keep.txt") == "KEEP");
     // ...and by Remove
-    {
-        std::ofstream f(t.modsDir / "gamebanana.ini", std::ios::binary | std::ios::app);
-        f << "\n[31]\nname = ThirtyOne\nmod = ../outside\ntexture = RENE8P/..\n";
-    }
     std::string msg;
-    ModInstall_Remove(t, 31, msg);
+    ModInstall_Remove(t, 33, msg);
+    ModInstall_Remove(t, 32, msg);
     CHECK(ModInstall_Remove(t, 30, msg) && !fs::exists(t.modsDir / "Thirty") && !fs::exists(t.texturesDir / "RENE8P" / "Pack"));
     CHECK(ReadText(tmp / "outside" / "keep.txt") == "KEEP" && ReadText(tmp / "textures" / "keep.txt") == "KEEP");
     CHECK(fs::exists(t.modsDir / "Inject" / "a.bin"));
+    recs = ModInstall_Records(t.modsDir);
+    CHECK(recs.size() == 1 && find(20));
+
+    // a broken file is ignored (and replaced by the next install)
+    std::string good = ReadText(recFile);
+    for (const char* bad : { "{ \"records\": [ {\"id\": 1, ", "[1, 2, 3]", "{\"records\": 7}", "" })
+    {
+        WriteFile(recFile, bad);
+        CHECK(ModInstall_Records(t.modsDir).empty());
+    }
+    WriteFile(recFile, good);
+
+    // gamebanana.ini from the first versions: moved to gamebanana.json once, same checks
+    InstallTargets old = t;
+    old.modsDir = tmp / "oldmods";
+    WriteFile(old.modsDir / "Old Mod" / "a.bin", "OLD");
+    WriteFile(old.texturesDir / "RENE8P" / "Old Pack" / "tex1_8x8_00000000000000dd_3.png", "P");
+    WriteFile(old.modsDir / "gamebanana.ini", "; old\n\n[80]\nname = Old\nfile = 800\nversion = 2\nmod = Old Mod\n"
+                                              "mod = ../outside\ntexture = RENE8P/Old Pack\ntexture = RENE8P/../..\n");
+    recs = ModInstall_Records(old.modsDir);
+    CHECK(recs.size() == 1 && recs[0].modId == 80 && recs[0].fileId == 800 && recs[0].name == "Old" && recs[0].version == "2");
+    CHECK(recs[0].mods.size() == 1 && recs[0].mods[0] == "Old Mod" && recs[0].textures.size() == 1 && recs[0].textures[0] == "RENE8P/Old Pack");
+    CHECK(fs::exists(old.modsDir / "gamebanana.json") && !fs::exists(old.modsDir / "gamebanana.ini") &&
+          fs::exists(old.modsDir / "gamebanana.ini.bak"));
+    CHECK(ModInstall_Records(old.modsDir).size() == 1);   // read from the JSON file now
+    CHECK(ModInstall_Remove(old, 80, msg) && !fs::exists(old.modsDir / "Old Mod") &&
+          !fs::exists(old.texturesDir / "RENE8P" / "Old Pack"));
+    CHECK(ReadText(tmp / "outside" / "keep.txt") == "KEEP" && ModInstall_Records(old.modsDir).empty());
 
     // Windows device names get a '_' (archive entries and names made from mod names)
     WriteArchive(arc / "devices.zip", false, { { "nul/a.bin", "A" }, { "nul/con.txt", "C" }, { "nul/Aux.Tar.gz", "X" },

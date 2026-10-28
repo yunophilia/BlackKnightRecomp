@@ -11,7 +11,7 @@
 //  * Dolphin-format textures (tex1_*.png/.dds): textures/<game ID>/<mod>/ (gx/hires.cpp).
 // Code patches (main.dol, .dol/.elf, xdelta/BPS/IPS) cannot work with the recompiled game:
 // such archives are refused. Dolphin settings and Gecko/Action Replay codes are skipped with
-// a note. What was installed is recorded in mods/gamebanana.ini for updates and removal.
+// a note. What was installed is recorded in mods/gamebanana.json for updates and removal.
 
 struct InstallSource
 {
@@ -42,7 +42,10 @@ struct InstallResult
 InstallResult ModInstall_Archive(const std::filesystem::path& archive, const InstallSource& source,
                                  const InstallTargets& targets, std::atomic<bool>* cancel = nullptr);
 
-// mods/gamebanana.ini: one section per installed GameBanana mod
+// mods/gamebanana.json: one record per installed GameBanana mod. Read as untrusted input:
+// mods/textures hold only safe folder names right below mods/ and textures/<game ID>/
+// (others are ignored). A gamebanana.ini from earlier versions is moved to the JSON file
+// once (and kept as gamebanana.ini.bak).
 struct InstalledMod
 {
     uint64_t modId = 0, fileId = 0;

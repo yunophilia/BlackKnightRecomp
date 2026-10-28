@@ -4,6 +4,7 @@
 
 #include <archive.h>
 #include <archive_entry.h>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <chrono>
@@ -13,10 +14,12 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <tuple>
 #include <windows.h>
 #include <shellapi.h>
 
 namespace fs = std::filesystem;
+using json = nlohmann::json;
 
 namespace
 {
@@ -116,7 +119,7 @@ std::string SafeName(const std::string& name)
     return s;
 }
 
-// text for one line of an .ini file (text from GameBanana could otherwise add lines)
+// text for one line of mod.ini (text from GameBanana could otherwise add lines)
 std::string OneLine(const std::string& text)
 {
     std::string s;
@@ -342,21 +345,29 @@ std::string Today()
     return std::format("{:04}-{:02}-{:02}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 }
 
-fs::path RecordsPath(const fs::path& modsDir) { return modsDir / "gamebanana.ini"; }
+// What was installed from GameBanana (for updates and removal). JSON, so text from
+// GameBanana is always escaped; still read as untrusted input (anyone can edit it).
+fs::path RecordsPath(const fs::path& modsDir) { return modsDir / "gamebanana.json"; }
+fs::path LegacyRecordsPath(const fs::path& modsDir) { return modsDir / "gamebanana.ini"; }   // before JSON
 
 bool WriteRecords(const fs::path& modsDir, const std::vector<InstalledMod>& recs)
 {
-    std::string s = "; Mods installed from GameBanana by the game's mod browser (for updates and removal)\n";
+    json list = json::array();
     for (auto& r : recs)
     {
-        s += std::format("\n[{}]\nname = {}\nfile = {}\nfile_name = {}\nversion = {}\nfile_added = {}\ndate = {}\n",
-                         r.modId, OneLine(r.name), r.fileId, OneLine(r.fileName), OneLine(r.version), r.fileAdded,
-                         OneLine(r.date));
+        json mods = json::array(), textures = json::array();
         for (auto& m : r.mods)
-            if (ValidRecordFolder(m, 1)) s += "mod = " + m + "\n";
+            if (ValidRecordFolder(m, 1)) mods.push_back(m);
         for (auto& t : r.textures)
-            if (ValidRecordFolder(t, 2)) s += "texture = " + t + "\n";
+            if (ValidRecordFolder(t, 2)) textures.push_back(t);
+        list.push_back({ { "id", r.modId }, { "file", r.fileId }, { "name", r.name }, { "file_name", r.fileName },
+                         { "version", r.version }, { "file_added", r.fileAdded }, { "date", r.date },
+                         { "mods", mods }, { "textures", textures } });
     }
+    json doc = { { "comment", "Mods installed from GameBanana by the game's mod browser (for updates and removal)" },
+                 { "records", list } };
+    // invalid UTF-8 in a name becomes U+FFFD instead of failing
+    std::string s = doc.dump(2, ' ', false, json::error_handler_t::replace) + "\n";
     std::error_code ec;
     fs::create_directories(modsDir, ec);
     fs::path tmp = RecordsPath(modsDir);
@@ -366,15 +377,61 @@ bool WriteRecords(const fs::path& modsDir, const std::vector<InstalledMod>& recs
         f << s;
         if (!f) return false;
     }
-    fs::rename(tmp, RecordsPath(modsDir), ec);
+    fs::rename(tmp, RecordsPath(modsDir), ec);   // replaces the old file
     return !ec;
 }
-}   // namespace
 
-std::vector<InstalledMod> ModInstall_Records(const fs::path& modsDir)
+std::vector<InstalledMod> ReadJsonRecords(const fs::path& file)
 {
     std::vector<InstalledMod> recs;
-    std::ifstream f(RecordsPath(modsDir));
+    std::error_code ec;
+    if (!fs::exists(file, ec)) return recs;   // nothing installed from GameBanana yet
+    std::ifstream f(file, std::ios::binary);
+    std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    json doc = json::parse(text, nullptr, false);
+    if (doc.is_discarded() || !doc.is_object() || !doc.contains("records") || !doc["records"].is_array())
+    {
+        LOG_WARN("mods: {} is not a valid records file; ignoring it", Utf8(file));
+        return recs;
+    }
+    auto str = [](const json& o, const char* key) { return o.contains(key) && o[key].is_string() ? o[key].get<std::string>() : ""; };
+    auto num = [](const json& o, const char* key) -> int64_t {
+        return o.contains(key) && o[key].is_number_integer() ? o[key].get<int64_t>() : 0;
+    };
+    for (auto& o : doc["records"])
+    {
+        if (!o.is_object() || num(o, "id") <= 0)
+        {
+            LOG_WARN("mods: {}: ignoring a record without a mod id", Utf8(file));
+            continue;
+        }
+        InstalledMod r;
+        r.modId = (uint64_t)num(o, "id");
+        r.fileId = (uint64_t)std::max<int64_t>(0, num(o, "file"));
+        r.name = str(o, "name");
+        r.fileName = str(o, "file_name");
+        r.version = str(o, "version");
+        r.fileAdded = num(o, "file_added");
+        r.date = str(o, "date");
+        for (auto [key, depth, out] : { std::tuple{ "mods", size_t(1), &r.mods }, std::tuple{ "textures", size_t(2), &r.textures } })
+        {
+            if (!o.contains(key)) continue;
+            if (!o[key].is_array()) { LOG_WARN("mods: {}: {} of {} is not a list; ignoring it", Utf8(file), key, r.modId); continue; }
+            // only folders right below mods/ and textures/<game ID>/
+            for (auto& v : o[key])
+                if (v.is_string() && ValidRecordFolder(v.get<std::string>(), depth)) out->push_back(v.get<std::string>());
+                else LOG_WARN("mods: {}: ignoring {} entry {} of {}", Utf8(file), key, v.dump(-1, ' ', false, json::error_handler_t::replace), r.modId);
+        }
+        recs.push_back(r);
+    }
+    return recs;
+}
+
+// gamebanana.ini (the mod browser's first versions): one [<mod id>] section per mod
+std::vector<InstalledMod> ReadLegacyRecords(const fs::path& file)
+{
+    std::vector<InstalledMod> recs;
+    std::ifstream f(file);
     std::string line;
     while (std::getline(f, line))
     {
@@ -405,6 +462,27 @@ std::vector<InstalledMod> ModInstall_Records(const fs::path& modsDir)
         }
     }
     return recs;
+}
+}   // namespace
+
+std::vector<InstalledMod> ModInstall_Records(const fs::path& modsDir)
+{
+    std::error_code ec;
+    fs::path file = RecordsPath(modsDir), legacy = LegacyRecordsPath(modsDir);
+    if (!fs::exists(file, ec) && fs::exists(legacy, ec))
+    {
+        // once: gamebanana.ini -> gamebanana.json (the old file stays as gamebanana.ini.bak)
+        std::vector<InstalledMod> recs = ReadLegacyRecords(legacy);
+        if (WriteRecords(modsDir, recs))
+        {
+            fs::path bak = legacy;
+            bak += ".bak";
+            fs::rename(legacy, bak, ec);
+            LOG_INFO("mods: moved {} records from gamebanana.ini to gamebanana.json", recs.size());
+        }
+        return recs;
+    }
+    return ReadJsonRecords(file);
 }
 
 fs::path ModInstall_TexturesDir(const std::string& configuredDir)
@@ -561,7 +639,8 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
         if (!parts.empty() && Lower(parts.back()) == "files") parts.pop_back();
         fs::path from = staging / FromUtf8(Join(parts, 0, parts.size()));
         std::string name;
-        if (prev && i < prev->mods.size()) name = prev->mods[i];   // an update keeps the folder
+        // an update keeps the folder (checked again: the records are a file anyone can edit)
+        if (prev && i < prev->mods.size() && ValidRecordFolder(prev->mods[i], 1)) name = prev->mods[i];
         else if (!parts.empty() && !IsGenericFolder(parts.back())) name = SafeName(parts.back());
         else name = SafeName(label);
         // a folder that is not this mod's earlier install (another mod, one copied by hand)
@@ -609,7 +688,9 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
     // texture packs: textures/<game ID>/<mod name>/
     std::map<std::string, std::vector<std::string>> packsById;   // ID folder -> pack folders
     for (auto& [root, id] : texRoots) packsById[id.empty() ? t.gameId : id].push_back(root);
-    std::string texBase = prev && !prev->textures.empty() ? Split(prev->textures[0]).back() : SafeName(label);
+    std::string texBase = prev && !prev->textures.empty() && ValidRecordFolder(prev->textures[0], 2)
+                              ? Split(prev->textures[0]).back()
+                              : SafeName(label);
     for (auto& [id, packRoots] : packsById)
     {
         std::string texName = texBase;
