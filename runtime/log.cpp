@@ -1,9 +1,9 @@
 #include "log.h"
+#include "platform/compat.h"
+#include "platform/platform.h"
 
 #include <cstdlib>
 #include <mutex>
-#include <share.h>
-#include <windows.h>
 
 static std::mutex s_logMutex;
 static FILE* s_logFile = nullptr;
@@ -34,7 +34,7 @@ void Fatal(const std::string& s)
 {
     Log_Write(3, "FATAL: " + s);
     fflush(stdout);
-    if (!g_noMessageBox) MessageBoxA(nullptr, s.c_str(), "BlackKnightRecomp - fatal error", MB_ICONERROR);
+    if (!g_noMessageBox) Platform_ErrorBox("BlackKnightRecomp - fatal error", s);
     { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
-    ExitProcess(1);
+    Platform_ExitProcess(1);
 }

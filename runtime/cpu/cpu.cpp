@@ -6,13 +6,13 @@
 #include "../kernel/memory.h"
 #include "../kernel/threads.h"
 #include "../region.h"
+#include "../platform/platform.h"
 
 #include <atomic>
 #include <bit>
 #include <limits>
 #include <unordered_map>
 #include <vector>
-#include <windows.h>
 
 static constexpr uint32_t CODE_BEGIN = 0x80004000;
 static constexpr uint32_t CODE_END = 0x80700000;
@@ -128,23 +128,21 @@ extern "C" void ppc_call_indirect(PPCContext& ctx, uint8_t* base, uint32_t addr)
 
 // ---------------------------------------------------------------- timebase
 // Wii timebase ticks at bus clock / 4 = 243 MHz / 4.
-static LARGE_INTEGER s_qpcFreq, s_qpcStart;
+static uint64_t s_qpcFreq, s_qpcStart;
 static uint64_t s_tbOffset = 0;
 
 void Timebase_Init()
 {
-    QueryPerformanceFrequency(&s_qpcFreq);
-    QueryPerformanceCounter(&s_qpcStart);
+    s_qpcFreq = Platform_PerfFrequency();
+    s_qpcStart = Platform_PerfCounter();
 }
 
 uint64_t Timebase_Now()
 {
-    LARGE_INTEGER now;
-    QueryPerformanceCounter(&now);
-    uint64_t d = (uint64_t)(now.QuadPart - s_qpcStart.QuadPart);
-    uint64_t hi = d / (uint64_t)s_qpcFreq.QuadPart;
-    uint64_t lo = d % (uint64_t)s_qpcFreq.QuadPart;
-    return s_tbOffset + hi * TB_FREQ + lo * TB_FREQ / (uint64_t)s_qpcFreq.QuadPart;
+    uint64_t d = Platform_PerfCounter() - s_qpcStart;
+    uint64_t hi = d / s_qpcFreq;
+    uint64_t lo = d % s_qpcFreq;
+    return s_tbOffset + hi * TB_FREQ + lo * TB_FREQ / s_qpcFreq;
 }
 
 // Pause (window focus loss): the guest thread parks here; on resume the time base
@@ -155,7 +153,7 @@ void Cpu_PauseIfRequested()
     if (!g_pauseRequested.load(std::memory_order_relaxed)) return;
     uint64_t tb = Timebase_Now();
     LOG_INFO("paused");
-    while (g_pauseRequested.load()) Sleep(20);
+    while (g_pauseRequested.load()) Platform_SleepMs(20);
     Timebase_Set(tb);
     LOG_INFO("resumed");
 }

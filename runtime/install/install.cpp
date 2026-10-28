@@ -1,5 +1,6 @@
 #include "install.h"
 #include "releases.h"
+#include "../platform/sha1.h"
 
 #include <nod.h>
 
@@ -9,8 +10,6 @@
 #include <memory>
 #include <span>
 #include <vector>
-#include <windows.h>
-#include <bcrypt.h>
 
 namespace fs = std::filesystem;
 
@@ -62,9 +61,9 @@ bool WriteFile(const fs::path& p, const void* data, size_t len)
     return fclose(f) == 0 && ok;
 }
 
-bool Sha1(const void* data, size_t len, uint8_t out[20])
+bool Sha1Of(const void* data, size_t len, uint8_t out[20])
 {
-    return BCryptHash(BCRYPT_SHA1_ALG_HANDLE, nullptr, 0, (PUCHAR)data, (ULONG)len, out, 20) == 0;
+    return Sha1_Hash(data, len, out);
 }
 
 struct FstEntry
@@ -135,7 +134,7 @@ InstallResult Install_Run(const fs::path& image, const fs::path& dest, InstallPr
     const KnownFile* dol = nullptr;
     for (auto& k : std::span(rel->files, rel->fileCount))
         if (strcmp(k.path, "sys/main.dol") == 0) dol = &k;
-    if (Sha1(meta.raw_dol.data, meta.raw_dol.size, sha))
+    if (Sha1Of(meta.raw_dol.data, meta.raw_dol.size, sha))
         for (int i = 0; i < 20; i++) snprintf(hex + 2 * i, 3, "%02x", sha[i]);
     if (!dol || strcmp(hex, dol->sha1) != 0)
     {
