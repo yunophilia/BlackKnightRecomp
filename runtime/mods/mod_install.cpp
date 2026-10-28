@@ -20,7 +20,9 @@ namespace fs = std::filesystem;
 
 namespace
 {
-constexpr uint64_t kMaxUnpacked = 16ull << 30;   // archive bombs
+// archive bombs: a mod for this game is well below these
+constexpr uint64_t kMaxUnpacked = 4ull << 30;
+constexpr size_t kMaxEntries = 100000;
 
 std::string Lower(std::string s)
 {
@@ -82,16 +84,56 @@ std::string Join(const std::vector<std::string>& parts, size_t from, size_t to)
     return s;
 }
 
+// Windows device names (CON, NUL, COM1, ...), alone or with an extension: under \\?\ paths
+// they become real files that Explorer cannot delete
+bool IsDeviceName(const std::string& name)
+{
+    std::string stem = Lower(name.substr(0, name.find('.')));
+    while (!stem.empty() && stem.back() == ' ') stem.pop_back();
+    static const std::set<std::string> devices = [] {
+        std::set<std::string> d = { "con", "prn", "aux", "nul", "conin$", "conout$" };
+        for (const char* digit : { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "\xC2\xB9", "\xC2\xB2", "\xC2\xB3" })
+        {
+            d.insert(std::string("com") + digit);
+            d.insert(std::string("lpt") + digit);
+        }
+        return d;
+    }();
+    return devices.count(stem) != 0;
+}
+
 // a name that is safe as one folder name
 std::string SafeName(const std::string& name)
 {
     std::string s;
     for (unsigned char c : name)
-        s += c < 32 || strchr("<>:\"/\\|?*", c) ? '_' : (char)c;
+        s += c < 32 || c == 127 || strchr("<>:\"/\\|?*", c) ? '_' : (char)c;
     s = Trim(s);
     while (!s.empty() && (s.back() == '.' || s.back() == ' ')) s.pop_back();
     if (s.empty() || s[0] == '.') s = "mod" + s;
-    return s.substr(0, 100);
+    s = s.substr(0, 100);
+    if (IsDeviceName(s)) s.insert(std::min(s.find('.'), s.size()), "_");
+    return s;
+}
+
+// text for one line of an .ini file (text from GameBanana could otherwise add lines)
+std::string OneLine(const std::string& text)
+{
+    std::string s;
+    for (unsigned char c : text) s += c < 32 || c == 127 ? ' ' : (char)c;
+    return Trim(s);
+}
+
+// a folder of a record (a text file anyone can edit): depth safe folder names, so it is
+// right below mods/ (1) or textures/ (2: <game ID>/<name>)
+bool ValidRecordFolder(const std::string& rel, size_t depth)
+{
+    if (rel.find('\\') != std::string::npos) return false;
+    std::vector<std::string> parts = Split(rel);
+    if (parts.size() != depth || Join(parts, 0, parts.size()) != rel) return false;
+    for (auto& p : parts)
+        if (p == "." || p == ".." || p.find(':') != std::string::npos || SafeName(p) != p) return false;
+    return true;
 }
 
 // an archive entry's path as a safe relative path, or empty to skip it
@@ -116,9 +158,13 @@ std::string SafeEntryPath(const archive_entry* e)
 
 bool Extract(const fs::path& file, const fs::path& dest, std::string& error, std::atomic<bool>* cancel)
 {
+    // only the formats mods come in, no compression filters (these formats compress
+    // inside). Not "all": mtree lists files by path, which would read files on the PC.
     archive* a = archive_read_new();
-    archive_read_support_format_all(a);
-    archive_read_support_filter_all(a);
+    archive_read_support_format_zip(a);
+    archive_read_support_format_7zip(a);
+    archive_read_support_format_rar(a);
+    archive_read_support_format_rar5(a);
     if (archive_read_open_filename_w(a, file.c_str(), 1 << 16) != ARCHIVE_OK)
     {
         error = std::format("cannot open the archive: {}", archive_error_string(a) ? archive_error_string(a) : "unknown format");
@@ -127,12 +173,19 @@ bool Extract(const fs::path& file, const fs::path& dest, std::string& error, std
     }
     bool ok = true;
     uint64_t total = 0;
+    size_t entries = 0;
     std::vector<char> buf(1 << 16);
     archive_entry* e = nullptr;
     int r;
     while ((r = archive_read_next_header(a, &e)) == ARCHIVE_OK || r == ARCHIVE_WARN)
     {
         if (cancel && *cancel) { error = "canceled"; ok = false; break; }
+        if (++entries > kMaxEntries)
+        {
+            error = std::format("the archive has more than {} files", kMaxEntries);
+            ok = false;
+            break;
+        }
         if (archive_entry_is_encrypted(e))
         {
             error = "the archive is password-protected";
@@ -166,7 +219,7 @@ bool Extract(const fs::path& file, const fs::path& dest, std::string& error, std
         fclose(f);
         if (n < 0)
         {
-            error = total > kMaxUnpacked ? "the archive unpacks to more than 16 GB"
+            error = total > kMaxUnpacked ? std::format("the archive unpacks to more than {} GB", kMaxUnpacked >> 30)
                                          : std::format("cannot unpack {}: {}", rel, archive_error_string(a) ? archive_error_string(a) : "error");
             ok = false;
             break;
@@ -247,10 +300,23 @@ bool MoveTree(const fs::path& src, const fs::path& dst, std::string& error)
     return true;
 }
 
-// to the Recycle Bin (deleted outright where there is none)
-bool Recycle(const fs::path& p, bool recycle = true)
+// p is below root (not root itself)
+bool Below(const fs::path& p, const fs::path& root)
 {
     std::error_code ec;
+    fs::path rel = fs::absolute(Plain(p), ec).lexically_normal().lexically_relative(fs::absolute(Plain(root), ec).lexically_normal());
+    return !rel.empty() && rel != "." && *rel.begin() != "..";
+}
+
+// to the Recycle Bin (deleted outright where there is none); only below root
+bool Recycle(const fs::path& p, const fs::path& root, bool recycle = true)
+{
+    std::error_code ec;
+    if (!Below(p, root))
+    {
+        LOG_WARN("mods: not removing {}: not in {}", Utf8(p), Utf8(root));
+        return false;
+    }
     if (!fs::exists(p, ec)) return true;
     if (!recycle)
     {
@@ -284,9 +350,12 @@ bool WriteRecords(const fs::path& modsDir, const std::vector<InstalledMod>& recs
     for (auto& r : recs)
     {
         s += std::format("\n[{}]\nname = {}\nfile = {}\nfile_name = {}\nversion = {}\nfile_added = {}\ndate = {}\n",
-                         r.modId, r.name, r.fileId, r.fileName, r.version, r.fileAdded, r.date);
-        for (auto& m : r.mods) s += "mod = " + m + "\n";
-        for (auto& t : r.textures) s += "texture = " + t + "\n";
+                         r.modId, OneLine(r.name), r.fileId, OneLine(r.fileName), OneLine(r.version), r.fileAdded,
+                         OneLine(r.date));
+        for (auto& m : r.mods)
+            if (ValidRecordFolder(m, 1)) s += "mod = " + m + "\n";
+        for (auto& t : r.textures)
+            if (ValidRecordFolder(t, 2)) s += "texture = " + t + "\n";
     }
     std::error_code ec;
     fs::create_directories(modsDir, ec);
@@ -328,8 +397,12 @@ std::vector<InstalledMod> ModInstall_Records(const fs::path& modsDir)
         else if (key == "version") r.version = val;
         else if (key == "file_added") r.fileAdded = atoll(val.c_str());
         else if (key == "date") r.date = val;
-        else if (key == "mod" && !val.empty()) r.mods.push_back(val);
-        else if (key == "texture" && !val.empty()) r.textures.push_back(val);
+        else if (key == "mod" || key == "texture")
+        {
+            // only folders right below mods/ and textures/<game ID>/
+            if (ValidRecordFolder(val, key == "mod" ? 1 : 2)) (key == "mod" ? r.mods : r.textures).push_back(val);
+            else LOG_WARN("mods: gamebanana.ini: ignoring {} = {}", key, val);
+        }
     }
     return recs;
 }
@@ -504,7 +577,7 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
         if (fs::exists(to, ec))
         {
             LOG_INFO("mods: replacing {} (old files to the Recycle Bin)", Utf8(to));
-            if (!Recycle(to, t.recycle))
+            if (!Recycle(to, t.modsDir, t.recycle))
             {
                 res.message = std::format("{}: cannot replace {}", label, Utf8(to));
                 return res;
@@ -525,9 +598,9 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
         if (!fs::exists(to / "mod.ini", ec) && !fs::exists(to / "files" / "mod.ini", ec))
         {
             std::ofstream ini(to / "mod.ini", std::ios::binary);
-            ini << "[Mod]\nname = " << (mirror.size() > 1 ? name : label) << "\n";
-            if (!src.author.empty()) ini << "author = " << src.author << "\n";
-            if (!src.version.empty()) ini << "version = " << src.version << "\n";
+            ini << "[Mod]\nname = " << OneLine(mirror.size() > 1 ? name : label) << "\n";
+            if (!src.author.empty()) ini << "author = " << OneLine(src.author) << "\n";
+            if (!src.version.empty()) ini << "version = " << OneLine(src.version) << "\n";
         }
         res.modFolders.push_back(name);
         LOG_INFO("mods: installed {} ({} game files) to {}", label, mirror[i].second, Utf8(to));
@@ -547,7 +620,7 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
             texName = std::format("{} ({})", texBase, n);
         std::string rel = id + "/" + texName;
         fs::path to = t.texturesDir / FromUtf8(id) / FromUtf8(texName);
-        if (fs::exists(to, ec) && !Recycle(to, t.recycle))
+        if (fs::exists(to, ec) && !Recycle(to, t.texturesDir, t.recycle))
         {
             res.message = std::format("{}: cannot replace {}", label, Utf8(to));
             return res;
@@ -616,16 +689,10 @@ bool ModInstall_Remove(const InstallTargets& t, uint64_t modId, std::string& mes
     auto it = std::find_if(recs.begin(), recs.end(), [&](const InstalledMod& r) { return r.modId == modId; });
     if (it == recs.end()) { message = "not installed"; return false; }
     // only folders below mods/ and textures/<game ID>/ (the record is a text file anyone can edit)
-    auto inside = [](const std::string& rel, size_t depth) {
-        std::vector<std::string> parts = Split(rel);
-        if (parts.size() != depth) return false;
-        for (auto& p : parts)
-            if (p == "." || p == ".." || p.find(':') != std::string::npos) return false;
-        return true;
-    };
     bool ok = true;
-    for (auto& m : it->mods) ok &= inside(m, 1) && Recycle(t.modsDir / FromUtf8(m), t.recycle);
-    for (auto& tx : it->textures) ok &= inside(tx, 2) && Recycle(t.texturesDir / FromUtf8(tx), t.recycle);
+    for (auto& m : it->mods) ok &= ValidRecordFolder(m, 1) && Recycle(t.modsDir / FromUtf8(m), t.modsDir, t.recycle);
+    for (auto& tx : it->textures)
+        ok &= ValidRecordFolder(tx, 2) && Recycle(t.texturesDir / FromUtf8(tx), t.texturesDir, t.recycle);
     message = ok ? std::format("Removed {} (moved to the Recycle Bin).", it->name) : std::format("Could not remove all of {}.", it->name);
     LOG_INFO("mods: {}", message);
     recs.erase(it);
@@ -644,7 +711,7 @@ bool ModInstall_RemoveFolder(const InstallTargets& t, const std::string& folder,
     for (auto& r : ModInstall_Records(t.modsDir))
         for (auto& m : r.mods)
             if (Lower(m) == Lower(folder) && r.mods.size() == 1) return ModInstall_Remove(t, r.modId, message);
-    bool ok = Recycle(t.modsDir / FromUtf8(folder), t.recycle);
+    bool ok = Recycle(t.modsDir / FromUtf8(folder), t.modsDir, t.recycle);
     message = ok ? std::format("Removed {} (moved to the Recycle Bin).", folder) : std::format("Could not remove {}.", folder);
     LOG_INFO("mods: {}", message);
     if (ok)

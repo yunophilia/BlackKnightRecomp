@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-// Installs a downloaded mod archive (zip, rar, 7z): unpacks it, finds what it holds and
+// Installs a downloaded mod archive (zip, 7z, RAR 4/5): unpacks it, finds what it holds and
 // puts each part where the game loads it:
 //  * game files (mirroring the disc's files/): the mod's folder goes to mods/ (mods.h),
 //  * Dolphin-format textures (tex1_*.png/.dds): textures/<game ID>/<mod>/ (gx/hires.cpp).

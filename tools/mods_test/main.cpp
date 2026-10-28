@@ -3,8 +3,10 @@
 //  * the disc overlay on a small synthetic disc: load order, case-insensitive paths, disabled
 //    mods, mods for another release, files the disc does not have, larger and smaller
 //    replacements (FST offsets and sizes, partial reads) and the unmodded disc;
-//  * installing archives (zip and 7z written here): mod folders, files/ layouts, texture packs,
+//  * installing archives (zip and 7z written here, RAR from data/): mod folders, files/ layouts, texture packs,
 //    variants, code mods and Dolphin-only archives (refused), unsafe paths, updates, removal;
+//  * hostile input: injected or edited gamebanana.ini records, device names, other formats,
+//    entry counts, plain-http downloads;
 //  * reading GameBanana's API answers.
 // Exit code 0 when every check passes.
 //
@@ -21,9 +23,11 @@
 #include <archive.h>
 #include <archive_entry.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <map>
 #include <string>
@@ -417,6 +421,154 @@ static void InstallTests()
     fs::remove_all(tmp, ec);
 }
 
+// --- what a hostile archive, API answer or edited gamebanana.ini can do
+static void HardeningTests()
+{
+    fs::path tmp = fs::temp_directory_path() / "bkr_mods_hardening_test";
+    std::error_code ec;
+    fs::remove_all(tmp, ec);
+    fs::create_directories(tmp / "archives");
+    InstallTargets t;
+    t.modsDir = tmp / "mods";
+    t.texturesDir = tmp / "textures";
+    t.gameId = "RENE8P";
+    t.discFiles = { "a.bin", "dir/b.bin", "test.txt", "testdir/test.txt", "test.bin" };
+    t.recycle = false;
+    auto src = [](uint64_t id, const std::string& name) {
+        InstallSource s;
+        s.modId = id;
+        s.fileId = id * 10;
+        s.name = name;
+        s.author = "Tester";
+        s.version = "1.0";
+        s.fileName = "x.zip";
+        return s;
+    };
+    fs::path arc = tmp / "archives";
+    WriteFile(tmp / "outside" / "keep.txt", "KEEP");
+    WriteFile(tmp / "textures" / "keep.txt", "KEEP");
+
+    // API text with line breaks cannot add lines to gamebanana.ini or mod.ini
+    WriteArchive(arc / "inject.zip", false, { { "Inject/a.bin", "A" } });
+    InstallSource s = src(20, "Inject\nmod = ../outside");
+    s.version = "1\ntexture = RENE8P/../../outside";
+    s.fileName = "x.zip\r\n[21]\nmod = ../outside";
+    s.author = "Me\nversion = 99";
+    InstallResult r = ModInstall_Archive(arc / "inject.zip", s, t);
+    CHECK(r.ok && r.modFolders.size() == 1 && r.modFolders[0] == "Inject");
+    std::string ini = ReadText(t.modsDir / "gamebanana.ini");
+    CHECK(ini.find("\nmod = ../") == std::string::npos && ini.find("\ntexture = ") == std::string::npos &&
+          ini.find("\n[21]") == std::string::npos);
+    std::vector<InstalledMod> recs = ModInstall_Records(t.modsDir);
+    CHECK(recs.size() == 1 && recs[0].mods.size() == 1 && recs[0].mods[0] == "Inject" && recs[0].textures.empty());
+    CHECK(ReadText(t.modsDir / "Inject" / "mod.ini").find("\nversion = 99") == std::string::npos);
+
+    // an edited record: folders outside mods/ and textures/<ID>/ are ignored...
+    {
+        std::ofstream f(t.modsDir / "gamebanana.ini", std::ios::binary | std::ios::app);
+        f << "\n[30]\nname = Thirty\nfile = 300\nmod = ../outside\nmod = " << (tmp / "outside").string()
+          << "\nmod = Inject/..\nmod = a/b\nmod = CON\nmod = .\ntexture = RENE8P/../../outside\ntexture = ..\\outside\n"
+          << "texture = RENE8P\ntexture = RENE8P/Pack\n";
+    }
+    recs = ModInstall_Records(t.modsDir);
+    const InstalledMod* thirty = nullptr;
+    for (auto& x : recs)
+        if (x.modId == 30) thirty = &x;
+    CHECK(thirty && thirty->mods.empty() && thirty->textures.size() == 1 && thirty->textures[0] == "RENE8P/Pack");
+    // ...by an update (which replaces the record's folders)...
+    WriteArchive(arc / "thirty.zip", false, { { "Thirty/a.bin", "30" }, { "RENE8P/tex1_8x8_00000000000000cc_3.png", "P" } });
+    r = ModInstall_Archive(arc / "thirty.zip", src(30, "Thirty"), t);
+    CHECK(r.ok && r.modFolders.size() == 1 && r.modFolders[0] == "Thirty" && r.textureFolders.size() == 1 &&
+          r.textureFolders[0] == "RENE8P/Pack");
+    CHECK(ReadText(tmp / "outside" / "keep.txt") == "KEEP" && ReadText(tmp / "textures" / "keep.txt") == "KEEP");
+    // ...and by Remove
+    {
+        std::ofstream f(t.modsDir / "gamebanana.ini", std::ios::binary | std::ios::app);
+        f << "\n[31]\nname = ThirtyOne\nmod = ../outside\ntexture = RENE8P/..\n";
+    }
+    std::string msg;
+    ModInstall_Remove(t, 31, msg);
+    CHECK(ModInstall_Remove(t, 30, msg) && !fs::exists(t.modsDir / "Thirty") && !fs::exists(t.texturesDir / "RENE8P" / "Pack"));
+    CHECK(ReadText(tmp / "outside" / "keep.txt") == "KEEP" && ReadText(tmp / "textures" / "keep.txt") == "KEEP");
+    CHECK(fs::exists(t.modsDir / "Inject" / "a.bin"));
+
+    // Windows device names get a '_' (archive entries and names made from mod names)
+    WriteArchive(arc / "devices.zip", false, { { "nul/a.bin", "A" }, { "nul/con.txt", "C" }, { "nul/Aux.Tar.gz", "X" },
+                                               { "nul/lpt\xC2\xB9.txt", "L" }, { "nul/com1 .txt", "M" }, { "nul/console.txt", "K" } });
+    r = ModInstall_Archive(arc / "devices.zip", src(40, "Devices"), t);
+    CHECK(r.ok && r.modFolders.size() == 1 && r.modFolders[0] == "nul_");
+    fs::path dev = t.modsDir / "nul_";
+    CHECK(fs::exists(dev / "a.bin") && fs::exists(dev / "con_.txt") && fs::exists(dev / "Aux_.Tar.gz") &&
+          fs::exists(dev / fs::path(u8"lpt\u00B9_.txt")) && fs::exists(dev / "console.txt"));
+    WriteArchive(arc / "com.zip", false, { { "a.bin", "A" } });
+    r = ModInstall_Archive(arc / "com.zip", src(41, "COM1"), t);
+    CHECK(r.ok && r.modFolders.size() == 1 && r.modFolders[0] == "COM1_" && fs::exists(t.modsDir / "COM1_" / "a.bin"));
+
+    // only zip, 7z and RAR open: not tar, nor mtree (whose entries name files on the PC)
+    {
+        archive* a = archive_write_new();
+        archive_write_set_format_pax_restricted(a);
+        archive_write_open_filename_w(a, (arc / "mod.tar").c_str());
+        archive_entry* en = archive_entry_new();
+        archive_entry_set_pathname(en, "Tar/a.bin");
+        archive_entry_set_filetype(en, AE_IFREG);
+        archive_entry_set_size(en, 1);
+        archive_write_header(a, en);
+        archive_write_data(a, "T", 1);
+        archive_entry_free(en);
+        archive_write_close(a);
+        archive_write_free(a);
+    }
+    r = ModInstall_Archive(arc / "mod.tar", src(50, "Tar"), t);
+    CHECK(!r.ok && r.message.find("cannot open the archive") != std::string::npos);
+    WriteFile(tmp / "secret.bin", "SECRET");
+    std::string secret = (tmp / "secret.bin").string();
+    std::replace(secret.begin(), secret.end(), '\\', '/');
+    WriteFile(arc / "steal.mtree", "#mtree\nSteal/a.bin type=file contents=" + secret + "\n");
+    r = ModInstall_Archive(arc / "steal.mtree", src(51, "Steal"), t);
+    CHECK(!r.ok && !fs::exists(t.modsDir / "Steal"));
+
+    // RAR4 (stored) and RAR5 (compressed): libarchive's own test archives (it cannot write RAR)
+    fs::path data = BKR_MODS_TEST_DATA;
+    r = ModInstall_Archive(data / "rar4.rar", src(60, "Rar Four"), t);
+    printf("  -> %s\n", r.message.c_str());
+    CHECK(r.ok && r.modFolders.size() == 1 && ReadText(t.modsDir / "Rar Four" / "test.txt") == "test text document\r\n" &&
+          ReadText(t.modsDir / "Rar Four" / "testdir" / "test.txt") == "test text document\r\n" &&
+          !fs::exists(t.modsDir / "Rar Four" / "testlink"));   // a symbolic link: skipped
+    r = ModInstall_Archive(data / "rar5.rar", src(61, "Rar Five"), t);
+    printf("  -> %s\n", r.message.c_str());
+    CHECK(r.ok && fs::file_size(t.modsDir / "Rar Five" / "test.bin", ec) == 1200);
+
+    // too many entries
+    {
+        archive* a = archive_write_new();
+        archive_write_set_format_zip(a);
+        archive_write_open_filename_w(a, (arc / "many.zip").c_str());
+        for (int i = 0; i <= 100000; i++)
+        {
+            archive_entry* en = archive_entry_new();
+            archive_entry_set_pathname(en, std::format("../skip{}", i).c_str());   // not unpacked: no files written
+            archive_entry_set_filetype(en, AE_IFREG);
+            archive_entry_set_size(en, 0);
+            archive_write_header(a, en);
+            archive_entry_free(en);
+        }
+        archive_write_close(a);
+        archive_write_free(a);
+    }
+    r = ModInstall_Archive(arc / "many.zip", src(70, "Many"), t);
+    printf("  -> %s\n", r.message.c_str());
+    CHECK(!r.ok && r.message.find("more than 100000 files") != std::string::npos);
+
+    // downloads: https only (checked before any network use)
+    std::string error;
+    CHECK(!Http_Download("http://gamebanana.com/dl/1", tmp / "x.zip", error) && error.find("https") != std::string::npos);
+    CHECK(!Http_Download("file:///C:/Windows/win.ini", tmp / "x.zip", error) && !fs::exists(tmp / "x.zip"));
+
+    CHECK(!fs::exists(t.modsDir / ".staging"));
+    fs::remove_all(tmp, ec);
+}
+
 static void ParseTests()
 {
     const char* list = R"({"_aMetadata":{"_nRecordCount":3,"_bIsComplete":true},"_aRecords":[
@@ -510,6 +662,8 @@ int main(int argc, char** argv)
     OverlayTests();
     printf("== install\n");
     InstallTests();
+    printf("== hostile archives and records\n");
+    HardeningTests();
     printf("== GameBanana answers\n");
     ParseTests();
     printf("%s (%d failed)\n", s_failed ? "FAILED" : "ALL PASSED", s_failed);
