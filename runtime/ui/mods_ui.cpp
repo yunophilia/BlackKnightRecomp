@@ -28,7 +28,7 @@ namespace
 {
 // ---------------------------------------------------------------- installed mods
 std::vector<ModInfo> s_mods;               // the mods folder as last scanned, in load order
-std::vector<InstalledMod> s_records;       // mods/gamebanana.ini
+std::vector<InstalledMod> s_records;       // mods/gamebanana.json
 bool s_scanned = false;
 std::string s_release;                     // game ID
 fs::path s_dataDir;
@@ -256,8 +256,10 @@ void StartInstall(const GbMod& m, const GbFile& f)
     src.fileName = f.name;
     src.fileAdded = f.added;
     std::string url = f.url, md5 = f.md5, fileName = f.name;
+    // at most twice the size GameBanana lists (the checksum catches the rest)
+    uint64_t maxBytes = f.size ? std::min(kHttpMaxDownload, f.size * 2 + (1 << 20)) : kHttpMaxDownload;
     LOG_INFO("mods: installing {} from GameBanana ({}, {} bytes)", m.name, f.name, f.size);
-    std::thread([job, t, src, url, md5, fileName] {
+    std::thread([job, t, src, url, md5, fileName, maxBytes] {
         std::error_code ec;
         fs::path dir = t.modsDir / ".download";
         fs::create_directories(dir, ec);
@@ -266,7 +268,7 @@ void StartInstall(const GbMod& m, const GbFile& f)
         fs::path file = dir / std::format("{}_{}", src.fileId, safe);
         InstallResult res;
         std::string error;
-        if (!Http_Download(url, file, error, &job->progress))
+        if (!Http_Download(url, file, error, &job->progress, maxBytes))
             res.message = std::format("Download of {} failed: {}", src.name, error);
         else if (!Md5Matches(file, md5))
             res.message = std::format("The download of {} is damaged (checksum differs); try again.", src.name);

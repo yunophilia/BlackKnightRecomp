@@ -27,7 +27,7 @@ struct Handle
 
 // GET url, passing the body to sink in pieces; false on failure (error set)
 bool Fetch(const std::string& url, const std::function<bool(const uint8_t*, size_t)>& sink, std::string& error,
-           HttpProgress* progress)
+           HttpProgress* progress, uint64_t maxBytes)
 {
     std::wstring wurl = Wide(url);
     URL_COMPONENTS uc{};
@@ -63,6 +63,9 @@ bool Fetch(const std::string& url, const std::function<bool(const uint8_t*, size
     Handle req{ conn.h ? WinHttpOpenRequest(conn.h, L"GET", target.c_str(), nullptr, WINHTTP_NO_REFERER,
                                             WINHTTP_DEFAULT_ACCEPT_TYPES, https ? WINHTTP_FLAG_SECURE : 0)
                        : nullptr };
+    // never follow a redirect from https to plain http (WinHTTP's default, made explicit)
+    DWORD policy = WINHTTP_OPTION_REDIRECT_POLICY_DISALLOW_HTTPS_TO_HTTP;
+    if (req.h) WinHttpSetOption(req.h, WINHTTP_OPTION_REDIRECT_POLICY, &policy, sizeof(policy));
     if (!req.h || !WinHttpSendRequest(req.h, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) ||
         !WinHttpReceiveResponse(req.h, nullptr))
     {
@@ -77,14 +80,18 @@ bool Fetch(const std::string& url, const std::function<bool(const uint8_t*, size
         error = std::format("{} answered with status {}", url, status);
         return false;
     }
-    if (progress)
+    uint64_t length = 0;
     {
         wchar_t buf[32];
         DWORD n = sizeof(buf);
         if (WinHttpQueryHeaders(req.h, WINHTTP_QUERY_CONTENT_LENGTH, WINHTTP_HEADER_NAME_BY_INDEX, buf, &n,
                                 WINHTTP_NO_HEADER_INDEX))
-            progress->total = _wcstoui64(buf, nullptr, 10);
+            length = _wcstoui64(buf, nullptr, 10);
     }
+    auto tooLarge = [&] { error = std::format("{} is larger than {} MB", url, maxBytes >> 20); return false; };
+    if (length > maxBytes) return tooLarge();
+    if (progress) progress->total = length;
+    uint64_t received = 0;
     std::vector<uint8_t> chunk(1 << 16);
     for (;;)
     {
@@ -100,6 +107,8 @@ bool Fetch(const std::string& url, const std::function<bool(const uint8_t*, size
             return false;
         }
         if (got == 0) break;
+        received += got;
+        if (received > maxBytes) return tooLarge();
         if (!sink(chunk.data(), got))
         {
             error = "cannot write the download";
@@ -114,11 +123,18 @@ bool Fetch(const std::string& url, const std::function<bool(const uint8_t*, size
 bool Http_Get(const std::string& url, std::string& body, std::string& error, HttpProgress* progress)
 {
     body.clear();
-    return Fetch(url, [&](const uint8_t* p, size_t n) { body.append((const char*)p, n); return true; }, error, progress);
+    return Fetch(url, [&](const uint8_t* p, size_t n) { body.append((const char*)p, n); return true; }, error, progress,
+                 kHttpMaxGet);
 }
 
-bool Http_Download(const std::string& url, const std::filesystem::path& file, std::string& error, HttpProgress* progress)
+bool Http_Download(const std::string& url, const std::filesystem::path& file, std::string& error, HttpProgress* progress,
+                   uint64_t maxBytes)
 {
+    if (_strnicmp(url.c_str(), "https://", 8) != 0)
+    {
+        error = "not an https address: " + url;
+        return false;
+    }
     std::filesystem::path part = file;
     part += ".part";
     FILE* f = _wfopen(part.c_str(), L"wb");
@@ -127,7 +143,7 @@ bool Http_Download(const std::string& url, const std::filesystem::path& file, st
         error = "cannot create " + part.string();
         return false;
     }
-    bool ok = Fetch(url, [&](const uint8_t* p, size_t n) { return fwrite(p, 1, n, f) == n; }, error, progress);
+    bool ok = Fetch(url, [&](const uint8_t* p, size_t n) { return fwrite(p, 1, n, f) == n; }, error, progress, maxBytes);
     ok = fclose(f) == 0 && ok;
     std::error_code ec;
     if (ok) std::filesystem::rename(part, file, ec);

@@ -254,8 +254,9 @@ screenshots and descriptions. Install downloads one and puts it where the game l
 game files into `mods/`, Dolphin-format textures into `textures/<game ID>/`. Mods that change
 the game's code (a `main.dol`, code patches) cannot work with the recompiled game and are
 refused with an explanation; Dolphin settings and Gecko codes in an archive are skipped.
+Archives can be zip, 7z or RAR (up to 4 GB unpacked and 100,000 files).
 Installed mods show when an update is out, and Remove moves a mod to the Recycle Bin.
-`mods/gamebanana.ini` remembers what was installed from there. The list is only loaded when
+`mods/gamebanana.json` remembers what was installed from there. The list is only loaded when
 you open that tab. It works with a controller and the keyboard too: on a list entry, A (keyboard: Space)
 goes to its buttons and B back.
 
@@ -294,8 +295,9 @@ level to use it instead.
 * `tools/gen_soak.py`: random-input scripts for long stability runs (see its header).
 * `out/bkr_mods_test.exe`: checks the mods code without the game or the network: the file
   overlay (load order, size changes, partial reads) on a small synthetic disc, installing
-  zip/7z archives (layouts, texture packs, refused code mods, unsafe and long paths, updates,
-  removal) and reading GameBanana's answers. `bkr_mods_test --install <archive> --data
+  zip/7z/RAR archives (layouts, texture packs, refused code mods, unsafe and long paths,
+  device names, other formats, size limits, updates, removal, edited or injected records,
+  the move from gamebanana.ini) and reading GameBanana's answers. `bkr_mods_test --install <archive> --data
   <game data> --mods <dir> --textures <dir>` installs a real archive (`gamebanana:<id>`:
   downloads that mod) with the same code. `--mods <folder>` makes the game load mods from
   another folder for one run.
