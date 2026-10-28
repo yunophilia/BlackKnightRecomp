@@ -1,5 +1,6 @@
 #include "overlay.h"
 #include "settings_ui.h"
+#include "ui_image.h"
 #include "ui_shot.h"
 #include "../log.h"
 #include "../tas/tas.h"
@@ -28,9 +29,11 @@ std::atomic<bool> s_homePress{ false };
 std::mutex s_msgMutex;
 std::vector<MSG> s_msgs;   // window messages, replayed on the render thread
 // test aid: BKR_UI_SHOT_OVERLAY=<file.bmp> opens the overlay BKR_UI_SHOT_AFTER seconds
-// (default 30) into the game, saves a screenshot a second later and closes it again
+// (default 30) into the game, saves a screenshot BKR_UI_SHOT_HOLD seconds later (default 1)
+// and closes it again
 const char* s_shotPath = nullptr;
 ULONGLONG s_shotOpenAt = 0;
+ULONGLONG s_shotHold = 1000;
 
 bool IsInput(UINT msg)
 {
@@ -54,6 +57,7 @@ void Overlay_Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* ctx)
     {
         const char* after = getenv("BKR_UI_SHOT_AFTER");
         s_shotOpenAt = GetTickCount64() + (after ? atoi(after) : 30) * 1000ull;
+        if (const char* hold = getenv("BKR_UI_SHOT_HOLD")) s_shotHold = atoi(hold) * 1000ull;
     }
     s_hwnd = hwnd;
     s_dev = device;
@@ -66,9 +70,11 @@ void Overlay_Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* ctx)
     std::string font = WindowsFont("segoeui.ttf");
     if (!font.empty() && GetFileAttributesA(font.c_str()) != INVALID_FILE_ATTRIBUTES)
         io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
+    SettingsUI_AddFallbackFonts();
     SettingsUI_ApplyStyle();
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device, ctx);
+    UiImage_SetDevice(device);
     s_ready = true;
 }
 
@@ -127,16 +133,35 @@ void Overlay_Render(float w, float h)
     ImGui::NewFrame();
 
     const ImGuiViewport* vp = ImGui::GetMainViewport();
-    ImVec2 size(std::min(vp->Size.x * 0.9f, 760.0f * scale), std::min(vp->Size.y * 0.85f, 560.0f * scale));
+    ImVec2 size(std::min(vp->Size.x * 0.9f, 900.0f * scale), std::min(vp->Size.y * 0.88f, 630.0f * scale));
     ImGui::SetNextWindowPos(vp->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
     bool open = true;
-    if (ImGui::Begin("Settings", &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+    if (ImGui::Begin("Sonic and the Black Knight###overlay", &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                                           ImGuiWindowFlags_NoSavedSettings))
     {
         float bottom = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-        ImGui::BeginChild("panel", ImVec2(0, -bottom));
-        SettingsUI_Draw(SettingsHost::InGame);
+        ImGui::BeginChild("panel", ImVec2(0, -bottom), ImGuiChildFlags_NavFlattened);
+        if (ImGui::BeginTabBar("overlayTabs"))
+        {
+            static int shotFrames = 0;
+            bool shotMods = SettingsUI_ShotMods() && shotFrames++ < 2;
+            static int selected = 0;
+            int pick = SettingsUI_PadTab(selected, 2, true);
+            if (SettingsUI_TabItem("Settings", 0, pick))
+            {
+                selected = 0;
+                SettingsUI_Draw(SettingsHost::InGame);
+                ImGui::EndTabItem();
+            }
+            if (SettingsUI_TabItem("Mods", 1, pick, shotMods))
+            {
+                selected = 1;
+                SettingsUI_DrawMods(SettingsHost::InGame);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
         ImGui::EndChild();
         if (ImGui::Button("Close")) open = false;
         ImGui::SameLine();
@@ -164,7 +189,7 @@ void Overlay_Render(float w, float h)
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-    if (s_shotPath && s_shotOpenAt && GetTickCount64() >= s_shotOpenAt + 1000)
+    if (s_shotPath && s_shotOpenAt && GetTickCount64() >= s_shotOpenAt + s_shotHold)
     {
         UI_SaveBoundTarget(s_dev, s_ctx, s_shotPath);
         LOG_INFO("settings overlay screenshot saved to {}", s_shotPath);

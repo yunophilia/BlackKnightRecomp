@@ -202,7 +202,7 @@ F11 or Alt+Enter toggles fullscreen.
 
 ## Launcher and settings
 
-The game opens a launcher on every start: Play, settings, and the game data status. It
+The game opens a launcher on every start: Play (with the game data status), Settings and Mods. It
 asks for your disc image only when nothing is installed yet or the installed files are
 damaged (each start checks that every file is present with the right size; "Check all
 game files" compares the hash of every file). `bkr_install --verify` does the full check
@@ -210,8 +210,11 @@ from the command line.
 
 In game, View (Back) or F1 opens the same settings over the running game. Changes are
 saved to `config.ini` at once and most apply immediately; frame rate, internal
-resolution, widescreen, language, texture packs and the graphics thread ask to restart
+resolution, widescreen, language, texture packs, mods and the graphics thread ask to restart
 the game. The overlay also has the Wii HOME Menu, restart and quit.
+
+With a controller, the D-pad moves (moving onto a tab opens it), A selects and B goes back;
+LB/RB switch between the main tabs and LT/RT between the tabs inside a page (Video, Input, ... or Installed / Get mods).
 
 `config.ini` next to the executable holds the settings (it can also be edited by hand):
 
@@ -237,12 +240,65 @@ the game. The overlay also has the Wii HOME Menu, restart and quit.
   `LB`, `RB`, `LT`, `RT`, `START`, `BACK`, `LS`, `RS`, D-pad `UP`/`DOWN`/`LEFT`/`RIGHT`,
   or `NONE`).
 * `data`, `iso`: game file locations, if they are not in `game/`.
+* `[Mods]`, `mods`: mod load order and on/off state, and the mods folder if it is not
+  `mods/` (see below).
+
+## Mods
+
+Besides texture packs (above), most mods for the game replace game files: character
+skins, HUD changes and the like.
+
+**Getting mods in the game**: the Mods tab > "Get mods (GameBanana)" (in the launcher
+and in game) lists the game's mods on [GameBanana](https://gamebanana.com/games/6511) with
+screenshots and descriptions. Install downloads one and puts it where the game loads it:
+game files into `mods/`, Dolphin-format textures into `textures/<game ID>/`. Mods that change
+the game's code (a `main.dol`, code patches) cannot work with the recompiled game and are
+refused with an explanation; Dolphin settings and Gecko codes in an archive are skipped.
+Installed mods show when an update is out, and Remove moves a mod to the Recycle Bin.
+`mods/gamebanana.ini` remembers what was installed from there. The list is only loaded when
+you open that tab. It works with a controller and the keyboard too: on a list entry, A (keyboard: Space)
+goes to its buttons and B back.
+
+**Adding mods by hand**: put each mod's folder in `mods/` next to the
+executable (`game/mods/` works too). The files in a mod folder mirror the disc's `files/`
+folder (`sonic.one`, `adx/`, `event/`, `sound/`, ...), either directly in the mod folder or
+in a `files/` subfolder. An optional `mod.ini` gives the mod's `name` (or `title`),
+`author`, `version` and `description`; without one the folder name is shown.
+
+Mods made for the Storybook Mod Manager (most of the game's mods on GameBanana) work as
+they are: extract the archive and drop the mod's folder (the one with `mod.ini`) into
+`mods/`. Their optional extras (the manager's "Configure" choices, usually in an
+`Additional Files` folder) are not applied; copy such a file over the one at the mod's top
+level to use it instead.
+
+* The installed game files are never changed: when the game reads a file, the first enabled
+  mod in the load order that has it supplies it, otherwise the installed file is read. A mod
+  file may be larger or smaller than the original. Mod files that are not game files are
+  ignored.
+* New mods are enabled and load after the ones already known (an archive with several
+  variants installs each as its own mod, the first enabled). The Mods tab
+  (launcher and in game) lists them with author and version, turns them on or off and changes
+  the load order; changes in game ask to restart. The launcher shows which mods are active.
+* The file checks (on start and "Check all game files") look at the installed files only,
+  so mods never make the game data count as damaged.
+* Mods apply to every release (USA, Europe, Japan): most replace files that have the same
+  name in all of them. A mod for one release only can say so in its `mod.ini` with
+  `releases = RENE8P` (game IDs or `USA`, `Europe`, `Japan`, comma-separated).
+* `BlackKnightRecomp.log` lists the files each mod replaces and warns when two enabled mods
+  replace the same file (the one higher in the load order wins).
 
 ## Testing
 
 * `tools/smoke_test.ps1 [-Fps60]`: boots into mission 1 with a scripted input run and
   checks the log (no errors, expected milestones, frame rate) and screenshots.
 * `tools/gen_soak.py`: random-input scripts for long stability runs (see its header).
+* `out/bkr_mods_test.exe`: checks the mods code without the game or the network: the file
+  overlay (load order, size changes, partial reads) on a small synthetic disc, installing
+  zip/7z archives (layouts, texture packs, refused code mods, unsafe and long paths, updates,
+  removal) and reading GameBanana's answers. `bkr_mods_test --install <archive> --data
+  <game data> --mods <dir> --textures <dir>` installs a real archive (`gamebanana:<id>`:
+  downloads that mod) with the same code. `--mods <folder>` makes the game load mods from
+  another folder for one run.
 * `--capture <frame>` writes a per-draw log, textures and EFB states for one frame;
   `--profile <start> <seconds>` (plus `--profile-gx`) prints a sampling profile.
 
@@ -260,5 +316,11 @@ Parts of the runtime are ported from or closely follow the
 [Dolphin emulator](https://github.com/dolphin-emu/dolphin) (GPL-2.0-or-later), notably the
 AX audio HLE, the TEV/lighting/fog shader formulas, VI timing and the DSP/IOS behaviour.
 Thanks to the Dolphin team.
+
+The exe also contains [Dear ImGui](https://github.com/ocornut/imgui) (MIT),
+[nod](https://github.com/encounter/nod) (MIT), [libarchive](https://libarchive.org) (BSD-2-Clause),
+[zlib](https://zlib.net) (zlib license), liblzma from [XZ Utils](https://tukaani.org/xz/) (0BSD)
+and [nlohmann/json](https://github.com/nlohmann/json) (MIT); their licences are in `licenses/`
+next to the exe.
 
 No game code or data is included; you need your own copy of the game.

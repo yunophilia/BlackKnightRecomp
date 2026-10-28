@@ -66,9 +66,15 @@ std::string Config_Text(const Config& c)
     s += "; PAGEDOWN NUMPAD0-NUMPAD9 MOUSE1 (left) MOUSE2 (right) MOUSE3 (middle) MOUSE4 MOUSE5 NONE\n";
     s += "; (F1 opens the settings, F11 toggles fullscreen; the mouse also moves the pointer)\n";
     for (int i = 0; i < 21; i++) s += std::format("{} = {}\n", kKeyActions[i], c.keys[i]);
+    s += "\n[Mods]\n";
+    s += "; mod folders in load order, one per line: on = <folder> loads it, off = <folder> skips it.\n";
+    s += "; When two enabled mods replace the same file, the one listed first wins. Mods not listed\n";
+    s += "; here load after these, enabled. Also editable in the Mods tab.\n";
+    for (auto& m : c.mods) s += std::format("{} = {}\n", m.enabled ? "on" : "off", m.folder);
     s += "\n[Paths]\n";
-    s += "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso)\n";
-    s += std::format("data = {}\niso = {}\n", c.dataDir, c.isoPath);
+    s += "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso;\n";
+    s += "; mods: mods/ next to the executable and game/mods)\n";
+    s += std::format("data = {}\niso = {}\nmods = {}\n", c.dataDir, c.isoPath, c.modsDir);
     return s;
 }
 
@@ -176,10 +182,15 @@ void Config_Load(const std::string& path)
             for (int i = 0; i < 21; i++)
                 if (key == kKeyActions[i]) c.keys[i] = val;
         }
+        else if (section == "mods")
+        {
+            if (!val.empty() && (key == "on" || key == "off")) c.mods.push_back({ val, key == "on" });
+        }
         else if (section == "paths")
         {
             if (key == "data") c.dataDir = val;
             else if (key == "iso") c.isoPath = val;
+            else if (key == "mods") c.modsDir = val;
         }
     }
 }

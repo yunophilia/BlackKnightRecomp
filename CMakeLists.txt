@@ -71,6 +71,21 @@ if(WIN32)
     set_target_properties(bkr_install PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                  RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
                                                  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
+
+    include(cmake/mod_deps.cmake)
+
+    # bkr_mods_test: checks the mod overlay of the disc layer on a synthetic disc (tools/mods_test)
+    add_executable(bkr_mods_test tools/mods_test/main.cpp runtime/ios/disc.cpp runtime/mods/mods.cpp
+                                 runtime/mods/mod_install.cpp runtime/mods/gamebanana.cpp runtime/net/http.cpp)
+    target_link_libraries(bkr_mods_test PRIVATE bkr_archive bkr_json winhttp bcrypt shell32)
+    target_include_directories(bkr_mods_test PRIVATE runtime)
+    target_compile_definitions(bkr_mods_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+    if(MSVC_FRONTEND)
+        target_compile_options(bkr_mods_test PRIVATE /EHsc /std:c++latest /utf-8)
+    endif()
+    set_target_properties(bkr_mods_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
+                                                   RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
+                                                   RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
 endif()
 
 # ---------------------------------------------------------------- Dear ImGui (launcher, settings overlay)
@@ -132,7 +147,7 @@ add_custom_target(bkr_version
     BYPRODUCTS ${BKR_VERSION_CPP} VERBATIM)
 target_sources(BlackKnightRecomp PRIVATE ${BKR_VERSION_CPP})
 add_dependencies(BlackKnightRecomp bkr_version)
-target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
+target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json winhttp windowscodecs bcrypt d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
 # the scripts in tools/ and the shader cache expect the game in out/
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out
                                                    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/out
@@ -140,6 +155,21 @@ set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CM
 if(BKR_CALL_COUNTS)
     set_target_properties(BlackKnightRecomp PROPERTIES OUTPUT_NAME BlackKnightRecomp_counts)
 endif()
+# licences of the libraries in the exe, shipped with it (tools/package.ps1 copies out/licenses)
+set(BKR_LICENSES ${CMAKE_BINARY_DIR}/licenses)
+file(DOWNLOAD https://raw.githubusercontent.com/encounter/nod/v2.0.0-alpha.12/LICENSE-MIT ${BKR_LICENSES}/nod-LICENSE-MIT.txt
+     EXPECTED_HASH SHA256=544ffe9befaefa6b59ab1fdde58789069ba7c1b65432bdea273a16b2117909b7)
+file(DOWNLOAD https://raw.githubusercontent.com/nlohmann/json/v3.12.0/LICENSE.MIT ${BKR_LICENSES}/nlohmann-json-LICENSE.MIT.txt
+     EXPECTED_HASH SHA256=46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603)
+add_custom_command(TARGET BlackKnightRecomp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/out/licenses
+    COMMAND ${CMAKE_COMMAND} -E copy ${BKR_LICENSES}/nod-LICENSE-MIT.txt ${BKR_LICENSES}/nlohmann-json-LICENSE.MIT.txt
+            ${CMAKE_SOURCE_DIR}/out/licenses/
+    COMMAND ${CMAKE_COMMAND} -E copy ${imgui_SOURCE_DIR}/LICENSE.txt ${CMAKE_SOURCE_DIR}/out/licenses/imgui-LICENSE.txt
+    COMMAND ${CMAKE_COMMAND} -E copy ${BKR_DEPS_PREFIX}/libarchive/src/bkr_libarchive/COPYING ${CMAKE_SOURCE_DIR}/out/licenses/libarchive-COPYING.txt
+    COMMAND ${CMAKE_COMMAND} -E copy ${BKR_DEPS_PREFIX}/zlib/src/bkr_zlib/LICENSE ${CMAKE_SOURCE_DIR}/out/licenses/zlib-LICENSE.txt
+    COMMAND ${CMAKE_COMMAND} -E copy ${BKR_DEPS_PREFIX}/xz/src/bkr_lzma/COPYING.0BSD ${CMAKE_SOURCE_DIR}/out/licenses/liblzma-COPYING.0BSD.txt
+    VERBATIM)
 target_compile_definitions(BlackKnightRecomp PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
 if(MSVC_FRONTEND)
     target_compile_options(BlackKnightRecomp PRIVATE /EHsc /std:c++latest /utf-8 $<$<CONFIG:RelWithDebInfo>:/Ob2>)

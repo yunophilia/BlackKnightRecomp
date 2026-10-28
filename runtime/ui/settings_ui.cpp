@@ -2,6 +2,7 @@
 #include "../config.h"
 #include "../gx/video.h"
 #include "../input/gamepad.h"
+#include "mods_ui.h"
 #include "../version.h"
 
 #include <imgui.h>
@@ -250,32 +251,33 @@ void SystemTab(SettingsHost host)
     ImGui::Spacing();
     ImGui::TextDisabled("Settings file: %s", Config_Path().c_str());
 }
+
+void ModsTab(SettingsHost host)
+{
+    const char* help = nullptr;
+    if (ModsUI_Draw(host, help)) Changed(host, true);
+    if (help) s_help = help;
+}
 }   // namespace
 
-void SettingsUI_Draw(SettingsHost host)
+void SettingsUI_SetRelease(const std::string& gameId, const std::string& dataDir) { ModsUI_SetRelease(gameId, dataDir); }
+std::vector<std::string> SettingsUI_ActiveMods() { return ModsUI_ActiveMods(); }
+
+namespace
 {
-    s_help = nullptr;
-    float helpH = ImGui::GetTextLineHeightWithSpacing() * 3;
-    if (ImGui::BeginTabBar("settings"))
-    {
-        struct Tab { const char* name; void (*draw)(SettingsHost); };
-        static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab } };
-        // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
-        static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
-        static int shotFrames = 0;
-        bool pick = shotTab && shotFrames++ < 2;
-        for (auto& t : tabs)
-            if (ImGui::BeginTabItem(t.name, nullptr, pick && !_stricmp(shotTab, t.name) ? ImGuiTabItemFlags_SetSelected : 0))
-            {
-                ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_None);
-                t.draw(host);
-                static const bool shotBottom = getenv("BKR_UI_SHOT_BOTTOM") != nullptr;   // test aid
-                if (shotBottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
-                ImGui::EndChild();
-                ImGui::EndTabItem();
-            }
-        ImGui::EndTabBar();
-    }
+// A page with the description of the hovered item below it, and the restart question
+void Page(SettingsHost host, void (*draw)(SettingsHost), float helpH)
+{
+    // flattened: Down from the tabs goes straight to the first setting
+    ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_NavFlattened);
+    draw(host);
+    static const bool shotBottom = getenv("BKR_UI_SHOT_BOTTOM") != nullptr;   // test aid
+    if (shotBottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
+    ImGui::EndChild();
+}
+
+void Footer()
+{
     ImGui::Separator();
     ImGui::TextWrapped("%s", s_help ? s_help : "");
 
@@ -301,6 +303,70 @@ void SettingsUI_Draw(SettingsHost host)
     }
 }
 
+float HelpHeight() { return ImGui::GetTextLineHeightWithSpacing() * 3; }
+}   // namespace
+
+void SettingsUI_Draw(SettingsHost host)
+{
+    s_help = nullptr;
+    if (ImGui::BeginTabBar("settings"))
+    {
+        struct Tab { const char* name; void (*draw)(SettingsHost); };
+        static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab } };
+        // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
+        static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
+        static int shotFrames = 0;
+        bool shot = shotTab && shotFrames++ < 2;
+        static int selected = 0;
+        int pick = SettingsUI_PadTab(selected, (int)std::size(tabs), false);
+        for (int i = 0; i < (int)std::size(tabs); i++)
+            if (SettingsUI_TabItem(tabs[i].name, i, pick, shot && !_stricmp(shotTab, tabs[i].name)))
+            {
+                selected = i;
+                Page(host, tabs[i].draw, HelpHeight());
+                ImGui::EndTabItem();
+            }
+        ImGui::EndTabBar();
+    }
+    Footer();
+}
+
+void SettingsUI_DrawMods(SettingsHost host)
+{
+    s_help = nullptr;
+    Page(host, ModsTab, HelpHeight());
+    Footer();
+}
+
+int SettingsUI_PadTab(int selected, int count, bool outer)
+{
+    if (count <= 0 || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId)) return -1;
+    ImGuiKey prev = outer ? ImGuiKey_GamepadL1 : ImGuiKey_GamepadL2;
+    ImGuiKey next = outer ? ImGuiKey_GamepadR1 : ImGuiKey_GamepadR2;
+    int step = (int)ImGui::IsKeyPressed(next, false) - (int)ImGui::IsKeyPressed(prev, false);
+    if (!step) return -1;
+    return (selected + step + count) % count;
+}
+
+bool SettingsUI_TabItem(const char* name, int index, int pick, bool select)
+{
+    // a tab the controller/keyboard cursor moved onto opens at once (like a game menu)
+    static ImGuiID s_focusedTab = 0;
+    ImGuiID id = ImGui::GetID(name);
+    bool open = ImGui::BeginTabItem(name, nullptr,
+                                    index == pick || select || id == s_focusedTab ? ImGuiTabItemFlags_SetSelected : 0);
+    if (id == s_focusedTab) s_focusedTab = 0;
+    if (index == pick) ImGui::SetKeyboardFocusHere(-1);
+    else if (!open && ImGui::IsItemFocused() && ImGui::GetIO().NavVisible) s_focusedTab = id;
+    return open;
+}
+
+bool SettingsUI_ShotMods()
+{
+    const char* tab = getenv("BKR_UI_SHOT_SUBTAB");
+    return tab && !_stricmp(tab, "Mods");
+}
+
 bool SettingsUI_TakeRestartRequest()
 {
     bool r = s_restartRequested;
@@ -314,6 +380,24 @@ void SettingsUI_DrawVersion()
     float pad = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(g_version).x;
     if (pad > 0) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + pad);
     ImGui::TextDisabled("%s", g_version);
+}
+
+void SettingsUI_AddFallbackFonts()
+{
+    // after the main font: Chinese, Japanese and Korean names and symbols (mod titles) from
+    // Windows' fonts where they exist; glyphs load as text needs them
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();
+    char dir[MAX_PATH];
+    UINT n = GetWindowsDirectoryA(dir, MAX_PATH);
+    if (!n) return;
+    ImFontConfig cfg;
+    cfg.MergeMode = true;
+    for (const char* file : { "msyh.ttc", "msjh.ttc", "YuGothM.ttc", "malgun.ttf", "seguisym.ttf" })
+    {
+        std::string path = std::string(dir, n) + "\\Fonts\\" + file;
+        if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES) io.Fonts->AddFontFromFileTTF(path.c_str(), 18.0f, &cfg);
+    }
 }
 
 void SettingsUI_ApplyStyle()
