@@ -38,7 +38,6 @@ stage() {   # stage <AppDir>: everything except the shader cache
     cp "$build/vkd3d_build-prefix/src/vkd3d_build/LICENSE" "$lic/vkd3d-shader.txt"
     cp "$root/data/linux/licenses/dxvk.txt" "$lic/dxvk.txt"
     cp "$root/data/linux/licenses/nod.txt" "$lic/nod.txt"
-    cp "$root/data/linux/licenses/stb.txt" "$lic/stb_image.txt"
     cp "$build/deps/libarchive/src/bkr_libarchive/COPYING" "$lic/libarchive.txt"
     cp "$build/deps/zlib/src/bkr_zlib/LICENSE" "$lic/zlib.txt"
     cp "$build/deps/xz/src/bkr_lzma/COPYING.0BSD" "$lic/liblzma.txt"

@@ -15,7 +15,7 @@ The runtime is the same as on Windows except for `runtime/platform/linux`:
 | Input | XInput, `GetAsyncKeyState` | SDL3 gamepads (Steam Input's too), keyboard and mouse; the same bindings and key names |
 | Audio | XAudio2 | SDL3 audio streams (PipeWire, PulseAudio or ALSA) |
 | Launcher, overlay | ImGui Win32 backend, COM dialogs | ImGui SDL3 backend, SDL file dialog (desktop portal or zenity), SDL message boxes |
-| Mod browser | WinHTTP, WIC, Recycle Bin | the system's libcurl (loaded when needed), stb_image, removed mods are deleted |
+| Mod browser | WinHTTP, WIC, Recycle Bin | the system's libcurl, libpng and libjpeg (loaded when needed), removed mods are deleted |
 | Guest memory | `VirtualAlloc2` placeholders + `MapViewOfFile3` | `memfd_create` + `mmap(MAP_FIXED)` |
 | Guest threads | Windows fibers | a small x86-64 context switch |
 | Crash reports | vectored exception handler, dbghelp | `SIGSEGV`/`SIGBUS`/`SIGILL`/`SIGFPE` handler with `backtrace()` |
@@ -35,8 +35,10 @@ and mods in its `mods/`.
 
 The mod browser needs libcurl (`libcurl.so.4`, installed on practically every desktop
 distribution and on SteamOS); without it the rest of the game works and the browser says it
-cannot use the network. It shows PNG, JPEG and GIF previews (WebP previews, which Windows
-shows, stay blank), and removing a mod deletes its folder instead of moving it to the trash.
+cannot use the network. Previews (PNG and JPEG, which is what GameBanana serves) are decoded
+by the system's libpng16 and libjpeg (`libjpeg.so.8` or `.62`); without them, or for a damaged
+or very large image, the browser shows no preview. Removing a mod deletes its folder instead
+of moving it to the trash.
 
 Requirements: x86-64, glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36, current
 SteamOS 3 or later), a Vulkan driver (Mesa or NVIDIA), and FUSE 2 to run AppImages (on Ubuntu
@@ -70,7 +72,7 @@ sudo apt-get install clang ninja-build cmake python3 bison flex libjson-perl lib
 
 The compiler needs C++20 with `<format>` (clang 15+ with libstdc++ 13+, or libc++ 17+).
 The first configure downloads SDL3 3.4.18, dxvk-native 3.1.1, vkd3d 1.19, the Khronos
-Vulkan and SPIR-V headers, stb_image and nod, each pinned by URL and SHA-256 in
+Vulkan and SPIR-V headers and nod, each pinned by URL and SHA-256 in
 `CMakeLists.txt`, and the first build the mod browser's libarchive, zlib and xz
 (`cmake/mod_deps.cmake`, as on Windows); SDL3 and vkd3d-shader are built from source (SDL3 needs the X11/Wayland/audio headers above,
 vkd3d bison, flex, Perl's JSON module and libvulkan). The C++ runtime is linked statically.

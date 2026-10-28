@@ -7,7 +7,9 @@
 //    variants, code mods and Dolphin-only archives (refused), unsafe paths, updates, removal;
 //  * hostile input: injected or edited install records (gamebanana.json, the old .ini), device names, other formats,
 //    entry counts, plain-http downloads;
-//  * reading GameBanana's API answers.
+//  * reading GameBanana's API answers;
+//  * decoding preview images (GameBanana's are untrusted): valid, truncated, corrupt and
+//    oversized PNG and JPEG files.
 // Exit code 0 when every check passes.
 //
 // bkr_mods_test --install <archive|gamebanana:<mod id>> --data <game data> --mods <dir>
@@ -19,6 +21,7 @@
 #include "mods/mod_install.h"
 #include "mods/mods.h"
 #include "net/http.h"
+#include "platform/image.h"
 
 #include <nlohmann/json.hpp>
 
@@ -619,6 +622,95 @@ static void HardeningTests()
     fs::remove_all(tmp, ec);
 }
 
+// --- preview images (the mod browser's Image_Decode; Linux: libpng and libjpeg, Windows: WIC)
+static uint32_t Crc32(const uint8_t* p, size_t n)
+{
+    uint32_t c = 0xFFFFFFFF;
+    for (size_t i = 0; i < n; i++)
+    {
+        c ^= p[i];
+        for (int k = 0; k < 8; k++) c = (c >> 1) ^ (0xEDB88320 & (0u - (c & 1)));
+    }
+    return ~c;
+}
+
+static void PutBE32(std::string& s, size_t at, uint32_t v)
+{
+    for (int i = 0; i < 4; i++) s[at + i] = (char)(v >> (24 - 8 * i));
+}
+
+static bool Decode(const std::string& data, uint32_t& w, uint32_t& h, std::vector<uint8_t>& rgba)
+{
+    w = h = 0;
+    rgba.clear();
+    return Image_Decode(data.data(), data.size(), w, h, rgba);
+}
+
+static void ImageTests()
+{
+    fs::path dir = BKR_MODS_TEST_DATA;
+    std::string png = ReadText(dir / "preview.png"), jpg = ReadText(dir / "preview.jpg");
+    CHECK(png.size() > 100 && jpg.size() > 100);
+    uint32_t w, h;
+    std::vector<uint8_t> px;
+    auto red = [&] { return px.size() == 64 * 48 * 4 && px[0] > 180 && px[1] < 70 && px[2] < 70 && px[3] == 255; };
+    CHECK(Decode(png, w, h, px) && w == 64 && h == 48 && red());
+    CHECK(Decode(jpg, w, h, px) && w == 64 && h == 48 && red());
+
+    // Damaged files are refused by the Linux decoders. WIC (Windows' own, unchanged) returns
+    // what it could decode of some of them, so on Windows they only have to come back
+    // without a crash and within the size limit.
+#ifdef _WIN32
+    constexpr bool kStrict = false;
+#else
+    constexpr bool kStrict = true;
+#endif
+    auto damaged = [&](const std::string& data) {
+        bool ok = Decode(data, w, h, px);
+        return kStrict ? !ok && px.empty() : !ok || (w <= 4096 && h <= 4096 && px.size() == (size_t)w * h * 4);
+    };
+    // truncated
+    CHECK(damaged(png.substr(0, png.size() / 2)));
+    CHECK(damaged(jpg.substr(0, jpg.size() / 2)));
+    CHECK(!Decode(png.substr(0, 20), w, h, px) && !Decode(jpg.substr(0, 4), w, h, px));
+    // corrupt: a changed byte in the PNG's pixel data (its CRC no longer matches), markers
+    // where the JPEG's entropy-coded data should be
+    size_t idat = png.find("IDAT");
+    CHECK(idat != std::string::npos);
+    std::string badPng = png;
+    badPng[idat + 6] ^= 0x55;
+    CHECK(damaged(badPng));
+    size_t sos = jpg.find("\xFF\xDA");
+    CHECK(sos != std::string::npos);
+    std::string badJpg = jpg;
+    for (size_t i = sos + 20; i < sos + 60 && i + 1 < badJpg.size(); i += 2) { badJpg[i] = '\xFF'; badJpg[i + 1] = '\x99'; }
+    CHECK(damaged(badJpg));
+    // huge dimensions in valid headers (PNG with a correct CRC): refused before decoding
+    std::string bigPng = png;
+    size_t ihdr = bigPng.find("IHDR");
+    PutBE32(bigPng, ihdr + 4, 30000);
+    PutBE32(bigPng, ihdr + 8, 30000);
+    PutBE32(bigPng, ihdr + 17, Crc32((const uint8_t*)bigPng.data() + ihdr, 17));
+    CHECK(!Decode(bigPng, w, h, px) && px.empty());
+    std::string wide = png;
+    PutBE32(wide, ihdr + 4, 4097);
+    PutBE32(wide, ihdr + 17, Crc32((const uint8_t*)wide.data() + ihdr, 17));
+    CHECK(!Decode(wide, w, h, px));
+    std::string bigJpg = jpg;
+    size_t sof = bigJpg.find("\xFF\xC0");
+    CHECK(sof != std::string::npos);
+    bigJpg[sof + 5] = (char)0xEA; bigJpg[sof + 6] = (char)0x60;   // height 60000
+    bigJpg[sof + 7] = (char)0xEA; bigJpg[sof + 8] = (char)0x60;   // width 60000
+    CHECK(!Decode(bigJpg, w, h, px) && px.empty());
+    // not an image
+    CHECK(!Decode("", w, h, px) && !Decode("<html><head></head></html>", w, h, px));
+#ifndef _WIN32
+    // GIF: no decoder on Linux (WIC decodes it on Windows)
+    static const uint8_t kGif[] = { 'G', 'I', 'F', '8', '9', 'a', 1, 0, 1, 0, 0, 0, 0, ',', 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 'D', 1, 0, ';' };
+    CHECK(!Decode(std::string((const char*)kGif, sizeof(kGif)), w, h, px));
+#endif
+}
+
 static void ParseTests()
 {
     const char* list = R"({"_aMetadata":{"_nRecordCount":3,"_bIsComplete":true},"_aRecords":[
@@ -722,6 +814,8 @@ int main(int argc, char** argv)
     HardeningTests();
     printf("== GameBanana answers\n");
     ParseTests();
+    printf("== preview images\n");
+    ImageTests();
     printf("%s (%d failed)\n", s_failed ? "FAILED" : "ALL PASSED", s_failed);
     return s_failed ? 1 : 0;
 }
