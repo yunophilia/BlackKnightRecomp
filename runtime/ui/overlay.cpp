@@ -137,7 +137,7 @@ void Overlay_Render(float w, float h)
     ImGui::SetNextWindowPos(vp->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(size, ImGuiCond_Always);
     bool open = true;
-    if (ImGui::Begin("Settings", &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+    if (ImGui::Begin("Sonic and the Black Knight###overlay", &open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                                           ImGuiWindowFlags_NoSavedSettings))
     {
         float bottom = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
@@ -146,13 +146,17 @@ void Overlay_Render(float w, float h)
         {
             static int shotFrames = 0;
             bool shotMods = SettingsUI_ShotMods() && shotFrames++ < 2;
-            if (ImGui::BeginTabItem("Settings"))
+            static int selected = 0;
+            int pick = SettingsUI_PadTab(selected, 2, true);
+            if (SettingsUI_TabItem("Settings", 0, pick))
             {
+                selected = 0;
                 SettingsUI_Draw(SettingsHost::InGame);
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Mods", nullptr, shotMods ? ImGuiTabItemFlags_SetSelected : 0))
+            if (SettingsUI_TabItem("Mods", 1, pick, shotMods))
             {
+                selected = 1;
                 SettingsUI_DrawMods(SettingsHost::InGame);
                 ImGui::EndTabItem();
             }

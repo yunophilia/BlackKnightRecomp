@@ -329,20 +329,23 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         ImGui::BeginChild("tabs", ImVec2(0, -bottom));
         if (ImGui::BeginTabBar("launcherTabs"))
         {
-            if (ImGui::BeginTabItem("Play"))
+            static int selected = 0;
+            int pick = SettingsUI_PadTab(selected, 3, true);
+            if (SettingsUI_TabItem("Play", 0, pick))
             {
+                selected = 0;
                 DrawHome(st, play, isoPath, installDest);
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Settings", nullptr,
-                                    frames < 2 && shotTab && !strcmp(shotTab, "settings") ? ImGuiTabItemFlags_SetSelected : 0))
+            if (SettingsUI_TabItem("Settings", 1, pick, frames < 2 && shotTab && !strcmp(shotTab, "settings")))
             {
+                selected = 1;
                 SettingsUI_Draw(SettingsHost::Launcher);
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("Mods", nullptr,
-                                    frames < 2 && shotTab && !strcmp(shotTab, "mods") ? ImGuiTabItemFlags_SetSelected : 0))
+            if (SettingsUI_TabItem("Mods", 2, pick, frames < 2 && shotTab && !strcmp(shotTab, "mods")))
             {
+                selected = 2;
                 SettingsUI_DrawMods(SettingsHost::Launcher);
                 ImGui::EndTabItem();
             }

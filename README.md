@@ -202,7 +202,7 @@ F11 or Alt+Enter toggles fullscreen.
 
 ## Launcher and settings
 
-The game opens a launcher on every start: Play, settings, and the game data status. It
+The game opens a launcher on every start: Play (with the game data status), Settings and Mods. It
 asks for your disc image only when nothing is installed yet or the installed files are
 damaged (each start checks that every file is present with the right size; "Check all
 game files" compares the hash of every file). `bkr_install --verify` does the full check
@@ -212,6 +212,9 @@ In game, View (Back) or F1 opens the same settings over the running game. Change
 saved to `config.ini` at once and most apply immediately; frame rate, internal
 resolution, widescreen, language, texture packs, mods and the graphics thread ask to restart
 the game. The overlay also has the Wii HOME Menu, restart and quit.
+
+With a controller, the D-pad moves, A selects and B goes back; LB/RB switch between the
+main tabs and LT/RT between the tabs inside a page (Video, Input, ... or Installed / Get mods).
 
 `config.ini` next to the executable holds the settings (it can also be edited by hand):
 

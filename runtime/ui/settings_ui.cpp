@@ -315,11 +315,14 @@ void SettingsUI_Draw(SettingsHost host)
         // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
         static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
         static int shotFrames = 0;
-        bool pick = shotTab && shotFrames++ < 2;
-        for (auto& t : tabs)
-            if (ImGui::BeginTabItem(t.name, nullptr, pick && !_stricmp(shotTab, t.name) ? ImGuiTabItemFlags_SetSelected : 0))
+        bool shot = shotTab && shotFrames++ < 2;
+        static int selected = 0;
+        int pick = SettingsUI_PadTab(selected, (int)std::size(tabs), false);
+        for (int i = 0; i < (int)std::size(tabs); i++)
+            if (SettingsUI_TabItem(tabs[i].name, i, pick, shot && !_stricmp(shotTab, tabs[i].name)))
             {
-                Page(host, t.draw, HelpHeight());
+                selected = i;
+                Page(host, tabs[i].draw, HelpHeight());
                 ImGui::EndTabItem();
             }
         ImGui::EndTabBar();
@@ -332,6 +335,23 @@ void SettingsUI_DrawMods(SettingsHost host)
     s_help = nullptr;
     Page(host, ModsTab, HelpHeight());
     Footer();
+}
+
+int SettingsUI_PadTab(int selected, int count, bool outer)
+{
+    if (count <= 0 || ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId)) return -1;
+    ImGuiKey prev = outer ? ImGuiKey_GamepadL1 : ImGuiKey_GamepadL2;
+    ImGuiKey next = outer ? ImGuiKey_GamepadR1 : ImGuiKey_GamepadR2;
+    int step = (int)ImGui::IsKeyPressed(next, false) - (int)ImGui::IsKeyPressed(prev, false);
+    if (!step) return -1;
+    return (selected + step + count) % count;
+}
+
+bool SettingsUI_TabItem(const char* name, int index, int pick, bool select)
+{
+    bool open = ImGui::BeginTabItem(name, nullptr, index == pick || select ? ImGuiTabItemFlags_SetSelected : 0);
+    if (index == pick) ImGui::SetKeyboardFocusHere(-1);
+    return open;
 }
 
 bool SettingsUI_ShotMods()

@@ -763,13 +763,17 @@ bool ModsUI_Draw(SettingsHost host, const char*& help)
 
     if (ImGui::BeginTabBar("modsView"))
     {
-        if (ImGui::BeginTabItem("Installed"))
+        static int selected = 0;
+        int pick = SettingsUI_PadTab(selected, 2, false);
+        if (SettingsUI_TabItem("Installed", 0, pick))
         {
+            selected = 0;
             changed |= InstalledTab(host);
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Get mods (GameBanana)", nullptr, openBrowse ? ImGuiTabItemFlags_SetSelected : 0))
+        if (SettingsUI_TabItem("Get mods (GameBanana)", 1, pick, openBrowse))
         {
+            selected = 1;
             BrowseTab(host);
             ImGui::EndTabItem();
         }
