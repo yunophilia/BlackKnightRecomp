@@ -245,7 +245,7 @@ the game. The overlay also has the Wii HOME Menu, restart and quit.
 Besides texture packs (above), most mods for the game replace game files: character
 skins, HUD changes and the like.
 
-**Getting mods in the game**: Settings > Mods > "Get mods (GameBanana)" (in the launcher
+**Getting mods in the game**: the Mods tab > "Get mods (GameBanana)" (in the launcher
 and in game) lists the game's mods on [GameBanana](https://gamebanana.com/games/6511) with
 screenshots and descriptions. Install downloads one and puts it where the game loads it:
 game files into `mods/`, Dolphin-format textures into `textures/<game ID>/`. Mods that change
@@ -273,7 +273,7 @@ level to use it instead.
   file may be larger or smaller than the original. Mod files that are not game files are
   ignored.
 * New mods are enabled and load after the ones already known (an archive with several
-  variants installs each as its own mod, the first enabled). The Mods tab of the settings
+  variants installs each as its own mod, the first enabled). The Mods tab
   (launcher and in game) lists them with author and version, turns them on or off and changes
   the load order; changes in game ask to restart. The launcher shows which mods are active.
 * The file checks (on start and "Check all game files") look at the installed files only,

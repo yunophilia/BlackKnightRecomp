@@ -69,7 +69,7 @@ std::string Config_Text(const Config& c)
     s += "\n[Mods]\n";
     s += "; mod folders in load order, one per line: on = <folder> loads it, off = <folder> skips it.\n";
     s += "; When two enabled mods replace the same file, the one listed first wins. Mods not listed\n";
-    s += "; here load after these, enabled. Also editable in the Mods tab of the settings.\n";
+    s += "; here load after these, enabled. Also editable in the Mods tab.\n";
     for (auto& m : c.mods) s += std::format("{} = {}\n", m.enabled ? "on" : "off", m.folder);
     s += "\n[Paths]\n";
     s += "; leave empty to search next to the executable (game/extracted/DATA, game/*.iso;\n";

@@ -142,7 +142,22 @@ void Overlay_Render(float w, float h)
     {
         float bottom = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
         ImGui::BeginChild("panel", ImVec2(0, -bottom));
-        SettingsUI_Draw(SettingsHost::InGame);
+        if (ImGui::BeginTabBar("overlayTabs"))
+        {
+            static int shotFrames = 0;
+            bool shotMods = SettingsUI_ShotMods() && shotFrames++ < 2;
+            if (ImGui::BeginTabItem("Settings"))
+            {
+                SettingsUI_Draw(SettingsHost::InGame);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Mods", nullptr, shotMods ? ImGuiTabItemFlags_SetSelected : 0))
+            {
+                SettingsUI_DrawMods(SettingsHost::InGame);
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
         ImGui::EndChild();
         if (ImGui::Button("Close")) open = false;
         ImGui::SameLine();

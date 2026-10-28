@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-// The Mods tab of the settings (launcher and in game): the installed mods (on/off, load
+// The Mods tab (launcher and in game): the installed mods (on/off, load
 // order, updates, removal) and a browser of the game's mods on GameBanana that downloads
 // and installs them (mods/mod_install.h).
 

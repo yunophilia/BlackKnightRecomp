@@ -169,7 +169,7 @@ void DrawHome(State& st, bool& play, const std::string& isoPath, const fs::path&
         std::vector<std::string> mods = SettingsUI_ActiveMods();
         std::string list;
         for (auto& m : mods) list += (list.empty() ? "" : ", ") + m;
-        if (mods.empty()) ImGui::TextDisabled("Mods: none (see Settings > Mods)");
+        if (mods.empty()) ImGui::TextDisabled("Mods: none (see the Mods tab)");
         else ImGui::TextWrapped("Mods active (%d): %s", (int)mods.size(), list.c_str());
     }
     ImGui::Spacing();
@@ -269,8 +269,8 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
     State st;
     st.data = dataDir.empty() ? installDest : fs::path(dataDir);
     Check(st);
-    // test aid: BKR_UI_SHOT=<file.bmp> saves the launcher (BKR_UI_SHOT_TAB=settings: the
-    // settings tab) and quits, without asking for a disc image; BKR_UI_SHOT_WAIT=<seconds>
+    // test aid: BKR_UI_SHOT=<file.bmp> saves the launcher (BKR_UI_SHOT_TAB=settings or mods:
+    // that tab) and quits, without asking for a disc image; BKR_UI_SHOT_WAIT=<seconds>
     // waits that long first (downloads in the Mods tab)
     const char* shot = getenv("BKR_UI_SHOT");
     const char* shotWait = getenv("BKR_UI_SHOT_WAIT");
@@ -338,6 +338,12 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
                                     frames < 2 && shotTab && !strcmp(shotTab, "settings") ? ImGuiTabItemFlags_SetSelected : 0))
             {
                 SettingsUI_Draw(SettingsHost::Launcher);
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Mods", nullptr,
+                                    frames < 2 && shotTab && !strcmp(shotTab, "mods") ? ImGuiTabItemFlags_SetSelected : 0))
+            {
+                SettingsUI_DrawMods(SettingsHost::Launcher);
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

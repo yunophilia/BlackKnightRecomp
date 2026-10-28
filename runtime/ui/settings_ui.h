@@ -12,10 +12,14 @@ enum class SettingsHost
 };
 
 void SettingsUI_Draw(SettingsHost host);
+// The Mods section (its own tab next to the settings in the launcher and in game).
+void SettingsUI_DrawMods(SettingsHost host);
+// Test aid: BKR_UI_SHOT_SUBTAB=Mods, the Mods section opens first.
+bool SettingsUI_ShotMods();
 // In game: the user confirmed "Restart the game?" (the overlay restarts the process).
 bool SettingsUI_TakeRestartRequest();
 
-// The installed release (game ID and data folder) the Mods tab checks mods against
+// The installed release (game ID and data folder) the Mods section checks mods against
 // (mod.ini "releases", the disc's files for installs); rescans the mods folder.
 void SettingsUI_SetRelease(const std::string& gameId, const std::string& dataDir);
 // Titles of the mods that load with the current settings, in load order.

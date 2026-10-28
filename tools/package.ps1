@@ -38,6 +38,6 @@ Optional, if you have one:
   textures\RENE8P\...                       (Dolphin-format HD texture pack; the folder is
                                             named by the game ID: RENE8P, RENP8P or RENJ8P)
   mods\<mod name>\...                       (file-replacement mods; or get them in the game:
-                                            Settings > Mods > Get mods)
+                                            Mods > Get mods)
 "@ | Set-Content (Join-Path $dist "game\ABOUT_THIS_FOLDER.txt")
 "packaged to $dist"

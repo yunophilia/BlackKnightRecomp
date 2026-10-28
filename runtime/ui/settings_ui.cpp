@@ -263,31 +263,20 @@ void ModsTab(SettingsHost host)
 void SettingsUI_SetRelease(const std::string& gameId, const std::string& dataDir) { ModsUI_SetRelease(gameId, dataDir); }
 std::vector<std::string> SettingsUI_ActiveMods() { return ModsUI_ActiveMods(); }
 
-void SettingsUI_Draw(SettingsHost host)
+namespace
 {
-    s_help = nullptr;
-    float helpH = ImGui::GetTextLineHeightWithSpacing() * 3;
-    if (ImGui::BeginTabBar("settings"))
-    {
-        struct Tab { const char* name; void (*draw)(SettingsHost); };
-        static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab },
-                                    { "Mods", ModsTab } };
-        // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
-        static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
-        static int shotFrames = 0;
-        bool pick = shotTab && shotFrames++ < 2;
-        for (auto& t : tabs)
-            if (ImGui::BeginTabItem(t.name, nullptr, pick && !_stricmp(shotTab, t.name) ? ImGuiTabItemFlags_SetSelected : 0))
-            {
-                ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_None);
-                t.draw(host);
-                static const bool shotBottom = getenv("BKR_UI_SHOT_BOTTOM") != nullptr;   // test aid
-                if (shotBottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
-                ImGui::EndChild();
-                ImGui::EndTabItem();
-            }
-        ImGui::EndTabBar();
-    }
+// A page with the description of the hovered item below it, and the restart question
+void Page(SettingsHost host, void (*draw)(SettingsHost), float helpH)
+{
+    ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_None);
+    draw(host);
+    static const bool shotBottom = getenv("BKR_UI_SHOT_BOTTOM") != nullptr;   // test aid
+    if (shotBottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
+    ImGui::EndChild();
+}
+
+void Footer()
+{
     ImGui::Separator();
     ImGui::TextWrapped("%s", s_help ? s_help : "");
 
@@ -311,6 +300,44 @@ void SettingsUI_Draw(SettingsHost host)
         if (ImGui::Button("Later")) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
+}
+
+float HelpHeight() { return ImGui::GetTextLineHeightWithSpacing() * 3; }
+}   // namespace
+
+void SettingsUI_Draw(SettingsHost host)
+{
+    s_help = nullptr;
+    if (ImGui::BeginTabBar("settings"))
+    {
+        struct Tab { const char* name; void (*draw)(SettingsHost); };
+        static const Tab tabs[] = { { "Video", VideoTab }, { "Input", InputTab }, { "Audio", AudioTab }, { "System", SystemTab } };
+        // test aid: BKR_UI_SHOT_SUBTAB=<tab name> opens that tab first (UI screenshots)
+        static const char* shotTab = getenv("BKR_UI_SHOT_SUBTAB");
+        static int shotFrames = 0;
+        bool pick = shotTab && shotFrames++ < 2;
+        for (auto& t : tabs)
+            if (ImGui::BeginTabItem(t.name, nullptr, pick && !_stricmp(shotTab, t.name) ? ImGuiTabItemFlags_SetSelected : 0))
+            {
+                Page(host, t.draw, HelpHeight());
+                ImGui::EndTabItem();
+            }
+        ImGui::EndTabBar();
+    }
+    Footer();
+}
+
+void SettingsUI_DrawMods(SettingsHost host)
+{
+    s_help = nullptr;
+    Page(host, ModsTab, HelpHeight());
+    Footer();
+}
+
+bool SettingsUI_ShotMods()
+{
+    const char* tab = getenv("BKR_UI_SHOT_SUBTAB");
+    return tab && !_stricmp(tab, "Mods");
 }
 
 bool SettingsUI_TakeRestartRequest()
