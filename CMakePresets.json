@@ -41,9 +41,9 @@
         {
             "name": "linux-clang",
             "displayName": "Linux (clang)",
-            "description": "recompiled code only until the runtime is ported",
+            "description": "clang; SDL3, dxvk-native and vkd3d-shader are downloaded (docs/linux.md)",
             "inherits": "base",
-            "cacheVariables": { "CMAKE_CXX_COMPILER": "clang++" },
+            "cacheVariables": { "CMAKE_C_COMPILER": "clang", "CMAKE_CXX_COMPILER": "clang++" },
             "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
         }
     ],

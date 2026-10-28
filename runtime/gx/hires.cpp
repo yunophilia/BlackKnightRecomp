@@ -4,6 +4,9 @@
 #include "texture_decode.h"
 #include "../log.h"
 #include "../region.h"
+#include "../platform/compat.h"
+#include "../platform/image.h"
+#include "../platform/platform.h"
 
 #include <algorithm>
 #include <cstring>
@@ -12,9 +15,6 @@
 #include <fstream>
 #include <unordered_map>
 #include <vector>
-#include <windows.h>
-#include <wincodec.h>
-#pragma comment(lib, "windowscodecs.lib")
 
 namespace fs = std::filesystem;
 
@@ -59,7 +59,6 @@ uint64_t XXH64(const uint8_t* p, size_t len, uint64_t seed = 0)
 
 std::unordered_map<std::string, fs::path> s_files;                    // lowercase name -> file
 std::unordered_map<std::string, ID3D11ShaderResourceView*> s_loaded;   // name -> texture (nullptr = failed)
-IWICImagingFactory* s_wic = nullptr;
 
 std::string Lower(std::string s)
 {
@@ -119,26 +118,10 @@ ID3D11ShaderResourceView* MakeTexture(uint32_t w, uint32_t h, DXGI_FORMAT fmt, c
 
 ID3D11ShaderResourceView* LoadPNG(const fs::path& path, bool mipmapped)
 {
-    if (!s_wic) return nullptr;
-    IWICBitmapDecoder* dec = nullptr;
-    if (FAILED(s_wic->CreateDecoderFromFilename(path.wstring().c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &dec)))
-        return nullptr;
-    ID3D11ShaderResourceView* srv = nullptr;
-    IWICBitmapFrameDecode* frame = nullptr;
-    IWICFormatConverter* conv = nullptr;
-    UINT w = 0, h = 0;
-    if (SUCCEEDED(dec->GetFrame(0, &frame)) && SUCCEEDED(s_wic->CreateFormatConverter(&conv)) &&
-        SUCCEEDED(conv->Initialize(frame, GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom)) &&
-        SUCCEEDED(conv->GetSize(&w, &h)) && w && h)
-    {
-        std::vector<std::vector<uint8_t>> lv(1, std::vector<uint8_t>((size_t)w * h * 4));
-        if (SUCCEEDED(conv->CopyPixels(nullptr, w * 4, (UINT)lv[0].size(), lv[0].data())))
-            srv = MakeTexture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, lv, { w * 4 }, mipmapped);
-    }
-    if (conv) conv->Release();
-    if (frame) frame->Release();
-    dec->Release();
-    return srv;
+    uint32_t w = 0, h = 0;
+    std::vector<std::vector<uint8_t>> lv(1);
+    if (!Image_LoadPNG(path, w, h, lv[0])) return nullptr;
+    return MakeTexture(w, h, DXGI_FORMAT_R8G8B8A8_UNORM, lv, { w * 4 }, mipmapped);
 }
 
 // Minimal DDS reader: BC1/BC2/BC3/BC7 (FourCC or DX10 header) and RGBA8, with mips.
@@ -202,14 +185,11 @@ void HiRes_Init(const std::string& configuredDir)
         roots.push_back(configuredDir);
     else
     {
-        wchar_t buf[MAX_PATH];
-        GetModuleFileNameW(nullptr, buf, MAX_PATH);
-        fs::path exe = fs::path(buf).parent_path();
-        roots.push_back(exe / "textures");
-        roots.push_back(exe / "game" / "textures");
-        roots.push_back(exe / ".." / "game" / "textures");
-        if (const char* up = getenv("USERPROFILE"))
-            roots.push_back(fs::path(up) / "Documents" / "Dolphin Emulator" / "Load" / "Textures");
+        fs::path user = Platform_UserDir();   // the exe directory on Windows
+        roots.push_back(user / "textures");
+        roots.push_back(user / "game" / "textures");
+        roots.push_back(user / ".." / "game" / "textures");
+        if (fs::path dolphin = Platform_DolphinTextureDir(); !dolphin.empty()) roots.push_back(dolphin);
     }
     // the installed release's pack (Dolphin's folder names: game ID, its first four or three
     // characters); else another release's: the textures are the same
@@ -222,8 +202,7 @@ void HiRes_Init(const std::string& configuredDir)
         for (auto& r : roots)
             if (fs::is_directory(r / ids[i], ec)) Scan(r / ids[i]);
     if (s_files.empty()) return;
-    CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&s_wic));
+    Image_Init();
     LOG_INFO("texture pack: {} replacement textures", s_files.size());
 }
 
@@ -296,33 +275,14 @@ void HiRes_Dump(const uint8_t* data, uint32_t dataSize, const uint8_t* tlut, uin
     static fs::path dir;
     if (dir.empty())
     {
-        wchar_t buf[MAX_PATH];
-        GetModuleFileNameW(nullptr, buf, MAX_PATH);
-        dir = fs::path(buf).parent_path() / "dump" / "textures" / Region_Current().gameId;
+        dir = Platform_UserDir() / "dump" / "textures" / Region_Current().gameId;
         std::error_code ec;
         fs::create_directories(dir, ec);
-        CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-        if (!s_wic) CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&s_wic));
+        Image_Init();
     }
     std::string names[2];
     MakeNames(data, dataSize, tlut, tlutSize, fmt, w, h, mipmapped, names);
-    if (names[0].empty() || done[names[0]] || !s_wic) return;
+    if (names[0].empty() || done[names[0]]) return;
     done[names[0]] = true;
-    fs::path path = dir / (names[0] + ".png");
-    IWICStream* stream = nullptr;
-    IWICBitmapEncoder* enc = nullptr;
-    IWICBitmapFrameEncode* frame = nullptr;
-    if (SUCCEEDED(s_wic->CreateStream(&stream)) && SUCCEEDED(stream->InitializeFromFilename(path.wstring().c_str(), GENERIC_WRITE)) &&
-        SUCCEEDED(s_wic->CreateEncoder(GUID_ContainerFormatPng, nullptr, &enc)) && SUCCEEDED(enc->Initialize(stream, WICBitmapEncoderNoCache)) &&
-        SUCCEEDED(enc->CreateNewFrame(&frame, nullptr)) && SUCCEEDED(frame->Initialize(nullptr)) && SUCCEEDED(frame->SetSize(w, h)))
-    {
-        WICPixelFormatGUID pf = GUID_WICPixelFormat32bppRGBA;
-        frame->SetPixelFormat(&pf);
-        frame->WritePixels(h, w * 4, w * h * 4, (BYTE*)rgba);
-        frame->Commit();
-        enc->Commit();
-    }
-    if (frame) frame->Release();
-    if (enc) enc->Release();
-    if (stream) stream->Release();
+    Image_SavePNG(dir / (names[0] + ".png"), w, h, rgba);
 }
