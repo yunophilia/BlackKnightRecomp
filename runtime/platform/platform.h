@@ -38,6 +38,8 @@ std::filesystem::path Platform_DolphinTextureDir();
 bool Platform_ReplaceFile(const std::string& from, const std::string& to);
 // A UI font of the system (empty: use ImGui's own).
 std::string Platform_UiFont();
+// UTF-8 of a wide string (UTF-16 on Windows, UTF-32 elsewhere).
+std::string Platform_Utf8(const wchar_t* s);
 
 // ---------------------------------------------------------------- time
 uint64_t Platform_TickMs();          // milliseconds since some point (GetTickCount64)

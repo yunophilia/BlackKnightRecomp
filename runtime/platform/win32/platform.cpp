@@ -104,6 +104,14 @@ std::string Platform_UiFont()
     return !font.empty() && GetFileAttributesA(font.c_str()) != INVALID_FILE_ATTRIBUTES ? font : std::string();
 }
 
+std::string Platform_Utf8(const wchar_t* s)
+{
+    int n = WideCharToMultiByte(CP_UTF8, 0, s, -1, nullptr, 0, nullptr, nullptr);
+    std::string out(n > 0 ? n - 1 : 0, '\0');
+    if (n > 1) WideCharToMultiByte(CP_UTF8, 0, s, -1, out.data(), n, nullptr, nullptr);
+    return out;
+}
+
 // ---------------------------------------------------------------- time
 uint64_t Platform_TickMs() { return GetTickCount64(); }
 

@@ -1,24 +1,22 @@
-// Window, D3D11 device and presentation.
+// D3D11 device and presentation (the window itself is the platform's, platform/window.h).
 #include "video.h"
 #include "../config.h"
 #include "../log.h"
+#include "../platform/platform.h"
+#include "../platform/window.h"
 #include "../ui/overlay.h"
 
+#include <algorithm>
 #include <atomic>
 #include <d3dcompiler.h>
 #include <dxgi1_2.h>
-#include <thread>
-#include <windows.h>
 
 VideoConfig g_videoConfig;
 ID3D11Device* g_device = nullptr;
 ID3D11DeviceContext* g_ctx = nullptr;
 
-static HWND s_hwnd = nullptr;
 static IDXGISwapChain1* s_swapchain = nullptr;
 static ID3D11RenderTargetView* s_backbufferRTV = nullptr;
-static std::atomic<bool> s_closed{ false };
-static std::atomic<bool> s_resized{ false };
 static ID3D11VertexShader* s_blitVS = nullptr;
 static ID3D11PixelShader* s_blitPS = nullptr;
 static ID3D11SamplerState* s_linearSampler = nullptr;
@@ -26,118 +24,9 @@ static ID3D11Buffer* s_blitCB = nullptr;
 static ID3D11RasterizerState* s_blitRS = nullptr;
 static ID3D11BlendState* s_blitBS = nullptr;
 static ID3D11DepthStencilState* s_blitDS = nullptr;
-static bool s_fullscreen = false;   // window thread only
 // UI screenshots of a minimized test window (BKR_UI_SHOT_OVERLAY): drawn off screen
 static ID3D11Texture2D* s_shotTex = nullptr;
 static ID3D11RenderTargetView* s_shotRTV = nullptr;
-constexpr UINT WM_APP_FULLSCREEN = WM_APP + 1;   // wParam: 1 fullscreen, 0 windowed
-constexpr UINT WM_APP_WINDOWSIZE = WM_APP + 2;   // wParam: width, lParam: height
-
-// borderless fullscreen on the window's monitor, or back to the saved window rect
-static void SetFullscreen(HWND hwnd, bool on)
-{
-    static RECT saved;
-    if (on == s_fullscreen) return;
-    s_fullscreen = on;
-    if (on)
-    {
-        GetWindowRect(hwnd, &saved);
-        HMONITOR mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-        MONITORINFO mi{ sizeof(mi) };
-        GetMonitorInfoW(mon, &mi);
-        SetWindowLongW(hwnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-        SetWindowPos(hwnd, HWND_TOP, mi.rcMonitor.left, mi.rcMonitor.top, mi.rcMonitor.right - mi.rcMonitor.left,
-                     mi.rcMonitor.bottom - mi.rcMonitor.top, SWP_FRAMECHANGED);
-    }
-    else
-    {
-        SetWindowLongW(hwnd, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-        SetWindowPos(hwnd, nullptr, saved.left, saved.top, saved.right - saved.left, saved.bottom - saved.top, SWP_FRAMECHANGED);
-    }
-}
-
-static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-    if (Overlay_WndProc(hwnd, msg, wp, lp)) return 0;   // the settings overlay has the input
-    switch (msg)
-    {
-    case WM_CLOSE:
-        // Closing the window quits. Saves are written to the host NAND as the game
-        // issues them, so there is nothing to flush; terminate directly rather than
-        // running DLL teardown while guest/GX/audio threads are mid-operation.
-        s_closed = true;
-        LOG_INFO("window closed, exiting");
-        { void Gamepad_StopRumble(); Gamepad_StopRumble(); }
-        TerminateProcess(GetCurrentProcess(), 0);
-        return 0;
-    case WM_SIZE:
-        s_resized = true;
-        return 0;
-    case WM_ACTIVATEAPP:
-        if (g_config.pauseOnFocusLoss)
-        {
-            extern std::atomic<bool> g_pauseRequested;
-            g_pauseRequested = (wp == FALSE);
-        }
-        break;
-    case WM_SETCURSOR:
-        // the game draws its own Wii Remote pointer; the overlay needs the mouse cursor
-        if (LOWORD(lp) == HTCLIENT)
-        {
-            SetCursor(Overlay_IsOpen() ? LoadCursorW(nullptr, MAKEINTRESOURCEW(32512)) : nullptr);
-            return TRUE;
-        }
-        break;
-    case WM_APP_FULLSCREEN:
-        SetFullscreen(hwnd, wp != 0);
-        return 0;
-    case WM_APP_WINDOWSIZE:
-        if (!s_fullscreen)
-        {
-            RECT r{ 0, 0, (LONG)wp, (LONG)lp };
-            AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-            SetWindowPos(hwnd, nullptr, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOMOVE | SWP_NOZORDER);
-        }
-        return 0;
-    case WM_KEYDOWN:
-        if (wp == VK_F11 || (wp == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000)))
-        {
-            SetFullscreen(hwnd, !s_fullscreen);
-            g_config.fullscreen = s_fullscreen;
-        }
-        else if (wp == VK_F1)
-            Overlay_Toggle();
-        break;
-    case WM_SYSKEYDOWN:
-        if (wp == VK_RETURN) { SendMessageW(hwnd, WM_KEYDOWN, VK_RETURN, lp); return 0; }
-        break;
-    }
-    return DefWindowProcW(hwnd, msg, wp, lp);
-}
-
-static void WindowThread(std::atomic<int>* ready)
-{
-    WNDCLASSW wc{};
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = GetModuleHandleW(nullptr);
-    wc.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
-    wc.hIcon = LoadIconW(nullptr, MAKEINTRESOURCEW(32512));
-    wc.lpszClassName = L"BlackKnightRecomp";
-    RegisterClassW(&wc);
-    RECT r{ 0, 0, g_videoConfig.windowWidth, g_videoConfig.windowHeight };
-    AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
-    s_hwnd = CreateWindowW(L"BlackKnightRecomp", L"Sonic and the Black Knight - Recompiled", WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                           CW_USEDEFAULT, CW_USEDEFAULT, r.right - r.left, r.bottom - r.top, nullptr, nullptr, wc.hInstance, nullptr);
-    if (s_hwnd && g_videoConfig.fullscreen) SetFullscreen(s_hwnd, true);
-    *ready = s_hwnd ? 1 : -1;
-    MSG msg;
-    while (GetMessageW(&msg, nullptr, 0, 0) > 0)
-    {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
-}
-
 static ID3DBlob* Compile(const char* src, const char* entry, const char* target)
 {
     ID3DBlob* blob = nullptr;
@@ -177,34 +66,11 @@ static void CreateBackbufferRTV()
     bb->Release();
 }
 
-// What a bug report needs to tell graphics problems apart: Wine/Proton (its D3D11 is DXVK
-// or wined3d, its HLSL compiler vkd3d-shader) and which d3dcompiler DLL is loaded.
-static void LogPlatform()
-{
-    using WineVersionFn = const char*(__cdecl*)();
-    if (auto wineVersion = (WineVersionFn)(void*)GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version"))
-        LOG_INFO("running under Wine {}", wineVersion());
-    if (HMODULE dc = GetModuleHandleW(L"d3dcompiler_47.dll"))
-    {
-        wchar_t path[MAX_PATH];
-        char utf8[MAX_PATH * 3];
-        GetModuleFileNameW(dc, path, MAX_PATH);
-        WideCharToMultiByte(CP_UTF8, 0, path, -1, utf8, sizeof(utf8), nullptr, nullptr);
-        LOG_INFO("HLSL compiler: {}", utf8);
-    }
-}
-
 bool Video_Init()
 {
-    LogPlatform();
-    std::atomic<int> ready{ 0 };
-    std::thread(WindowThread, &ready).detach();
-    while (ready == 0) Sleep(1);
-    if (ready < 0)
-    {
-        LOG_ERROR("CreateWindow failed ({})", GetLastError());
-        return false;
-    }
+    Platform_LogHost();
+    if (!Window_Create(g_videoConfig.windowWidth, g_videoConfig.windowHeight, g_videoConfig.fullscreen)) return false;
+    HWND hwnd = (HWND)Window_Handle();
 
     UINT flags = 0;
 #ifdef _DEBUG
@@ -225,9 +91,7 @@ bool Video_Init()
     adapter->GetParent(__uuidof(IDXGIFactory2), (void**)&factory);
     DXGI_ADAPTER_DESC ad;
     adapter->GetDesc(&ad);
-    char name[128];
-    WideCharToMultiByte(CP_UTF8, 0, ad.Description, -1, name, sizeof(name), nullptr, nullptr);
-    LOG_INFO("D3D11 adapter: {} (feature level {:x})", name, (uint32_t)g_device->GetFeatureLevel());
+    LOG_INFO("D3D11 adapter: {} (feature level {:x})", Platform_Utf8(ad.Description), (uint32_t)g_device->GetFeatureLevel());
 
     DXGI_SWAP_CHAIN_DESC1 sd{};
     sd.Width = 0;
@@ -237,13 +101,13 @@ bool Video_Init()
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     sd.BufferCount = 2;
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-    hr = factory->CreateSwapChainForHwnd(g_device, s_hwnd, &sd, nullptr, nullptr, &s_swapchain);
+    hr = factory->CreateSwapChainForHwnd(g_device, hwnd, &sd, nullptr, nullptr, &s_swapchain);
     if (FAILED(hr))
     {
         LOG_ERROR("CreateSwapChainForHwnd failed {:08x}", (uint32_t)hr);
         return false;
     }
-    factory->MakeWindowAssociation(s_hwnd, DXGI_MWA_NO_ALT_ENTER);
+    factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
     factory->Release();
     adapter->Release();
     dxgiDev->Release();
@@ -280,23 +144,23 @@ bool Video_Init()
     g_device->CreateBlendState(&bs, &s_blitBS);
     D3D11_DEPTH_STENCIL_DESC ds{};
     g_device->CreateDepthStencilState(&ds, &s_blitDS);
-    Overlay_Init(s_hwnd, g_device, g_ctx);
+    Overlay_Init(hwnd, g_device, g_ctx);
     return true;
 }
 
 void Video_Present(ID3D11ShaderResourceView* srv, float u0, float v0, float u1, float v1)
 {
-    if (s_resized.exchange(false))
+    if (Window_TakeResized())
     {
         g_ctx->OMSetRenderTargets(0, nullptr, nullptr);
         if (s_backbufferRTV) s_backbufferRTV->Release();
         s_swapchain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
         CreateBackbufferRTV();
     }
-    RECT rc;
-    GetClientRect(s_hwnd, &rc);
-    float w = (float)std::max<LONG>(1, rc.right - rc.left);
-    float h = (float)std::max<LONG>(1, rc.bottom - rc.top);
+    int cw, ch;
+    Window_ClientSize(cw, ch);
+    float w = (float)std::max(1, cw);
+    float h = (float)std::max(1, ch);
     ID3D11RenderTargetView* target = s_backbufferRTV;
     if (Overlay_ShotPending() && w < 64)
     {
@@ -358,7 +222,5 @@ void Video_Present(ID3D11ShaderResourceView* srv, float u0, float v0, float u1, 
     }
 }
 
-bool Video_WindowClosed() { return s_closed; }
-void Video_SetFullscreen(bool on) { if (s_hwnd) PostMessageW(s_hwnd, WM_APP_FULLSCREEN, on ? 1 : 0, 0); }
-void Video_SetWindowSize(int w, int h) { if (s_hwnd) PostMessageW(s_hwnd, WM_APP_WINDOWSIZE, (WPARAM)w, (LPARAM)h); }
-void* Video_HWND() { return s_hwnd; }
+void Video_SetFullscreen(bool on) { Window_SetFullscreen(on); }
+void Video_SetWindowSize(int w, int h) { Window_SetSize(w, h); }
