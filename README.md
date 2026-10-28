@@ -264,13 +264,14 @@ game files into `mods/`, Dolphin-format textures into `textures/<game ID>/`. Mod
 the game's code (a `main.dol`, code patches) cannot work with the recompiled game and are
 refused with an explanation; Dolphin settings and Gecko codes in an archive are skipped.
 Archives can be zip, 7z or RAR (up to 4 GB unpacked and 100,000 files).
-Installed mods show when an update is out, and Remove moves a mod to the Recycle Bin.
+Installed mods show when an update is out, and Remove moves a mod to the Recycle Bin
+(on Linux it deletes it).
 `mods/gamebanana.json` remembers what was installed from there. The list is only loaded when
 you open that tab. It works with a controller and the keyboard too: on a list entry, A (keyboard: Space)
 goes to its buttons and B back.
 
 **Adding mods by hand**: put each mod's folder in `mods/` next to the
-executable (`game/mods/` works too). The files in a mod folder mirror the disc's `files/`
+executable (`game/mods/` works too; for the Linux AppImage, `~/.local/share/BlackKnightRecomp/mods/`). The files in a mod folder mirror the disc's `files/`
 folder (`sonic.one`, `adx/`, `event/`, `sound/`, ...), either directly in the mod folder or
 in a `files/` subfolder. An optional `mod.ini` gives the mod's `name` (or `title`),
 `author`, `version` and `description`; without one the folder name is shown.

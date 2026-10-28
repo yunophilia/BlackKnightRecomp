@@ -23,6 +23,11 @@ void UiWindow_Show();
 bool UiWindow_Pump(uint32_t& resizeW, uint32_t& resizeH);
 void UiWindow_Destroy();
 
+// ---------------------------------------------------------------- the desktop
+// Opens a web page in the default browser, or a folder in the file manager.
+void Shell_OpenUrl(const std::string& url);
+void Shell_OpenFolder(const std::filesystem::path& dir);
+
 // ---------------------------------------------------------------- installer dialogs
 // Asks for the disc image to install from (false: canceled).
 bool Dialog_PickDiscImage(std::filesystem::path& out);

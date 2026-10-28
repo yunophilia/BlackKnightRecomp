@@ -15,6 +15,7 @@ The runtime is the same as on Windows except for `runtime/platform/linux`:
 | Input | XInput, `GetAsyncKeyState` | SDL3 gamepads (Steam Input's too), keyboard and mouse; the same bindings and key names |
 | Audio | XAudio2 | SDL3 audio streams (PipeWire, PulseAudio or ALSA) |
 | Launcher, overlay | ImGui Win32 backend, COM dialogs | ImGui SDL3 backend, SDL file dialog (desktop portal or zenity), SDL message boxes |
+| Mod browser | WinHTTP, WIC, Recycle Bin | the system's libcurl (loaded when needed), stb_image, removed mods are deleted |
 | Guest memory | `VirtualAlloc2` placeholders + `MapViewOfFile3` | `memfd_create` + `mmap(MAP_FIXED)` |
 | Guest threads | Windows fibers | a small x86-64 context switch |
 | Crash reports | vectored exception handler, dbghelp | `SIGSEGV`/`SIGBUS`/`SIGILL`/`SIGFPE` handler with `backtrace()` |
@@ -29,7 +30,13 @@ Download `BlackKnightRecomp-<version>-linux-x86_64.AppImage` from the releases, 
 executable (`chmod +x`, or the file's properties in a file manager) and start it. The
 launcher asks for your disc image (USA, Europe or Japan; ISO, RVZ, WIA or WBFS) and installs
 the game data into `~/.local/share/BlackKnightRecomp/game`. The log, `config.ini`, saves
-(`nand/`) and new shaders are kept in the same folder; texture packs go in its `textures/`.
+(`nand/`) and new shaders are kept in the same folder; texture packs go in its `textures/`
+and mods in its `mods/`.
+
+The mod browser needs libcurl (`libcurl.so.4`, installed on practically every desktop
+distribution and on SteamOS); without it the rest of the game works and the browser says it
+cannot use the network. It shows PNG, JPEG and GIF previews (WebP previews, which Windows
+shows, stay blank), and removing a mod deletes its folder instead of moving it to the trash.
 
 Requirements: x86-64, glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36, current
 SteamOS 3 or later), a Vulkan driver (Mesa or NVIDIA), and FUSE 2 to run AppImages (on Ubuntu
@@ -63,8 +70,9 @@ sudo apt-get install clang ninja-build cmake python3 bison flex libjson-perl lib
 
 The compiler needs C++20 with `<format>` (clang 15+ with libstdc++ 13+, or libc++ 17+).
 The first configure downloads SDL3 3.4.18, dxvk-native 3.1.1, vkd3d 1.19, the Khronos
-Vulkan and SPIR-V headers and nod, each pinned by URL and SHA-256 in `CMakeLists.txt`; SDL3
-and vkd3d-shader are built from source (SDL3 needs the X11/Wayland/audio headers above,
+Vulkan and SPIR-V headers, stb_image and nod, each pinned by URL and SHA-256 in
+`CMakeLists.txt`, and the first build the mod browser's libarchive, zlib and xz
+(`cmake/mod_deps.cmake`, as on Windows); SDL3 and vkd3d-shader are built from source (SDL3 needs the X11/Wayland/audio headers above,
 vkd3d bison, flex, Perl's JSON module and libvulkan). The C++ runtime is linked statically.
 
 The steps are those of the README's Building section with the `linux-clang` preset:
@@ -114,9 +122,11 @@ What a first test on real hardware should cover, in about 20 minutes:
    opens the settings, F11 toggles fullscreen.
 5. Play one mission to its end; note the frame rate (the log prints a `status:` line every
    3 seconds) and any stutter, wrong colours or missing objects.
-6. Settings: change the internal resolution (the game restarts by itself) and the window
+6. Mods: in Settings > Mods, browse GameBanana (previews load), install a mod, check that it
+   is used after the restart, then remove it; "Open mods folder" should open the file manager.
+7. Settings: change the internal resolution (the game restarts by itself) and the window
    size; quit with the overlay's "Quit game" and with the window's close button.
-7. Steam Deck only: add the AppImage to Steam (see above), start it from Game Mode, check
+8. Steam Deck only: add the AppImage to Steam (see above), start it from Game Mode, check
    the controls, the sound, sleep/resume, and that the frame rate holds 30 (or 60 with
    the 60 fps setting).
 

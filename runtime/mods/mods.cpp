@@ -1,10 +1,10 @@
 #include "mods.h"
 #include "../log.h"
+#include "../platform/platform.h"
 
 #include <algorithm>
 #include <fstream>
 #include <set>
-#include <windows.h>
 
 namespace fs = std::filesystem;
 
@@ -150,12 +150,6 @@ bool IsModMetadata(const std::string& rel)
            ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".webp" || name.rfind("readme", 0) == 0;
 }
 
-fs::path ExeDir()
-{
-    wchar_t buf[MAX_PATH];
-    GetModuleFileNameW(nullptr, buf, MAX_PATH);
-    return fs::path(buf).parent_path();
-}
 }   // namespace
 
 void Mods_SetDirOverride(const std::string& dir) { s_dirOverride = dir; }
@@ -164,7 +158,7 @@ std::vector<fs::path> Mods_Roots(const std::string& configuredDir)
 {
     if (!s_dirOverride.empty()) return { fs::path(s_dirOverride) };
     if (!configuredDir.empty()) return { fs::path(configuredDir) };
-    fs::path exe = ExeDir();
+    fs::path exe = Platform_UserDir();   // the exe directory on Windows
     return { exe / "mods", exe / "game" / "mods", exe / ".." / "game" / "mods" };
 }
 
@@ -294,6 +288,9 @@ std::map<std::string, ModOverride> Mods_BuildOverlay(const std::vector<ModInfo>&
 
 fs::path Mods_LongPath(const fs::path& p)
 {
+#ifndef _WIN32
+    return p;   // no MAX_PATH limit
+#else
     const std::wstring prefix = LR"(\\?\)";
     if (p.native().rfind(prefix, 0) == 0) return p;
     std::error_code ec;
@@ -302,6 +299,7 @@ fs::path Mods_LongPath(const fs::path& p)
     const std::wstring& w = abs.native();
     if (w.rfind(LR"(\\)", 0) == 0) return fs::path(prefix + L"UNC\\" + w.substr(2));   // \\server\share
     return fs::path(prefix + w);
+#endif
 }
 
 void Mods_SetLoaded(std::vector<ModInfo> mods) { s_loaded = std::move(mods); }

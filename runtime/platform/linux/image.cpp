@@ -1,7 +1,14 @@
-// PNG through SDL3's built-in loader and writer.
+// PNG through SDL3's built-in loader and writer; web images through stb_image.
 #include "../image.h"
 
 #include <SDL3/SDL.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_ONLY_JPEG
+#define STBI_ONLY_GIF
+#define STBI_NO_STDIO
+#include <stb_image.h>
 
 #include <cstring>
 
@@ -30,4 +37,18 @@ bool Image_SavePNG(const std::filesystem::path& path, uint32_t w, uint32_t h, co
     bool ok = SDL_SavePNG(s, path.c_str());
     SDL_DestroySurface(s);
     return ok;
+}
+
+bool Image_Decode(const void* data, size_t size, uint32_t& width, uint32_t& height, std::vector<uint8_t>& rgba)
+{
+    int w = 0, h = 0, n = 0;
+    if (!stbi_info_from_memory((const stbi_uc*)data, (int)size, &w, &h, &n) || w <= 0 || h <= 0 || w > 4096 || h > 4096)
+        return false;
+    stbi_uc* px = stbi_load_from_memory((const stbi_uc*)data, (int)size, &w, &h, &n, 4);
+    if (!px) return false;
+    rgba.assign(px, px + (size_t)w * h * 4);
+    stbi_image_free(px);
+    width = (uint32_t)w;
+    height = (uint32_t)h;
+    return true;
 }

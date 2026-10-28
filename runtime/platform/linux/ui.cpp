@@ -12,6 +12,8 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstring>
+#include <format>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -138,6 +140,22 @@ void UiWindow_Destroy()
 {
     if (s_launcher) SDL_DestroyWindow(s_launcher);
     s_launcher = nullptr;
+}
+
+// ---------------------------------------------------------------- the desktop
+// SDL_OpenURL runs xdg-open (or the desktop portal)
+void Shell_OpenUrl(const std::string& url)
+{
+    if (!SDL_OpenURL(url.c_str())) LOG_WARN("cannot open {} ({})", url, SDL_GetError());
+}
+
+void Shell_OpenFolder(const std::filesystem::path& dir)
+{
+    std::string url = "file://";
+    for (unsigned char c : std::filesystem::absolute(dir).string())
+        if (isalnum(c) || strchr("/-._~", c)) url += (char)c;
+        else url += std::format("%{:02X}", c);
+    Shell_OpenUrl(url);
 }
 
 // ---------------------------------------------------------------- installer dialogs

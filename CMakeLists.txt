@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.21)
 project(BlackKnightRecomp LANGUAGES CXX)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX ON)
+    enable_language(C)   # the libraries built from source (SDL3, vkd3d, libarchive, ...)
 endif()
 
 set(CMAKE_CXX_STANDARD 20)
@@ -93,14 +94,23 @@ if(WIN32 OR LINUX)
     include(cmake/mod_deps.cmake)
 
     # bkr_mods_test: checks the mod overlay of the disc layer on a synthetic disc (tools/mods_test)
+    if(WIN32)
+        set(BKR_PLATFORM_DIR runtime/platform/win32)
+    else()
+        set(BKR_PLATFORM_DIR runtime/platform/linux)
+    endif()
     add_executable(bkr_mods_test tools/mods_test/main.cpp runtime/ios/disc.cpp runtime/mods/mods.cpp
-                                 runtime/mods/mod_install.cpp runtime/mods/gamebanana.cpp runtime/net/http.cpp)
+                                 runtime/mods/mod_install.cpp runtime/mods/gamebanana.cpp runtime/net/http.cpp
+                                 ${BKR_PLATFORM_DIR}/http.cpp)
     target_link_libraries(bkr_mods_test PRIVATE bkr_archive bkr_json)
     target_include_directories(bkr_mods_test PRIVATE runtime)
     target_compile_definitions(bkr_mods_test PRIVATE BKR_MODS_TEST_DATA="${CMAKE_SOURCE_DIR}/tools/mods_test/data")
     if(WIN32)
         target_link_libraries(bkr_mods_test PRIVATE winhttp bcrypt shell32)
         target_compile_definitions(bkr_mods_test PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+    else()
+        target_link_libraries(bkr_mods_test PRIVATE dl)
+        target_compile_options(bkr_mods_test PRIVATE -include ${CMAKE_SOURCE_DIR}/runtime/platform/compat.h)
     endif()
     if(MSVC_FRONTEND)
         target_compile_options(bkr_mods_test PRIVATE /EHsc /std:c++latest /utf-8)
@@ -119,8 +129,9 @@ endif()
 #     structure definitions only, see its include/dxvk/README.md)
 #   vkd3d-shader (https://gitlab.winehq.org/wine/vkd3d, LGPL-2.1+): compiles the generated
 #     HLSL to DXBC (the D3DCompile of Wine and Proton), linked statically
+#   stb_image (https://github.com/nothings/stb, MIT or public domain): decodes the mod
+#     browser's web images (WIC on Windows); a single header
 if(LINUX)
-    enable_language(C)
     set(SDL_SHARED ON CACHE BOOL "" FORCE)
     set(SDL_STATIC OFF CACHE BOOL "" FORCE)
     set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
@@ -174,6 +185,14 @@ if(LINUX)
     add_dependencies(vkd3d_shader vkd3d_build)
     target_include_directories(vkd3d_shader SYSTEM INTERFACE ${SOURCE_DIR}/include)
     target_link_libraries(vkd3d_shader INTERFACE ${BINARY_DIR}/.libs/libvkd3d-shader.a m pthread)
+
+    FetchContent_Declare(stb
+        URL https://raw.githubusercontent.com/nothings/stb/013ac3beddff3dbffafd5177e7972067cd2b5083/stb_image.h
+        URL_HASH SHA256=594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3
+        DOWNLOAD_NO_EXTRACT TRUE)
+    FetchContent_MakeAvailable(stb)
+    add_library(stb_image INTERFACE)
+    target_include_directories(stb_image SYSTEM INTERFACE ${stb_SOURCE_DIR})
 endif()
 
 # ---------------------------------------------------------------- Dear ImGui (launcher, settings overlay)
@@ -252,7 +271,7 @@ add_dependencies(BlackKnightRecomp bkr_version)
 if(WIN32)
     target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json winhttp windowscodecs bcrypt d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
 else()
-    target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json SDL3::SDL3 dxvk vkd3d_shader pthread dl)
+    target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json SDL3::SDL3 dxvk vkd3d_shader stb_image pthread dl)
 endif()
 # the scripts in tools/ and the shader cache expect the game in out/
 set_target_properties(BlackKnightRecomp PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out

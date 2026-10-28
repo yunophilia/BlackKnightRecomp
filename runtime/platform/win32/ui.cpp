@@ -11,6 +11,7 @@
 #include <mutex>
 #include <vector>
 #include <windows.h>
+#include <shellapi.h>
 #include <shlobj.h>
 #include <shobjidl.h>
 
@@ -145,6 +146,14 @@ void UiWindow_Destroy()
     s_launcher = nullptr;
     if (SUCCEEDED(s_co)) CoUninitialize();
     s_co = E_FAIL;
+}
+
+// ---------------------------------------------------------------- the desktop
+void Shell_OpenUrl(const std::string& url) { ShellExecuteW(nullptr, L"open", Widen(url).c_str(), nullptr, nullptr, SW_SHOWNORMAL); }
+
+void Shell_OpenFolder(const std::filesystem::path& dir)
+{
+    ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 // ---------------------------------------------------------------- installer dialogs
