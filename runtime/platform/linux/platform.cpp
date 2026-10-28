@@ -171,6 +171,36 @@ std::string Platform_UiFont()
     return {};
 }
 
+std::vector<std::string> Platform_UiFallbackFonts()
+{
+    // the first Noto CJK collection found (all four scripts), then symbols
+    static const char* const kCjk[] = {
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",                 // Debian, Ubuntu
+        "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",                      // Arch, SteamOS
+        "/usr/share/fonts/google-noto-sans-cjk-vf-fonts/NotoSansCJK-VF.ttc",      // Fedora
+        "/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+    };
+    static const char* const kSymbols[] = {
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/TTF/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf",
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+    };
+    std::vector<std::string> fonts;
+    auto first = [&](const auto& list) {
+        for (const char* f : list)
+            if (access(f, R_OK) == 0)
+            {
+                fonts.push_back(f);
+                return;
+            }
+    };
+    first(kCjk);
+    first(kSymbols);
+    return fonts;
+}
+
 std::string Platform_Utf8(const wchar_t* s)
 {
     std::string out;
