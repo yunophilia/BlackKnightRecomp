@@ -2,78 +2,43 @@
 #include "install/install.h"
 #include "install/releases.h"
 #include "log.h"
+#include "platform/platform.h"
+#include "platform/ui.h"
 
+#include <atomic>
 #include <filesystem>
 #include <string>
 #include <thread>
-#include <windows.h>
-#include <shlobj.h>
-#include <shobjidl.h>
 
 namespace fs = std::filesystem;
 
 namespace
 {
-constexpr const wchar_t* kTitle = L"BlackKnightRecomp";
+constexpr const char* kTitle = "BlackKnightRecomp";
 
-std::wstring Widen(const std::string& s)
+std::string Utf8(const fs::path& p)
 {
-    std::wstring w(MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), nullptr, 0), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), w.data(), (int)w.size());
-    return w;
-}
-
-bool PickImage(fs::path& out)
-{
-    IFileOpenDialog* dlg = nullptr;
-    if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dlg))))
-        return false;
-    COMDLG_FILTERSPEC filters[] = { { L"Wii disc images", kInstallImageFilter }, { L"All files", L"*.*" } };
-    dlg->SetFileTypes(2, filters);
-    dlg->SetTitle(L"Select your Sonic and the Black Knight disc image (USA, Europe or Japan)");
-    bool ok = false;
-    IShellItem* item = nullptr;
-    if (SUCCEEDED(dlg->Show(nullptr)) && SUCCEEDED(dlg->GetResult(&item)))
-    {
-        PWSTR path = nullptr;
-        if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)))
-        {
-            out = path;
-            ok = true;
-            CoTaskMemFree(path);
-        }
-        item->Release();
-    }
-    dlg->Release();
-    return ok;
+    std::u8string u = p.u8string();
+    return std::string(u.begin(), u.end());
 }
 
 InstallResult RunWithProgress(const fs::path& image, const fs::path& dest, std::string& error)
 {
     InstallProgress progress;
     InstallResult result = InstallResult::Canceled;
-    IProgressDialog* dlg = nullptr;
-    CoCreateInstance(CLSID_ProgressDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&dlg));
-    if (dlg)
+    ProgressDialog dlg(kTitle, "Installing the game data from your disc image...", Utf8(image));
+    std::atomic<bool> finished{ false };
+    std::thread worker([&] {
+        result = Install_Run(image, dest, progress, error);
+        finished = true;
+    });
+    for (;;)
     {
-        dlg->SetTitle(kTitle);
-        dlg->SetLine(1, L"Installing the game data from your disc image...", FALSE, nullptr);
-        dlg->SetLine(2, image.c_str(), TRUE, nullptr);
-        dlg->StartProgressDialog(nullptr, nullptr, PROGDLG_NORMAL | PROGDLG_AUTOTIME, nullptr);
-    }
-    std::thread worker([&] { result = Install_Run(image, dest, progress, error); });
-    while (WaitForSingleObject(worker.native_handle(), 100) == WAIT_TIMEOUT)
-    {
-        if (!dlg) continue;
-        dlg->SetProgress64(progress.done, progress.total ? progress.total.load() : 1);
-        if (dlg->HasUserCancelled()) progress.cancel = true;
+        for (int i = 0; i < 10 && !finished; i++) Platform_SleepMs(10);
+        if (finished) break;
+        if (dlg.Update(progress.done, progress.total ? progress.total.load() : 1)) progress.cancel = true;
     }
     worker.join();
-    if (dlg)
-    {
-        dlg->StopProgressDialog();
-        dlg->Release();
-    }
     return result;
 }
 }   // namespace
@@ -83,31 +48,29 @@ InstallResult RunWithProgress(const fs::path& image, const fs::path& dest, std::
 // nothing is installed yet).
 bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const std::string& damage)
 {
-    std::wstring why = damage.empty() ? L"The game data is not installed yet."
-                                      : L"The installed game data is damaged (" + Widen(damage) + L") and needs reinstalling.";
-    HRESULT co = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    std::string why = damage.empty() ? "The game data is not installed yet."
+                                     : "The installed game data is damaged (" + damage + ") and needs reinstalling.";
     bool installed = false;
     fs::path image;
     if (!foundImage.empty() && Release_Find(Install_GameId(foundImage)))
     {
-        std::wstring msg = why + L" Install it from\n\n" + Widen(foundImage) +
-                           L"?\n\nChoose No to select a different disc image.";
-        int r = MessageBoxW(nullptr, msg.c_str(), kTitle, MB_YESNOCANCEL | MB_ICONQUESTION);
-        if (r == IDYES) image = foundImage;
-        else if (r == IDCANCEL) goto done;
+        std::string msg = why + " Install it from\n\n" + foundImage + "?\n\nChoose No to select a different disc image.";
+        MsgResult r = Platform_MessageBox(kTitle, msg, MsgButtons::YesNoCancel, MsgIcon::Question);
+        if (r == MsgResult::Yes) image = foundImage;
+        else if (r == MsgResult::Cancel) return false;
     }
     else
     {
-        int r = MessageBoxW(nullptr,
-                            (why + L"\n\nSelect your own disc image of Sonic and the "
-                            L"Black Knight (USA, Europe or Japan) to install it. ISO, RVZ, WIA and WBFS images work. "
-                            L"This takes a minute and needs about 3.5 GB; the image is not needed afterwards.").c_str(),
-                            kTitle, MB_OKCANCEL | MB_ICONINFORMATION);
-        if (r != IDOK) goto done;
+        MsgResult r = Platform_MessageBox(kTitle,
+                                          why + "\n\nSelect your own disc image of Sonic and the "
+                                          "Black Knight (USA, Europe or Japan) to install it. ISO, RVZ, WIA and WBFS images work. "
+                                          "This takes a minute and needs about 3.5 GB; the image is not needed afterwards.",
+                                          MsgButtons::OkCancel, MsgIcon::Info);
+        if (r != MsgResult::Ok) return false;
     }
     for (;;)
     {
-        if (image.empty() && !PickImage(image)) break;
+        if (image.empty() && !Dialog_PickDiscImage(image)) break;
         LOG_INFO("installing game data from {} to {}", image.string(), dest.string());
         std::string error;
         InstallResult r = RunWithProgress(image, dest, error);
@@ -119,17 +82,15 @@ bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const st
         }
         if (r == InstallResult::Canceled) break;
         LOG_ERROR("install failed: {}", error);
-        std::wstring msg = L"Could not install the game data:\n\n" + Widen(error);
+        std::string msg = "Could not install the game data:\n\n" + error;
         if (r == InstallResult::WriteFailed)
         {
-            MessageBoxW(nullptr, msg.c_str(), kTitle, MB_ICONERROR);
+            Platform_MessageBox(kTitle, msg, MsgButtons::Ok, MsgIcon::Error);
             break;
         }
-        msg += L"\n\nSelect a different disc image?";
-        if (MessageBoxW(nullptr, msg.c_str(), kTitle, MB_OKCANCEL | MB_ICONERROR) != IDOK) break;
+        msg += "\n\nSelect a different disc image?";
+        if (Platform_MessageBox(kTitle, msg, MsgButtons::OkCancel, MsgIcon::Error) != MsgResult::Ok) break;
         image.clear();
     }
-done:
-    if (SUCCEEDED(co)) CoUninitialize();
     return installed;
 }

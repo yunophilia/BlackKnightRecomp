@@ -104,6 +104,20 @@ std::string Platform_UiFont()
     return !font.empty() && GetFileAttributesA(font.c_str()) != INVALID_FILE_ATTRIBUTES ? font : std::string();
 }
 
+std::vector<std::string> Platform_UiFallbackFonts()
+{
+    std::vector<std::string> fonts;
+    char dir[MAX_PATH];
+    UINT n = GetWindowsDirectoryA(dir, MAX_PATH);
+    if (!n) return fonts;
+    for (const char* file : { "msyh.ttc", "msjh.ttc", "YuGothM.ttc", "malgun.ttf", "seguisym.ttf" })
+    {
+        std::string path = std::string(dir, n) + "\\Fonts\\" + file;
+        if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES) fonts.push_back(path);
+    }
+    return fonts;
+}
+
 std::string Platform_Utf8(const wchar_t* s)
 {
     int n = WideCharToMultiByte(CP_UTF8, 0, s, -1, nullptr, 0, nullptr, nullptr);
