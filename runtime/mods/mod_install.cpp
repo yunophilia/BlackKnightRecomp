@@ -1,6 +1,7 @@
 #include "mod_install.h"
 #include "mods.h"
 #include "../log.h"
+#include "../platform/platform.h"
 
 #include <archive.h>
 #include <archive_entry.h>
@@ -15,8 +16,10 @@
 #include <map>
 #include <set>
 #include <tuple>
+#ifdef _WIN32
 #include <windows.h>
 #include <shellapi.h>
+#endif
 
 namespace fs = std::filesystem;
 using json = nlohmann::json;
@@ -36,10 +39,14 @@ std::string Lower(std::string s)
 // without the long-path prefix (messages, the shell)
 fs::path Plain(const fs::path& p)
 {
+#ifndef _WIN32
+    return p;
+#else
     const std::wstring& w = p.native();
     if (w.rfind(LR"(\\?\UNC\)", 0) == 0) return fs::path(L"\\\\" + w.substr(8));
     if (w.rfind(LR"(\\?\)", 0) == 0) return fs::path(w.substr(4));
     return p;
+#endif
 }
 
 std::string Utf8(const fs::path& p)
@@ -143,9 +150,12 @@ bool ValidRecordFolder(const std::string& rel, size_t depth)
 std::string SafeEntryPath(const archive_entry* e)
 {
     std::string path;
+#ifdef _WIN32
     if (const wchar_t* w = archive_entry_pathname_w(const_cast<archive_entry*>(e)))
         path = Utf8(fs::path(w));
-    else if (const char* u = archive_entry_pathname_utf8(const_cast<archive_entry*>(e)))
+    else
+#endif
+    if (const char* u = archive_entry_pathname_utf8(const_cast<archive_entry*>(e)))
         path = u;
     else if (const char* n = archive_entry_pathname(const_cast<archive_entry*>(e)))
         path = n;
@@ -168,7 +178,11 @@ bool Extract(const fs::path& file, const fs::path& dest, std::string& error, std
     archive_read_support_format_7zip(a);
     archive_read_support_format_rar(a);
     archive_read_support_format_rar5(a);
+#ifdef _WIN32
     if (archive_read_open_filename_w(a, file.c_str(), 1 << 16) != ARCHIVE_OK)
+#else
+    if (archive_read_open_filename(a, file.c_str(), 1 << 16) != ARCHIVE_OK)
+#endif
     {
         error = std::format("cannot open the archive: {}", archive_error_string(a) ? archive_error_string(a) : "unknown format");
         archive_read_free(a);
@@ -311,7 +325,7 @@ bool Below(const fs::path& p, const fs::path& root)
     return !rel.empty() && rel != "." && *rel.begin() != "..";
 }
 
-// to the Recycle Bin (deleted outright where there is none); only below root
+// to the Recycle Bin (deleted outright where there is none, and on Linux); only below root
 bool Recycle(const fs::path& p, const fs::path& root, bool recycle = true)
 {
     std::error_code ec;
@@ -326,6 +340,7 @@ bool Recycle(const fs::path& p, const fs::path& root, bool recycle = true)
         fs::remove_all(p, ec);
         return !fs::exists(p, ec);
     }
+#ifdef _WIN32
     std::wstring from = fs::absolute(Plain(p), ec).wstring();
     from.push_back(L'\0');   // double-null terminated list
     SHFILEOPSTRUCTW op{};
@@ -333,9 +348,19 @@ bool Recycle(const fs::path& p, const fs::path& root, bool recycle = true)
     op.pFrom = from.c_str();
     op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT | FOF_NOERRORUI;
     if (SHFileOperationW(&op) == 0 && !op.fAnyOperationsAborted && !fs::exists(p, ec)) return true;
+#endif
     fs::remove_all(p, ec);
     return !fs::exists(p, ec);
 }
+
+// how the messages describe Recycle
+#ifdef _WIN32
+constexpr const char* kRemovedNote = " (moved to the Recycle Bin)";
+constexpr const char* kReplacedNote = "old files to the Recycle Bin";
+#else
+constexpr const char* kRemovedNote = "";
+constexpr const char* kReplacedNote = "old files deleted";
+#endif
 
 std::string Today()
 {
@@ -488,9 +513,7 @@ std::vector<InstalledMod> ModInstall_Records(const fs::path& modsDir)
 fs::path ModInstall_TexturesDir(const std::string& configuredDir)
 {
     if (!configuredDir.empty()) return FromUtf8(configuredDir);
-    wchar_t buf[MAX_PATH];
-    GetModuleFileNameW(nullptr, buf, MAX_PATH);
-    fs::path exe = fs::path(buf).parent_path();
+    fs::path exe = Platform_UserDir();   // the exe directory on Windows
     std::error_code ec;
     for (fs::path p : { exe / "textures", exe / "game" / "textures", exe / ".." / "game" / "textures" })
         if (fs::is_directory(p, ec)) return fs::weakly_canonical(p, ec);
@@ -532,7 +555,8 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
     InstallResult res;
     std::error_code ec;
     std::string label = src.name.empty() ? Utf8(archive.stem()) : src.name;
-    fs::path staging = t.modsDir / ".staging" / std::format("{}_{}", src.modId, GetTickCount64());
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+    fs::path staging = t.modsDir / ".staging" / std::format("{}_{}", src.modId, ms);
     fs::create_directories(staging, ec);
     struct Cleanup { fs::path p; ~Cleanup() { std::error_code e; fs::remove_all(p, e); fs::remove(p.parent_path(), e); } } cleanup{ staging };
     std::string error;
@@ -655,7 +679,7 @@ InstallResult ModInstall_Archive(const fs::path& archive, const InstallSource& s
         fs::path to = t.modsDir / FromUtf8(name);
         if (fs::exists(to, ec))
         {
-            LOG_INFO("mods: replacing {} (old files to the Recycle Bin)", Utf8(to));
+            LOG_INFO("mods: replacing {} ({})", Utf8(to), kReplacedNote);
             if (!Recycle(to, t.modsDir, t.recycle))
             {
                 res.message = std::format("{}: cannot replace {}", label, Utf8(to));
@@ -774,7 +798,7 @@ bool ModInstall_Remove(const InstallTargets& t, uint64_t modId, std::string& mes
     for (auto& m : it->mods) ok &= ValidRecordFolder(m, 1) && Recycle(t.modsDir / FromUtf8(m), t.modsDir, t.recycle);
     for (auto& tx : it->textures)
         ok &= ValidRecordFolder(tx, 2) && Recycle(t.texturesDir / FromUtf8(tx), t.texturesDir, t.recycle);
-    message = ok ? std::format("Removed {} (moved to the Recycle Bin).", it->name) : std::format("Could not remove all of {}.", it->name);
+    message = ok ? std::format("Removed {}{}.", it->name, kRemovedNote) : std::format("Could not remove all of {}.", it->name);
     LOG_INFO("mods: {}", message);
     recs.erase(it);
     WriteRecords(t.modsDir, recs);
@@ -793,7 +817,7 @@ bool ModInstall_RemoveFolder(const InstallTargets& t, const std::string& folder,
         for (auto& m : r.mods)
             if (Lower(m) == Lower(folder) && r.mods.size() == 1) return ModInstall_Remove(t, r.modId, message);
     bool ok = Recycle(t.modsDir / FromUtf8(folder), t.modsDir, t.recycle);
-    message = ok ? std::format("Removed {} (moved to the Recycle Bin).", folder) : std::format("Could not remove {}.", folder);
+    message = ok ? std::format("Removed {}{}.", folder, kRemovedNote) : std::format("Could not remove {}.", folder);
     LOG_INFO("mods: {}", message);
     if (ok)
     {

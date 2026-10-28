@@ -49,7 +49,14 @@ inline FILE* _wfopen(const char* path, const wchar_t* mode)
 #define _SH_DENYWR 0
 inline FILE* _fsopen(const char* path, const char* mode, int) { return fopen(path, mode); }
 
+inline int _wfopen_s(FILE** f, const char* path, const wchar_t* mode)
+{
+    *f = _wfopen(path, mode);
+    return *f ? 0 : errno;
+}
+
 inline int localtime_s(struct tm* out, const time_t* t) { return localtime_r(t, out) ? 0 : errno; }
+inline int gmtime_s(struct tm* out, const time_t* t) { return gmtime_r(t, out) ? 0 : errno; }
 
 #define _stricmp strcasecmp
 #define _strnicmp strncasecmp

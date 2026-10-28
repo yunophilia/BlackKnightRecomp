@@ -6,11 +6,10 @@
 #include "../mods/mod_install.h"
 #include "../mods/mods.h"
 #include "../net/http.h"
+#include "../platform/md5.h"
+#include "../platform/ui.h"
 
 #include <imgui.h>
-#include <windows.h>
-#include <bcrypt.h>
-#include <shellapi.h>
 
 #include <algorithm>
 #include <ctime>
@@ -105,6 +104,13 @@ std::string Date(int64_t t)
     return std::format("{:04}-{:02}-{:02}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 }
 
+// removed files go to the Recycle Bin on Windows and are deleted on Linux (mod_install.cpp)
+#ifdef _WIN32
+#define BKR_TRASH(windows, other) windows
+#else
+#define BKR_TRASH(windows, other) other
+#endif
+
 std::string Size(uint64_t b)
 {
     if (b >= 1000000) return std::format("{:.1f} MB", b / 1e6);
@@ -114,26 +120,14 @@ std::string Size(uint64_t b)
 void OpenUrl(const std::string& url)
 {
     if (url.rfind("https://", 0) != 0) return;   // only web pages
-    int n = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, nullptr, 0);
-    std::wstring w(n, L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, w.data(), n);
-    ShellExecuteW(nullptr, L"open", w.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    Shell_OpenUrl(url);
 }
 
 bool Md5Matches(const fs::path& file, const std::string& expected)
 {
     if (expected.size() != 32) return true;   // GameBanana gave none
-    FILE* f = _wfopen(file.c_str(), L"rb");
-    if (!f) return false;
-    BCRYPT_HASH_HANDLE h = nullptr;
-    BCryptCreateHash(BCRYPT_MD5_ALG_HANDLE, &h, nullptr, 0, nullptr, 0, 0);
-    std::vector<uint8_t> buf(1 << 20);
-    size_t n;
-    while ((n = fread(buf.data(), 1, buf.size(), f)) > 0) BCryptHashData(h, buf.data(), (ULONG)n, 0);
-    fclose(f);
     uint8_t d[16];
-    BCryptFinishHash(h, d, 16, 0);
-    BCryptDestroyHash(h);
+    if (!Md5_File(file, d)) return false;
     std::string hex;
     for (uint8_t b : d) hex += std::format("{:02x}", b);
     return hex == Lower(expected);
@@ -341,9 +335,13 @@ bool InstalledTab(SettingsHost host)
     {
         std::error_code ec;
         fs::create_directories(dir, ec);
-        ShellExecuteW(nullptr, L"open", dir.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        Shell_OpenFolder(dir);
     }
+#ifdef _WIN32
     Hover("Open the mods folder in Explorer (created if it does not exist).");
+#else
+    Hover("Open the mods folder in the file manager (created if it does not exist).");
+#endif
     ImGui::SameLine();
     if (ImGui::Button("Refresh")) Scan();
     Hover("Look for new or removed mods.");
@@ -400,7 +398,7 @@ bool InstalledTab(SettingsHost host)
                 ImGui::BeginDisabled(s_job != nullptr);
                 if (ImGui::Button(up.c_str())) StartInstall(*gb, *f);
                 ImGui::EndDisabled();
-                Hover(std::format("{} has a new file on GameBanana ({}, {}). The old files go to the Recycle Bin.",
+                Hover(std::format("{} has a new file on GameBanana ({}, {}). " BKR_TRASH("The old files go to the Recycle Bin.", "The old files are deleted."),
                                   gb->name, f->name, Date(f->added)));
             }
             else
@@ -422,7 +420,7 @@ bool InstalledTab(SettingsHost host)
             ImGui::BeginDisabled(s_job != nullptr);
             if (ImGui::Button("Remove")) AskRemove(m.folder, 0, m.title);
             ImGui::EndDisabled();
-            Hover("Remove this mod (its folder goes to the Recycle Bin).");
+            Hover(BKR_TRASH("Remove this mod (its folder goes to the Recycle Bin).", "Remove this mod (deletes its folder)."));
             ImGui::PopID();
         }
         ImGui::EndTable();
@@ -448,7 +446,7 @@ bool InstalledTab(SettingsHost host)
         ImGui::BeginDisabled(s_job != nullptr);
         if (ImGui::Button("Remove")) AskRemove("", r.modId, r.name);
         ImGui::EndDisabled();
-        Hover("Remove this texture pack (to the Recycle Bin).");
+        Hover(BKR_TRASH("Remove this texture pack (to the Recycle Bin).", "Remove this texture pack (deletes it)."));
         ImGui::PopID();
     }
     if (changed) g_config.mods = Mods_Settings(s_mods);
@@ -593,7 +591,7 @@ void DrawDetails(Catalog& c, SettingsHost host)
                 ImGui::SameLine();
                 ImGui::BeginDisabled(s_job != nullptr);
                 if (ImGui::Button("Remove")) AskRemove("", rec->modId, m->name);
-                Hover("Remove everything this mod installed (to the Recycle Bin).");
+                Hover(BKR_TRASH("Remove everything this mod installed (to the Recycle Bin).", "Remove everything this mod installed (deletes it)."));
                 ImGui::EndDisabled();
             }
             if (!f.clean) ImGui::TextColored(ImVec4(0.9f, 0.6f, 0.3f, 1), "GameBanana's file check flagged this file.");
@@ -792,7 +790,7 @@ bool ModsUI_Draw(SettingsHost host, const char*& help)
     if (ImGui::BeginPopupModal("Remove mod?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("Remove %s?", s_removeName.c_str());
-        ImGui::TextDisabled("Its files go to the Recycle Bin.");
+        ImGui::TextDisabled(BKR_TRASH("Its files go to the Recycle Bin.", "Its files are deleted."));
         if (ImGui::Button("Remove"))
         {
             std::string msg;

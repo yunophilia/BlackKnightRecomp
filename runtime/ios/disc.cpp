@@ -9,9 +9,11 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#ifdef _WIN32
 #include <fcntl.h>
 #include <io.h>
 #include <windows.h>
+#endif
 
 struct Extent
 {
@@ -40,6 +42,7 @@ static FILE* GetFile(const std::string& p, const std::filesystem::path& host)
     // shared for deletion: the mod browser can replace or remove a loaded mod's files while
     // the game runs (it keeps reading the old ones until it restarts)
     FILE* f = nullptr;
+#ifdef _WIN32
     HANDLE h = CreateFileW(host.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
                            OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (h != INVALID_HANDLE_VALUE)
@@ -48,6 +51,9 @@ static FILE* GetFile(const std::string& p, const std::filesystem::path& host)
         if (fd < 0) CloseHandle(h);
         else if (!(f = _fdopen(fd, "rb"))) _close(fd);
     }
+#else
+    f = fopen(host.c_str(), "rb");   // POSIX files can always be replaced or removed while open
+#endif
     if (s_files.size() > 64)
     {
         for (auto& kv : s_files) if (kv.second) fclose(kv.second);

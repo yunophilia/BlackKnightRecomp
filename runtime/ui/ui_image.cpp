@@ -1,9 +1,9 @@
 #include "ui_image.h"
 #include "../log.h"
 #include "../net/http.h"
+#include "../platform/image.h"
 
 #include <d3d11.h>
-#include <wincodec.h>
 
 #include <condition_variable>
 #include <deque>
@@ -24,43 +24,13 @@ struct Image
 };
 
 std::mutex s_mutex;
-std::condition_variable s_cv;
+// never destroyed: the detached worker can still be waiting on it when the process exits
+// (glibc's destructor would wait for it)
+std::condition_variable& s_cv = *new std::condition_variable;
 std::map<std::string, std::shared_ptr<Image>> s_images;
 std::deque<std::string> s_queue;
 bool s_worker = false;
 ID3D11Device* s_device = nullptr;   // UI thread only
-
-bool Decode(const std::string& data, std::vector<uint8_t>& rgba, int& w, int& h)
-{
-    static thread_local IWICImagingFactory* wic = nullptr;
-    if (!wic)
-    {
-        CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-        if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wic)))) return false;
-    }
-    IWICStream* stream = nullptr;
-    IWICBitmapDecoder* dec = nullptr;
-    IWICBitmapFrameDecode* frame = nullptr;
-    IWICFormatConverter* conv = nullptr;
-    bool ok = SUCCEEDED(wic->CreateStream(&stream)) &&
-              SUCCEEDED(stream->InitializeFromMemory((BYTE*)data.data(), (DWORD)data.size())) &&
-              SUCCEEDED(wic->CreateDecoderFromStream(stream, nullptr, WICDecodeMetadataCacheOnDemand, &dec)) &&
-              SUCCEEDED(dec->GetFrame(0, &frame)) && SUCCEEDED(wic->CreateFormatConverter(&conv)) &&
-              SUCCEEDED(conv->Initialize(frame, GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr, 0.0,
-                                         WICBitmapPaletteTypeCustom));
-    UINT uw = 0, uh = 0;
-    if (ok) ok = SUCCEEDED(conv->GetSize(&uw, &uh)) && uw && uh && uw <= 4096 && uh <= 4096;
-    if (ok)
-    {
-        rgba.resize((size_t)uw * uh * 4);
-        ok = SUCCEEDED(conv->CopyPixels(nullptr, uw * 4, (UINT)rgba.size(), rgba.data()));
-        w = (int)uw;
-        h = (int)uh;
-    }
-    for (IUnknown* u : { (IUnknown*)conv, (IUnknown*)frame, (IUnknown*)dec, (IUnknown*)stream })
-        if (u) u->Release();
-    return ok;
-}
 
 void Worker()
 {
@@ -80,13 +50,13 @@ void Worker()
         }
         std::string body, error;
         std::vector<uint8_t> rgba;
-        int w = 0, h = 0;
-        bool ok = Http_Get(url, body, error) && Decode(body, rgba, w, h);
+        uint32_t w = 0, h = 0;
+        bool ok = Http_Get(url, body, error) && Image_Decode(body.data(), body.size(), w, h, rgba);
         if (!ok) LOG_DEBUG("ui image {}: {}", url, error.empty() ? "cannot decode" : error);
         std::lock_guard lk(s_mutex);
         img->rgba = std::move(rgba);
-        img->w = w;
-        img->h = h;
+        img->w = (int)w;
+        img->h = (int)h;
         img->state = ok ? Image::Decoded : Image::Failed;
     }
 }

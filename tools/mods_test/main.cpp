@@ -33,6 +33,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <clocale>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -46,6 +47,9 @@ void Log_Write(int level, const std::string& s)
 }
 void Tas_OnFileRead(const std::string&) {}
 extern const char g_version[] = "test";
+// the platform layer's writable directory: the exe's (as on Windows)
+static fs::path s_exeDir;
+fs::path Platform_UserDir() { return s_exeDir; }
 
 static int s_failed = 0;
 #define CHECK(cond)                                                     \
@@ -224,6 +228,16 @@ static void OverlayTests()
 
 // --- archives for the install tests, written with libarchive
 struct Entry { std::string path, data; };
+// an archive to write, by its wide path on Windows and its UTF-8 path elsewhere
+static int OpenWrite(archive* a, const fs::path& file)
+{
+#ifdef _WIN32
+    return archive_write_open_filename_w(a, file.c_str());
+#else
+    return archive_write_open_filename(a, file.c_str());
+#endif
+}
+
 static bool WriteArchive(const fs::path& file, bool sevenZip, const std::vector<Entry>& entries)
 {
     archive* a = archive_write_new();
@@ -237,7 +251,7 @@ static bool WriteArchive(const fs::path& file, bool sevenZip, const std::vector<
         archive_write_set_format_zip(a);
         archive_write_set_format_option(a, "zip", "compression", "deflate");
     }
-    if (archive_write_open_filename_w(a, file.c_str()) != ARCHIVE_OK) { archive_write_free(a); return false; }
+    if (OpenWrite(a, file) != ARCHIVE_OK) { archive_write_free(a); return false; }
     for (auto& e : entries)
     {
         archive_entry* en = archive_entry_new();
@@ -544,7 +558,7 @@ static void HardeningTests()
     {
         archive* a = archive_write_new();
         archive_write_set_format_pax_restricted(a);
-        archive_write_open_filename_w(a, (arc / "mod.tar").c_str());
+        OpenWrite(a, arc / "mod.tar");
         archive_entry* en = archive_entry_new();
         archive_entry_set_pathname(en, "Tar/a.bin");
         archive_entry_set_filetype(en, AE_IFREG);
@@ -579,7 +593,7 @@ static void HardeningTests()
     {
         archive* a = archive_write_new();
         archive_write_set_format_zip(a);
-        archive_write_open_filename_w(a, (arc / "many.zip").c_str());
+        OpenWrite(a, arc / "many.zip");
         for (int i = 0; i <= 100000; i++)
         {
             archive_entry* en = archive_entry_new();
@@ -692,6 +706,12 @@ static int InstallCommand(int argc, char** argv)
 int main(int argc, char** argv)
 {
     setvbuf(stdout, nullptr, _IONBF, 0);
+#ifndef _WIN32
+    // the test archives are written from UTF-8 names: libarchive's writer converts them to
+    // the locale's charset, which in the default C locale fails on non-ASCII names
+    setlocale(LC_CTYPE, "C.UTF-8");
+#endif
+    s_exeDir = fs::absolute(argv[0]).parent_path();
     for (int i = 1; i < argc; i++)
         if (!strcmp(argv[i], "--install")) return InstallCommand(argc, argv);
     printf("== disc overlay\n");
