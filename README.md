@@ -213,8 +213,8 @@ saved to `config.ini` at once and most apply immediately; frame rate, internal
 resolution, widescreen, language, texture packs, mods and the graphics thread ask to restart
 the game. The overlay also has the Wii HOME Menu, restart and quit.
 
-With a controller, the D-pad moves, A selects and B goes back; LB/RB switch between the
-main tabs and LT/RT between the tabs inside a page (Video, Input, ... or Installed / Get mods).
+With a controller, the D-pad moves (moving onto a tab opens it), A selects and B goes back;
+LB/RB switch between the main tabs and LT/RT between the tabs inside a page (Video, Input, ... or Installed / Get mods).
 
 `config.ini` next to the executable holds the settings (it can also be edited by hand):
 

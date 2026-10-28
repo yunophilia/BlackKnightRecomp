@@ -326,7 +326,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         ImGui::PopFont();
         ImGui::TextDisabled("Recompiled for PC");
         float bottom = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-        ImGui::BeginChild("tabs", ImVec2(0, -bottom));
+        ImGui::BeginChild("tabs", ImVec2(0, -bottom), ImGuiChildFlags_NavFlattened);
         if (ImGui::BeginTabBar("launcherTabs"))
         {
             static int selected = 0;

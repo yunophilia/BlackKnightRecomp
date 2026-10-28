@@ -141,7 +141,7 @@ void Overlay_Render(float w, float h)
                                           ImGuiWindowFlags_NoSavedSettings))
     {
         float bottom = ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y;
-        ImGui::BeginChild("panel", ImVec2(0, -bottom));
+        ImGui::BeginChild("panel", ImVec2(0, -bottom), ImGuiChildFlags_NavFlattened);
         if (ImGui::BeginTabBar("overlayTabs"))
         {
             static int shotFrames = 0;

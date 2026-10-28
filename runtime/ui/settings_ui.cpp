@@ -268,7 +268,8 @@ namespace
 // A page with the description of the hovered item below it, and the restart question
 void Page(SettingsHost host, void (*draw)(SettingsHost), float helpH)
 {
-    ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_None);
+    // flattened: Down from the tabs goes straight to the first setting
+    ImGui::BeginChild("page", ImVec2(0, -helpH), ImGuiChildFlags_NavFlattened);
     draw(host);
     static const bool shotBottom = getenv("BKR_UI_SHOT_BOTTOM") != nullptr;   // test aid
     if (shotBottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
@@ -349,8 +350,14 @@ int SettingsUI_PadTab(int selected, int count, bool outer)
 
 bool SettingsUI_TabItem(const char* name, int index, int pick, bool select)
 {
-    bool open = ImGui::BeginTabItem(name, nullptr, index == pick || select ? ImGuiTabItemFlags_SetSelected : 0);
+    // a tab the controller/keyboard cursor moved onto opens at once (like a game menu)
+    static ImGuiID s_focusedTab = 0;
+    ImGuiID id = ImGui::GetID(name);
+    bool open = ImGui::BeginTabItem(name, nullptr,
+                                    index == pick || select || id == s_focusedTab ? ImGuiTabItemFlags_SetSelected : 0);
+    if (id == s_focusedTab) s_focusedTab = 0;
     if (index == pick) ImGui::SetKeyboardFocusHere(-1);
+    else if (!open && ImGui::IsItemFocused() && ImGui::GetIO().NavVisible) s_focusedTab = id;
     return open;
 }
 

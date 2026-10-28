@@ -21,7 +21,8 @@ bool SettingsUI_ShotMods();
 // to select now, or -1.
 int SettingsUI_PadTab(int selected, int count, bool outer);
 // BeginTabItem that selects the tab when index == pick (from SettingsUI_PadTab, or a test
-// aid when select is set) and then moves the controller/keyboard focus onto it.
+// aid when select is set) and then moves the controller/keyboard focus onto it. A tab the
+// D-pad/arrow keys move onto is selected as well.
 bool SettingsUI_TabItem(const char* name, int index, int pick, bool select = false);
 // In game: the user confirmed "Restart the game?" (the overlay restarts the process).
 bool SettingsUI_TakeRestartRequest();
