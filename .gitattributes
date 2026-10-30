@@ -1,2 +1,6 @@
 *.bin binary
 *.rar binary
+*.png binary
+*.jpg binary
+# shell scripts run on Linux (also from a Windows checkout, e.g. in WSL)
+*.sh text eol=lf

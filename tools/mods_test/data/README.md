@@ -5,3 +5,8 @@ Test archives for `bkr_mods_test` (libarchive can write zip and 7z, but not RAR)
 
 Both come from libarchive's test suite (`libarchive/test/*.rar.uu`, decoded), under
 libarchive's BSD 2-clause licence (shipped in `licenses/` with the game).
+
+Preview images for the image checks (made for this test, 64 x 48, a red top-left corner):
+
+* `preview.png`, `preview.jpg`: decoded as they are, and truncated, corrupted and with
+  oversized dimensions in the test.
