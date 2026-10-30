@@ -76,10 +76,10 @@ avoid that, and releases include precompiled shaders in `shadercache/`, so keep 
 next to the exe.
 
 Tested so far: Valve's Proton Experimental, Proton 10.0 and Proton 9.0, and Wine 10.0 with
-DXVK 2.7.1, on desktop Linux with software Vulkan, from boot into gameplay. With Proton 10.0,
-shaders that the game compiles itself (those not in the bundled `shadercache/`) showed wrong
-colours in testing; the bundled ones are fine. Proton Experimental and 9.0 had no such
-problem, so prefer one of those. **Not yet tested on a Steam Deck**; reports are welcome.
+DXVK 2.7.1, on desktop Linux with software Vulkan, from boot into gameplay, also with no
+`shadercache/` at all (every shader compiled by Proton's own compiler). v1.0.1 showed wrong
+colours under Proton 10.0 for shaders it compiled itself; that is fixed. **Not yet tested on
+a Steam Deck**; reports are welcome.
 Setup:
 
 1. In Desktop Mode, unzip the release somewhere in your home folder (for example
@@ -88,8 +88,7 @@ Setup:
 2. In Steam: *Games > Add a Non-Steam Game to My Library*, browse to
    `BlackKnightRecomp.exe` (set the file type filter to "All files").
 3. In the shortcut's *Properties > Compatibility*, tick *Force the use of a specific Steam
-   Play compatibility tool* and pick Proton Experimental or Proton 9.0 (see above about
-   10.0).
+   Play compatibility tool* and pick Proton Experimental, 10.0 or 9.0.
 4. Start it once in Desktop Mode: the launcher installs the game data from your image.
    After that it can be started from Game Mode.
 
