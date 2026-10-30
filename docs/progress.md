@@ -205,9 +205,24 @@ Byte 0x48F is not the chapter/unlock flag.
   bundled Microsoft-compiled cache, but pixel shaders compiled by 10.0's own compiler give
   wrong colours (texture colour replaced by red/green gradients in movies, menus and
   stages). Bisected with mixed caches: Microsoft VS + Proton 10 PS is wrong, Proton 10 VS +
-  Microsoft PS is right. The disassembly and signatures of the affected shaders look
-  equivalent to Experimental's, so the cause (its vkd3d-shader or its DXVK 2.6.2) is not
-  found yet. Replacing the texture arrays and the `switch` in `sampleTex` did not help.
+  Microsoft PS is right.
+- Cause of the Proton 10.0 colours: DXVK 2.6.2 renders dual-source blending wrong when a
+  pixel shader declares its outputs (`dcl_output`) before its inputs (`dcl_input_ps`).
+  Newer vkd3d-shader (the compilers of Proton 10.0 and Experimental) writes them in that
+  order; Microsoft's compiler and Proton 9.0's write inputs first. The game maps GX alpha
+  blending to `SRC1_ALPHA`/`INV_SRC1_ALPHA`, so blended draws (HUD, text boxes, characters,
+  movies) were wrong and opaque ones fine. The compiled code itself is correct. Found with
+  a standalone harness that renders every recorded pixel shader key with fixed inputs and
+  compares pixels: without blending, Proton 10.0's blobs match Microsoft's on WARP and on
+  DXVK 2.6.2; with dual-source blending, DXVK 2.6.2 gets 252 of the 268 distinct shaders
+  from Proton 10.0's and Experimental's compilers wrong and none from Microsoft's or Proton
+  9.0's. DXVK 3.1.1 (Experimental) and 2.5.1 (9.0) render all four compilers' blobs
+  correctly. Moving only the output declarations behind the inputs fixes every shader.
+- `gx/dxbc_fixup.cpp` does that move on every pixel shader blob (after `D3DCompile` and on
+  loading a cached blob, so caches written under Proton 10.0 by earlier versions are fixed
+  too) and rewrites the DXBC checksum. Microsoft's and Proton 9.0's output is already in that
+  order and is not touched (0 of 269 blobs changed); the checksum code reproduces the stored
+  checksum of all 1076 blobs from the four compilers.
 - Releases ship `shadercache/` compiled by `tools/package.ps1` (`--precompile-shaders`)
   from `data/shadercache/*_keys.bin`, so Proton normally uses Microsoft-compiled bytecode.
   Keys whose blob is missing (a new key list, or a generator change) compile in the

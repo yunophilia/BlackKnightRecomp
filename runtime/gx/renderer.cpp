@@ -1,5 +1,6 @@
 // GX -> Direct3D 11 renderer.
 #include "gx_state.h"
+#include "dxbc_fixup.h"
 #include "shadergen.h"
 #include "texture_decode.h"
 #include "vertex_loader.h"
@@ -110,6 +111,17 @@ static void LogShaderFailure(const char* target, HRESULT hr, ID3DBlob* err, cons
         LOG_ERROR("HLSL compile error {:08x} ({}, failure {}): {}", (uint32_t)hr, target, n, msg);
 }
 
+// Wine's compiler declares pixel shader outputs before inputs, which DXVK 2.6.2 (Proton 10.0)
+// mishandles with dual-source blending (wrong colours on blended draws). Microsoft's output is
+// already in the other order and stays as it is. Applied to cached blobs too, for caches
+// written by earlier versions under Wine.
+static void FixDeclarationOrder(ID3DBlob* blob)
+{
+    static std::atomic<bool> logged{ false };
+    if (FixDxbcDeclarationOrder(blob->GetBufferPointer(), blob->GetBufferSize()) && !logged.exchange(true))
+        LOG_INFO("shader: moved pixel shader output declarations after the inputs (Wine compiler output, for DXVK)");
+}
+
 static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
 {
     ID3DBlob* blob = nullptr;
@@ -123,6 +135,7 @@ static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
         if (n > 0 && SUCCEEDED(D3DCreateBlob((SIZE_T)n, &blob)) && fread(blob->GetBufferPointer(), 1, n, f) == (size_t)n)
         {
             fclose(f);
+            FixDeclarationOrder(blob);
             return blob;
         }
         if (blob) { blob->Release(); blob = nullptr; }
@@ -137,6 +150,7 @@ static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
         return nullptr;
     }
     if (err) err->Release();
+    FixDeclarationOrder(blob);
     if (FILE* f = _wfopen(cachePath.c_str(), L"wb"))
     {
         fwrite(blob->GetBufferPointer(), 1, blob->GetBufferSize(), f);
