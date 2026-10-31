@@ -13,7 +13,7 @@ bool UI_SaveBoundTarget(ID3D11Device* dev, ID3D11DeviceContext* ctx, const char*
     rtv->GetResource(&res);
     rtv->Release();
     ID3D11Texture2D* tex = nullptr;
-    res->QueryInterface(IID_PPV_ARGS(&tex));
+    res->QueryInterface(__uuidof(ID3D11Texture2D), (void**)&tex);
     res->Release();
     if (!tex) return false;
     D3D11_TEXTURE2D_DESC d;

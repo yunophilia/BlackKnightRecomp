@@ -1,11 +1,13 @@
-# Builds and publishes a release when a version tag (v*.*.*) is pushed.
+# Builds and publishes a release when a version tag (v*.*.*) is pushed: the Windows zip and
+# the Linux AppImage.
 #
 # The recompiled code is generated from the game's main.dol of each release (USA RENE8P,
 # Europe RENP8P, Japan RENJ8P), which is not in this repository: the workflow reads them
 # (with the other build inputs) from a private repository using the PRIVATE_FILES_TOKEN
 # secret of the "release" environment (a fine-grained token with read-only Contents access
-# to that repository). Nothing from it is uploaded or published; only the built exe goes
-# into the release.
+# to that repository). Nothing from it is uploaded or published; only the built programs go
+# into the release. The two build jobs use the environment and start together, so one
+# approval covers both.
 #
 # The inputs are pinned to a tag of the private repository (PRIVATE_INPUTS_REF below), so
 # every release rebuilds from exactly the inputs it was made with. Whenever the inputs
@@ -20,15 +22,17 @@ on:
   push:
     tags: ["v*.*.*"]
 
+# read-only by default: the build jobs run third-party code (the toolchain PPA, the
+# FetchContent dependencies, appimagetool); only the publish job can write (the release)
 permissions:
-  contents: write   # create the release
+  contents: read
 
 env:
   # build inputs: tag in yunophilia/BlackKnightRecomp-private (see the header)
   PRIVATE_INPUTS_REF: inputs-multiregion-1
 
 jobs:
-  build:
+  windows:
     runs-on: windows-2025
     # PRIVATE_FILES_TOKEN is an environment secret: the job only gets it once a
     # required reviewer approves the run.
@@ -43,6 +47,7 @@ jobs:
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
           ref: ${{ env.PRIVATE_INPUTS_REF }}
           path: private-inputs
+          persist-credentials: false   # the token is not kept in the checkout
 
       # Private repository layout, one folder per release (the USA files may also be at the
       # top level, as before):
@@ -81,22 +86,134 @@ jobs:
         shell: pwsh
         run: |
           powershell -ExecutionPolicy Bypass -File tools/package.ps1
-          $zip = "BlackKnightRecomp-${{ github.ref_name }}-windows-x64.zip"
-          Compress-Archive -Path dist/BlackKnightRecomp -DestinationPath $zip
-          "ZIP=$zip" >> $env:GITHUB_ENV
+          Compress-Archive -Path dist/BlackKnightRecomp -DestinationPath "BlackKnightRecomp-${{ github.ref_name }}-windows-x64.zip"
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: BlackKnightRecomp-${{ github.ref_name }}-windows-x64.zip
+
+      # the precompiled shaders also go into the AppImage (DXBC works the same under DXVK)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shadercache
+          path: dist/BlackKnightRecomp/shadercache
+
+  linux:
+    # Ubuntu 22.04 (glibc 2.35) so the AppImage runs on older distributions too; a newer
+    # libstdc++ comes from the toolchain PPA and is linked statically.
+    runs-on: ubuntu-22.04
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+
+      # docs/linux.md lists the same packages. First, so the packages' install scripts (run
+      # as root) run before the private inputs or their token are on the runner.
+      - name: Install build tools and libraries
+        run: |
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y clang-15 g++-13 ninja-build bison flex libjson-perl libvulkan-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libxfixes-dev libxinerama-dev libwayland-dev wayland-protocols libdecor-0-dev libegl-dev libgl-dev \
+            libdrm-dev libgbm-dev libasound2-dev libpulse-dev libpipewire-0.3-dev libudev-dev libdbus-1-dev \
+            libibus-1.0-dev libusb-1.0-0-dev
+
+      - name: Fetch build inputs (private)
+        uses: actions/checkout@v4
+        with:
+          repository: yunophilia/BlackKnightRecomp-private
+          token: ${{ secrets.PRIVATE_FILES_TOKEN }}
+          ref: ${{ env.PRIVATE_INPUTS_REF }}
+          path: private-inputs
+          persist-credentials: false   # the token is not kept in the checkout
+
+      - name: Place build inputs
+        run: |
+          for id in RENE8P RENP8P RENJ8P; do
+            src=private-inputs/$id
+            if [ ! -d "$src" ] && [ $id = RENE8P ]; then src=private-inputs; fi
+            mkdir -p game/$id/sys game/$id/files out/$id
+            cp $src/sys/main.dol game/$id/sys/
+            cp $src/files/BLACKKNIGHT.sel $src/files/hbm_part.rso game/$id/files/
+            cp $src/mem2_dump.bin out/$id/
+          done
+          rm -rf private-inputs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the recompiled code
+        run: |
+          python tools/build_generated.py --require-all
+          git diff --exit-code runtime/game_addrs.inc
+
+      - name: Build
+        env:
+          BKR_VERSION: ${{ github.ref_name }}
+        run: |
+          cmake --preset linux-clang -DCMAKE_C_COMPILER=clang-15 -DCMAKE_CXX_COMPILER=clang++-15
+          cmake --build --preset linux-clang
+
+      - name: Stage the AppImage contents
+        run: tools/package_linux.sh -S
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appdir
+          path: dist/AppDir
+
+  appimage:
+    needs: [windows, linux]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-appdir
+          path: dist/AppDir
+      - uses: actions/download-artifact@v4
+        with:
+          name: shadercache
+          path: shadercache
+      - name: Make the AppImage
+        run: tools/package_linux.sh -A dist/AppDir -c shadercache -v "${{ github.ref_name }}" -b build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/BlackKnightRecomp-${{ github.ref_name }}-linux-x86_64.AppImage
+
+  publish:
+    needs: [windows, appimage]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write   # create the release
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-zip
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-appimage
       - name: Publish the release
-        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # one line per paragraph: release notes keep single line breaks. Edit the notes on
           # the release page afterwards to add what changed.
-          $notes = @"
-          Sonic and the Black Knight (Wii), statically recompiled to run natively on Windows.
+          cat > notes.md <<'EOF'
+          Sonic and the Black Knight (Wii), statically recompiled to run natively on Windows and Linux.
 
-          **This release contains no game data.** You need your own copy of the game as a disc image (USA RENE8P, Europe RENP8P or Japan RENJ8P): ISO, RVZ, WIA or WBFS. Unzip, start ``BlackKnightRecomp.exe`` and select the image when the launcher asks; the game data is installed next to the exe.
+          **This release contains no game data.** You need your own copy of the game as a disc image (USA RENE8P, Europe RENP8P or Japan RENJ8P): ISO, RVZ, WIA or WBFS.
+
+          **Windows:** unzip, start `BlackKnightRecomp.exe` and select the image when the launcher asks; the game data is installed next to the exe.
+
+          **Linux and Steam Deck:** make the `.AppImage` executable and start it; the launcher asks for the image and installs the game data into `~/.local/share/BlackKnightRecomp`. Needs a Vulkan driver.
 
           See the [README](https://github.com/${{ github.repository }}#readme) for controls and settings.
-          "@
-          gh release create "${{ github.ref_name }}" "$env:ZIP" --title "${{ github.ref_name }}" --notes $notes
+          EOF
+          gh release create "${{ github.ref_name }}" --repo "${{ github.repository }}" \
+            "BlackKnightRecomp-${{ github.ref_name }}-windows-x64.zip" \
+            "BlackKnightRecomp-${{ github.ref_name }}-linux-x86_64.AppImage" \
+            --title "${{ github.ref_name }}" --notes-file notes.md

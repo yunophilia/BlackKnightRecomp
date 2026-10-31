@@ -1,19 +1,18 @@
-// XInput controllers with a keyboard fallback for player 1.
+// Controllers (platform/input.h) with a keyboard fallback for player 1.
 #include "gamepad.h"
 #include "../config.h"
 #include "../tas/tas.h"
 #include "../ui/overlay.h"
+#include "../platform/input.h"
+#include "../platform/platform.h"
+#include "../platform/window.h"
 
 #include <atomic>
 #include <string>
 #include <vector>
 #include <cmath>
-#include <windows.h>
-#include <Xinput.h>
 
-extern void* Video_HWND();
-
-static float Stick(SHORT v, SHORT dead)
+static float Stick(int16_t v, int16_t dead)
 {
     float f = (float)v;
     float d = (float)dead;
@@ -24,21 +23,21 @@ static float Stick(SHORT v, SHORT dead)
 
 static bool Key(int vk)
 {
-    return (GetAsyncKeyState(vk) & 0x8000) != 0;
+    return Key_Down(vk);
 }
 
-// Players 2-4 exist only while their XInput pad is plugged in. Querying an empty slot
+// Players 2-4 exist only while their pad is plugged in. Querying an empty XInput slot
 // is slow, so absent pads are re-checked at most once a second.
 bool Gamepad_IsConnected(int index)
 {
     if (Tas_Active()) return index < Tas_Players();   // scripted runs ignore real controllers
     if (index == 0) return true;   // keyboard fallback
-    static DWORD lastCheck[4];
+    static uint64_t lastCheck[4];
     static bool connected[4];
-    DWORD now = GetTickCount();
+    uint64_t now = Platform_TickMs();
     if (!connected[index] && lastCheck[index] && now - lastCheck[index] < 1000) return false;
-    XINPUT_STATE st{};
-    connected[index] = XInputGetState(index, &st) == ERROR_SUCCESS;
+    PadState st;
+    connected[index] = Pad_Read(index, st);
     lastCheck[index] = now;
     return connected[index];
 }
@@ -151,7 +150,7 @@ bool Gamepad_RumbleAllowed();
 #include <vector>
 struct ScriptEvent { double t0, t1; uint16_t buttons; float lx, ly, rx, ry, rt; bool hasStick; float px = -1, py = -1; };
 static std::vector<ScriptEvent> s_script;
-static DWORD s_scriptStart = 0;
+static uint64_t s_scriptStart = 0;
 
 void Gamepad_LoadScript(const char* path)
 {
@@ -159,6 +158,7 @@ void Gamepad_LoadScript(const char* path)
     std::string line;
     while (std::getline(f, line))
     {
+        if (!line.empty() && line.back() == '\r') line.pop_back();   // CRLF files outside Windows
         if (line.empty() || line[0] == '#') continue;
         std::istringstream ss(line);
         ScriptEvent e{};
@@ -193,7 +193,7 @@ void Gamepad_LoadScript(const char* path)
         }
         s_script.push_back(e);
     }
-    s_scriptStart = GetTickCount();
+    s_scriptStart = Platform_TickMs();
 }
 
 void Gamepad_Poll(int index, GamepadState& out)
@@ -203,7 +203,7 @@ void Gamepad_Poll(int index, GamepadState& out)
         return;
     if (!s_script.empty() && index == 0)
     {
-        double t = (GetTickCount() - s_scriptStart) / 1000.0;
+        double t = (Platform_TickMs() - s_scriptStart) / 1000.0;
         for (auto& e : s_script)
             if (t >= e.t0 && t < e.t1)
             {
@@ -218,16 +218,16 @@ void Gamepad_Poll(int index, GamepadState& out)
     }
     if (g_autoPress && index == 0)
     {
-        DWORD t = GetTickCount() % 3000;
+        uint64_t t = Platform_TickMs() % 3000;
         if (t < 150) out.buttons |= PAD_A;
         out.connected = true;
     }
-    XINPUT_STATE st{};
-    if ((index == 0 || Gamepad_IsConnected(index)) && XInputGetState(index, &st) == ERROR_SUCCESS)
+    PadState st;
+    if ((index == 0 || Gamepad_IsConnected(index)) && Pad_Read(index, st))
     {
         out.connected = true;
-        float lt = st.Gamepad.bLeftTrigger / 255.0f, rt = st.Gamepad.bRightTrigger / 255.0f;
-        uint32_t phys = st.Gamepad.wButtons & ~PAD_HOME;
+        float lt = st.lt / 255.0f, rt = st.rt / 255.0f;
+        uint32_t phys = st.buttons & ~PAD_HOME;
         if (index == 0)
         {
             // View (Back) toggles the settings overlay when released, unless Start was
@@ -260,17 +260,17 @@ void Gamepad_Poll(int index, GamepadState& out)
             out.buttons |= PAD_HOME;
         }
         ApplyBindings(out, phys, lt, rt);
-        out.lx = Stick(st.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
-        out.ly = Stick(st.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
-        out.rx = Stick(st.Gamepad.sThumbRX, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
-        out.ry = Stick(st.Gamepad.sThumbRY, XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE);
+        out.lx = Stick(st.lx, PAD_LEFT_THUMB_DEADZONE);
+        out.ly = Stick(st.ly, PAD_LEFT_THUMB_DEADZONE);
+        out.rx = Stick(st.rx, PAD_RIGHT_THUMB_DEADZONE);
+        out.ry = Stick(st.ry, PAD_RIGHT_THUMB_DEADZONE);
     }
     if (index != 0)
         return;
     // "Wii HOME Menu" button in the overlay: hold HOME for a moment
-    static DWORD homeUntil = 0;
-    if (Overlay_TakeHomePress()) homeUntil = GetTickCount() + 250;
-    if (homeUntil && GetTickCount() < homeUntil)
+    static uint64_t homeUntil = 0;
+    if (Overlay_TakeHomePress()) homeUntil = Platform_TickMs() + 250;
+    if (homeUntil && Platform_TickMs() < homeUntil)
     {
         out.buttons |= PAD_HOME;
         out.connected = true;
@@ -282,7 +282,7 @@ void Gamepad_Poll(int index, GamepadState& out)
         return;
     }
     // keyboard and mouse (only when our window has focus), bindings from [Keyboard]
-    if (GetForegroundWindow() != (HWND)Video_HWND())
+    if (!Window_Focused())
         return;
     static std::vector<int> keys[21];
     if (s_keysChanged.exchange(false))
@@ -314,13 +314,11 @@ void Gamepad_Poll(int index, GamepadState& out)
 bool Gamepad_RumbleAllowed()
 {
     if (!s_script.empty() || g_autoPress || Tas_Active()) return false;
-    HWND hwnd = (HWND)Video_HWND();
-    return hwnd && GetForegroundWindow() == hwnd;
+    return Window_Handle() && Window_Focused();
 }
 
 // Stops all controller motors (called on focus loss and before exiting).
 void Gamepad_StopRumble()
 {
-    XINPUT_VIBRATION v{};
-    for (DWORD i = 0; i < 4; i++) XInputSetState(i, &v);
+    for (int i = 0; i < 4; i++) Pad_SetRumble(i, 0, 0);
 }

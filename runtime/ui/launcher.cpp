@@ -7,24 +7,23 @@
 #include "../config.h"
 #include "../install/verify.h"
 #include "../log.h"
+#include "../platform/platform.h"
+#include "../platform/ui.h"
 #include "../region.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
-#include <imgui_impl_win32.h>
 
+#include <atomic>
 #include <d3d11.h>
 #include <dxgi.h>
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <thread>
-#include <windows.h>
-#include <shellapi.h>
 
 namespace fs = std::filesystem;
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 bool InstallUI_Run(const fs::path& dest, const std::string& foundImage, const std::string& damage);
 
 namespace
@@ -36,11 +35,11 @@ namespace
 void ShotKeys()
 {
     static std::vector<ImGuiKey> keys;
-    static ULONGLONG start = 0;
+    static uint64_t start = 0;
     if (!start)
     {
         const char* delay = getenv("BKR_UI_SHOT_KEYS_DELAY");
-        start = GetTickCount64() + (delay ? atoi(delay) : 1) * 1000ull;
+        start = Platform_TickMs() + (delay ? atoi(delay) : 1) * 1000ull;
         if (const char* list = getenv("BKR_UI_SHOT_KEYS"))
         {
             std::string name;
@@ -55,13 +54,13 @@ void ShotKeys()
         }
     }
     ImGuiIO& io = ImGui::GetIO();
-    if (keys.empty() || GetTickCount64() < start) return;
+    if (keys.empty() || Platform_TickMs() < start) return;
     io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
     // one key every 200 ms, held for 50 ms
     static size_t next = 0;
     static bool down = false;
     static ULONGLONG at = 0;
-    ULONGLONG now = GetTickCount64();
+    ULONGLONG now = Platform_TickMs();
     if (next >= keys.size() || now < at) return;
     io.AddKeyEvent(keys[next], !down);
     if (down) next++;
@@ -74,29 +73,13 @@ ID3D11DeviceContext* s_ctx = nullptr;
 IDXGISwapChain* s_swap = nullptr;
 ID3D11RenderTargetView* s_rtv = nullptr;
 bool s_quit = false;
-UINT s_resizeW = 0, s_resizeH = 0;
 
 void CreateRTV()
 {
     ID3D11Texture2D* bb = nullptr;
-    s_swap->GetBuffer(0, IID_PPV_ARGS(&bb));
+    s_swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&bb);
     s_dev->CreateRenderTargetView(bb, nullptr, &s_rtv);
     bb->Release();
-}
-
-LRESULT CALLBACK LauncherProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-    if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wp, lp)) return TRUE;
-    switch (msg)
-    {
-    case WM_SIZE:
-        if (wp != SIZE_MINIMIZED) { s_resizeW = LOWORD(lp); s_resizeH = HIWORD(lp); }
-        return 0;
-    case WM_CLOSE:
-        s_quit = true;
-        return 0;
-    }
-    return DefWindowProcW(hwnd, msg, wp, lp);
 }
 
 struct State
@@ -216,21 +199,13 @@ void DrawHome(State& st, bool& play, const std::string& isoPath, const fs::path&
 // Returns true to start the game, with dataDir set to the installed data.
 bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::path& installDest)
 {
-    HRESULT co = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    WNDCLASSW wc{};
-    wc.lpfnWndProc = LauncherProc;
-    wc.hInstance = GetModuleHandleW(nullptr);
-    wc.hCursor = LoadCursorW(nullptr, MAKEINTRESOURCEW(32512));
-    wc.hIcon = LoadIconW(nullptr, MAKEINTRESOURCEW(32512));
-    wc.lpszClassName = L"BlackKnightRecompLauncher";
-    RegisterClassW(&wc);
-    RECT wa;
-    SystemParametersInfoW(SPI_GETWORKAREA, 0, &wa, 0);
-    // room for the mod browser, within the screen
-    int w = std::min(1060, (int)(wa.right - wa.left) * 9 / 10), h = std::min(740, (int)(wa.bottom - wa.top) * 9 / 10);
-    HWND hwnd = CreateWindowW(wc.lpszClassName, L"Sonic and the Black Knight - Recompiled", WS_OVERLAPPEDWINDOW,
-                              wa.left + (wa.right - wa.left - w) / 2, wa.top + (wa.bottom - wa.top - h) / 2, w, h,
-                              nullptr, nullptr, wc.hInstance, nullptr);
+    // room for the mod browser (within the screen)
+    HWND hwnd = (HWND)UiWindow_Create("Sonic and the Black Knight - Recompiled", 1060, 740);
+    if (!hwnd)
+    {
+        LOG_WARN("launcher: no window, starting the game directly");
+        return true;
+    }
     DXGI_SWAP_CHAIN_DESC sd{};
     sd.BufferCount = 2;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -243,26 +218,22 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
                                              &s_swap, &s_dev, nullptr, &s_ctx)))
     {
         LOG_WARN("launcher: no D3D11 device, starting the game directly");
-        DestroyWindow(hwnd);
-        if (SUCCEEDED(co)) CoUninitialize();
+        UiWindow_Destroy();
         return true;
     }
     CreateRTV();
-    ShowWindow(hwnd, SW_SHOWDEFAULT);
-    UpdateWindow(hwnd);
+    UiWindow_Show();
 
     IMGUI_CHECKVERSION();
     ImGuiContext* imgui = ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
-    char winDir[MAX_PATH];
-    UINT n = GetWindowsDirectoryA(winDir, MAX_PATH);
-    std::string font = n ? std::string(winDir, n) + "\\Fonts\\segoeui.ttf" : "";
-    if (!font.empty() && GetFileAttributesA(font.c_str()) != INVALID_FILE_ATTRIBUTES) io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
+    std::string font = Platform_UiFont();
+    if (!font.empty()) io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
     SettingsUI_AddFallbackFonts();
     SettingsUI_ApplyStyle();
-    ImGui_ImplWin32_Init(hwnd);
+    UiBackend_Init(hwnd);
     ImGui_ImplDX11_Init(s_dev, s_ctx);
     UiImage_SetDevice(s_dev);
 
@@ -274,7 +245,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
     // waits that long first (downloads in the Mods tab)
     const char* shot = getenv("BKR_UI_SHOT");
     const char* shotWait = getenv("BKR_UI_SHOT_WAIT");
-    ULONGLONG shotAt = GetTickCount64() + (shotWait ? atoi(shotWait) : 0) * 1000ull;
+    ULONGLONG shotAt = Platform_TickMs() + (shotWait ? atoi(shotWait) : 0) * 1000ull;
     const char* shotTab = getenv("BKR_UI_SHOT_TAB");
     st.promptInstall = st.status != DataStatus::Ok && !shot;
 
@@ -283,18 +254,13 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
     int frames = 0;
     while (!s_quit && !play)
     {
-        MSG msg;
-        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
-        }
+        uint32_t resizeW, resizeH;
+        if (!UiWindow_Pump(resizeW, resizeH)) s_quit = true;
         if (s_quit) break;
-        if (s_resizeW)
+        if (resizeW)
         {
             if (s_rtv) { s_rtv->Release(); s_rtv = nullptr; }
-            s_swap->ResizeBuffers(0, s_resizeW, s_resizeH, DXGI_FORMAT_UNKNOWN, 0);
-            s_resizeW = s_resizeH = 0;
+            s_swap->ResizeBuffers(0, resizeW, resizeH, DXGI_FORMAT_UNKNOWN, 0);
             CreateRTV();
         }
         // first start, deleted or damaged data: ask for the disc image once the window is up
@@ -307,7 +273,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         }
 
         ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
+        UiBackend_NewFrame();
         if (shot) ShotKeys();
         if (shot)
         {
@@ -361,7 +327,7 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
         s_ctx->OMSetRenderTargets(1, &s_rtv, nullptr);
         s_ctx->ClearRenderTargetView(s_rtv, clear);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        if (shot && ++frames > 5 && GetTickCount64() >= shotAt)
+        if (shot && ++frames > 5 && Platform_TickMs() >= shotAt)
         {
             UI_SaveBoundTarget(s_dev, s_ctx, shot);
             s_quit = true;
@@ -373,16 +339,14 @@ bool Launcher_Run(std::string& dataDir, const std::string& isoPath, const fs::pa
     if (st.verifyThread.joinable()) st.verifyThread.join();
     UiImage_SetDevice(nullptr);
     ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
+    UiBackend_Shutdown();
     ImGui::DestroyContext(imgui);
     if (s_rtv) s_rtv->Release();
     s_swap->Release();
     s_ctx->Release();
     s_dev->Release();
     s_rtv = nullptr;
-    DestroyWindow(hwnd);
-    UnregisterClassW(wc.lpszClassName, wc.hInstance);
-    if (SUCCEEDED(co)) CoUninitialize();
+    UiWindow_Destroy();
     if (play) dataDir = st.data.string();
     LOG_INFO("launcher: {}", play ? "play" : "quit");
     return play;

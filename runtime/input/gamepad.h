@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-// Host controller state (XInput layout), polled once per guest input read.
+// Host controller state (XInput layout, see platform/input.h), polled once per guest input read.
 struct GamepadState
 {
     bool connected = false;
