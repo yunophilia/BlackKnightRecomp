@@ -84,8 +84,10 @@ The Europe and Japan values of every name are in `runtime/game_addrs.inc`.
 
 `tas_run.ps1 -Region RENP8P` (or `RENJ8P`, `RENE8P`) plays the release installed in
 `game/<Region>` instead of `game/extracted/DATA`; `-Save none` starts from an empty save
-folder, so the game begins with its own first start (language, save file creation). The
-test saves are USA saves (title `52454e45`) and are not seen by the other releases.
+folder, so the game begins with its own first start (language, save file creation);
+`tools/tas/fresh_save.tas` plays it in any release: name entry, the intro, the first stage
+and the HOME menu. The test saves are USA saves (title `52454e45`) and are not seen by the
+other releases.
 
 ## Call counting
 
