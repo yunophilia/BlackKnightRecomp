@@ -65,14 +65,17 @@ struct PPCFuncMapping
     PPCFunc host;
 };
 
-// The recompiled code of one release (tools/recomp.py), in that release's namespace
+// The recompiled code of one release (tools/recomp.py). The releases share the bodies of
+// the functions they have in common; those pick what differs by g_ppcRelease/g_ppcDelta.
 struct PPCRegionCode
 {
     const char* gameId;              // RENE8P, RENP8P, RENJ8P
+    uint32_t release;                // its g_ppcRelease value
     const PPCFuncMapping* funcs;     // every function, ends with { 0, nullptr }
     const PPCFunc* originals;        // per runtime/game_addrs.inc entry: the recompiled
                                      // original of a function the runtime overrides, or null
     uint32_t addrCount;              // entries in runtime/game_addrs.inc at generation
+    const uint32_t* deltas;          // its g_ppcDelta (g_ppcDeltaCount entries)
     uint32_t rsoTextBegin, rsoTextEnd;   // HOME menu module recompiled at its link address
     uint64_t rsoTextHash;                // (tools/rso.py), all 0 if not recompiled
 };
@@ -96,6 +99,11 @@ extern "C" uint32_t g_callCounts[0x200000];
 extern "C" {
 extern volatile uint32_t g_ppcIrqPending;
 extern uint32_t g_tasProbe[16];   // read-only test probes (tools/recomp.py PROBES)
+// Set by Region_Select for the shared code (generated/ppc_regions.cpp): the release being
+// played, and per address that differs between releases its offset from the first one's
+extern uint32_t g_ppcRelease;
+extern uint32_t g_ppcDelta[];
+extern const uint32_t g_ppcDeltaCount;
 PPCFunc ppc_lookup(uint32_t addr);
 void ppc_call_indirect(PPCContext& ctx, uint8_t* base, uint32_t addr);
 void ppc_check_irq(PPCContext& ctx, uint8_t* base);

@@ -1,0 +1,37 @@
+# Fresh save (tas_run.ps1 -Save none, any release): name entry, the intro, the first stage,
+# HOME menu open and close. Used to compare builds of every release.
+include watches.tas
+watch px f32 [PlayerPtr]+380
+watch pz f32 [PlayerPtr]+388
+log boot
+until file adv_title mash A+B timeout 80
+wait 2
+shot title
+hold 0.3 A+B
+wait 4
+tap A 0.2
+wait 1.5
+hold 1 PX=0.78+PY=0.66
+shot name_entry
+tap A+PX=0.78+PY=0.66 0.2
+wait 3
+shot intro
+filemark
+until file stg001_obj mash A timeout 400
+log stage
+wait 10
+shot stage_start
+hold 4 LY=1.0
+shot stage_moved
+wait 1
+tap HOME 0.3
+wait 3
+shot home_open
+tap HOME 0.3
+wait 3
+shot home_closed
+hold 3 LY=1.0
+shot stage_after_home
+log done
+wait 1
+quit

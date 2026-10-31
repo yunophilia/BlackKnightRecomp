@@ -1,20 +1,26 @@
-"""Static recompiler: PPC (Gekko/Broadway) DOL -> C++, one release at a time.
+"""Static recompiler: PPC (Gekko/Broadway) DOL -> C++, every release in one run.
 
-  python tools/recomp.py GAMEID      (tools/build_generated.py runs it for every release)
+  python tools/recomp.py GAMEID...   (tools/build_generated.py runs it with the releases here)
 
-Every guest function becomes void fn_XXXXXXXX(PPCContext& ctx, uint8_t* base) in the
-release's namespace (rene8p, renp8p, renj8p) in generated/<namespace>/, unless the
-runtime overrides it with PPC_OVERRIDE(NAME) (NAME from runtime/game_addrs.inc; the list
-is in out/<id>/overrides.txt). Then the body is emitted as fn_XXXXXXXX_impl, which the
-runtime calls as PPC_ORIGINAL(NAME), and fn_XXXXXXXX forwards to the runtime's ovr_NAME.
+Every guest function becomes void fn_XXXXXXXX(PPCContext& ctx, uint8_t* base) in namespace
+ppc in generated/. The releases (USA RENE8P, Europe RENP8P, Japan RENJ8P) share one body per
+function they have in common (see Generator); each release has its dispatch table in
+generated/<ns>/ppc_func_mapping.cpp. If the runtime overrides a function with
+PPC_OVERRIDE(NAME) (NAME from runtime/game_addrs.inc; the list is in out/<id>/overrides.txt),
+the body is emitted as fn_XXXXXXXX_impl, which the runtime calls as PPC_ORIGINAL(NAME), and
+fn_XXXXXXXX forwards to the runtime's ovr_NAME.
 """
 import json
+import multiprocessing
 import os
+import re
 import sys
+from collections import namedtuple
 
+import region_map
 from dol import Dol, Section
 from game_addrs import load_inc
-from regions import ROOT, by_id
+from regions import REGIONS, ROOT, by_id
 from ppc import decode
 
 MMIO_SAFE_BASES = (1, 2, 13)   # r1 stack, r2/r13 small data: never MMIO
@@ -38,6 +44,12 @@ def mask32(mb, me):
     else:
         m = (((0xFFFFFFFF >> mb) | (0xFFFFFFFF << (31 - me))) & 0xFFFFFFFF)
     return m
+
+
+# A function's code in one release: entries[0] counts the call, entries[1..n] are the
+# instructions, entries[n + 1] the tail call into the next function (or empty); labels
+# are the entry indices that have a label before them.
+Body = namedtuple('Body', 'name labels entries')
 
 
 class FuncGen:
@@ -91,14 +103,18 @@ class FuncGen:
     def cr_record(self, val):
         self.emit(f'PPC_CR0({val});')
 
+    def lname(self, t):
+        # by offset: the same in every release's copy of the function
+        return f'loc_{t - self.start:X}'
+
     def call(self, target, ret_addr):
         self.calls.add(target)
-        self.emit(f'ctx.lr = {h(ret_addr)}; fn_{target:08X}(ctx, base);')
+        self.emit(f'ctx.lr = {h(ret_addr)}; {self.rc.fname(target)}(ctx, base);')
 
     def tailcall(self, target):
         if self.rc.is_func(target):
             self.calls.add(target)
-            return f'{{ fn_{target:08X}(ctx, base); return; }}'
+            return f'{{ {self.rc.fname(target)}(ctx, base); return; }}'
         return f'{{ PPC_CALL_INDIRECT({h(target)}); return; }}'
 
     def cond(self, bo, bi):
@@ -116,7 +132,7 @@ class FuncGen:
         if self.inside(t):
             self.labels.add(t)
             chk = 'PPC_CHECK_IRQ(); ' if t <= a else ''
-            return f'{{ {chk}goto loc_{t:08X}; }}'
+            return f'{{ {chk}goto {self.lname(t)}; }}'
         return self.tailcall(t)
 
     # ---------------------------------------------------------------- main
@@ -132,24 +148,21 @@ class FuncGen:
             for t in self.jt.get(a, ()):
                 if self.inside(t):
                     self.labels.add(t)
-        body = []
-        self.out = body
+        # one entry per instruction, between the call count and the fall-through tail call
+        entries = [f'\tPPC_COUNT_CALL({h(self.start)});']
         last_term = False
         for a in range(self.start, self.end, 4):
-            w = self.dol.read32(a)
-            if a in self.labels:
-                body.append(f'loc_{a:08X}:')
-            ins = decode(w)
-            last_term = self.insn(a, ins)
+            self.out = []
+            last_term = self.insn(a, decode(self.dol.read32(a)))
+            entries.append('\n'.join(self.out))
+        self.out = []
         if not last_term:
             # falls through into the next function
             self.emit(self.tailcall(self.end))
-        name = self.f.get('name')
-        hdr = f'// {name}\n' if name else ''
-        suffix = '_impl' if self.start in self.rc.overrides else ''
-        if any(self.start <= pa < self.end for pa in self.rc.patches):
-            hdr = 'extern "C" uint32_t g_cfgFrameRate;\n' + hdr
-        return hdr + f'PPC_GEN_FUNC(fn_{self.start:08X}{suffix}) {{\n\tPPC_FUNC_PROLOGUE(); PPC_COUNT_CALL(0x{self.start:08X});\n' + '\n'.join(body) + '\n}\n'
+        entries.append('\n'.join(self.out))
+        # label positions as entry indices (the label goes before that entry)
+        labels = frozenset(1 + (t - self.start) // 4 for t in self.labels)
+        return Body(self.f.get('name'), labels, entries)
 
     def insn(self, a, i):
         """Emit one instruction. Returns True if control never falls through."""
@@ -184,7 +197,7 @@ class FuncGen:
             if i.lk:
                 if self.rc.is_func(t):
                     self.calls.add(t)
-                    e(f'{pre}if ({c}) {{ ctx.lr = {h(nxt)}; fn_{t:08X}(ctx, base); }}')
+                    e(f'{pre}if ({c}) {{ ctx.lr = {h(nxt)}; {self.rc.fname(t)}(ctx, base); }}')
                 else:
                     e(f'{pre}if ({c}) {{ ctx.lr = {h(nxt)}; PPC_CALL_INDIRECT({h(t)}); }}')
                 return False
@@ -209,9 +222,10 @@ class FuncGen:
                 e(f'{pre}if ({c}) {{ ctx.lr = {h(nxt)}; PPC_CALL_INDIRECT(ctx.ctr); }}')
                 return False
             if a in self.jt:
-                lines = [f'switch (ctx.ctr) {{']
+                # cases by offset from the function start: the same in every release
+                lines = [f'switch (ctx.ctr - {h(self.start)}) {{']
                 for t in sorted(set(self.jt[a])):
-                    lines.append(f'\tcase {h(t)}: {self.goto(a, t)}')
+                    lines.append(f'\tcase {h(t - self.start)}: {self.goto(a, t)}')
                 lines.append(f'\tdefault: {{ PPC_CALL_INDIRECT(ctx.ctr); return; }}')
                 lines.append('\t}')
                 body = '\n\t'.join(lines)
@@ -790,86 +804,323 @@ def write_if_changed(path, text):
     return True
 
 
-class Recompiler:
-    def __init__(self, region, dol, funcs, addrs, overrides=()):
-        """addrs: [(name, kind, address)] of this release (runtime/game_addrs.inc);
-        overrides: names of the functions the runtime overrides."""
+class Release:
+    """One release's inputs: main.dol (and the HOME menu module), its functions, game addresses."""
+
+    def __init__(self, region):
         self.region = region
-        self.dol = dol
-        self.funcs = funcs
-        self.starts = {f['start'] for f in funcs}
-        self.addrs = addrs
-        at = {name: a for name, _, a in addrs}
+        self.index = REGIONS.index(region)   # its g_ppcRelease value
+        self.dol = Dol(region.dol())
+        self.funcs = json.load(open(region.out('functions.json')))
+        self.main_funcs = [(f['start'], f['end']) for f in self.funcs]
+        ovr_path = region.out('overrides.txt')
+        overrides = open(ovr_path).read().split() if os.path.exists(ovr_path) else []
+        self.addrs = [(name, kind, cols[region.game_id]) for name, kind, cols in load_inc()]
+        at = {name: a for name, _, a in self.addrs}
         self.overrides = {at[n]: n for n in overrides}
         self.probes = {at[n]: v for n, v in PROBES.items()}
         self.patches = {at[n]: v for n, v in PATCHES.items()}
+        # Optional: the linked HOME menu module (see tools/rso.py), appended as an extra
+        # text section; the runtime only uses it after checking the code in memory.
+        self.rso, self.rso_funcs = None, []
+        if os.path.exists(region.out('rso_info.json')):
+            self.rso = json.load(open(region.out('rso_info.json')))
+            img = open(region.out('rso_image.bin'), 'rb').read()
+            self.dol.sections.append(Section('text', 7, 0, self.rso['text'], img))
+            self.dol.text = [x for x in self.dol.sections if x.kind == 'text']
+            self.rso_funcs = json.load(open(region.out('rso_functions.json')))
+            self.funcs = self.funcs + self.rso_funcs
+        self.starts = {f['start'] for f in self.funcs}
         for a, n in self.overrides.items():
             if a not in self.starts:
                 sys.exit(f'{region.game_id}: override {n} ({a:08X}) is not a function start')
+        self.names = {}   # function start -> the name the generated code calls it by
 
     def is_func(self, a):
         return a in self.starts
 
-    def run(self, outdir, rso=None, per_file=6000):
-        os.makedirs(outdir, exist_ok=True)
-        ns = self.region.ns
-        files = []
-        chunk, count, idx = [], 0, 0
+    def fname(self, a):
+        return self.names[a]
+
+    def bodies(self):
+        return {f['start']: FuncGen(self, f).gen() for f in self.funcs}
+
+
+def release_bodies(args):
+    """Worker: every function of one release, with the call names worked out beforehand."""
+    game_id, names = args
+    rel = Release(by_id(game_id))
+    rel.names = names
+    return rel.bodies()
+
+
+# a hex literal of the generated code (h(), optionally unsigned)
+LIT = re.compile(r'(?<![\w])0x[0-9A-F]+(?:ull|u)?')
+# instructions of a shared function that may differ by more than literals (each becomes
+# an if on g_ppcRelease); a function with more is generated per release
+SELECT_LIMIT = 8
+
+
+class Generator:
+    """The code of several releases, with one body for each function they share.
+
+    Functions are paired with the first release's (tools/region_map.py; the HOME menu
+    module by address). A group of paired functions of the same length gets one body:
+    code that is the same in every member is emitted as it is, hex literals that differ
+    (addresses of data that moved, return addresses, the function's own address) become
+    (literal + g_ppcDelta[k]), the k-th per-release offset, set when the release is
+    selected, and up to SELECT_LIMIT instructions that differ otherwise are picked by
+    g_ppcRelease. Other groups get one body per release (fn_<ref>_<ns>) and a dispatcher.
+    Calls go by group name (fn_<first release's address>, or fn_<ns>_<address> for a
+    function only one release has), so they reach the right release's function."""
+
+    def __init__(self, rels):
+        self.rels = rels
+        self.deltas = {}   # per-release offsets (REGIONS order) -> index in g_ppcDelta
+        self.groups = []   # (name, {index in rels: start})
+        self.stats = {'shared': 0, 'per release': 0, 'single': 0, 'delta': 0, 'select': 0}
+
+    def pair(self):
+        ref = self.rels[0]
+        pairs = []
+        for rel in self.rels[1:]:
+            m = region_map.RegionMap(ref.dol, ref.main_funcs, rel.dol, rel.main_funcs)
+            p = dict(m.func_pairs)
+            if ref.rso and rel.rso and (ref.rso['text'], ref.rso['size']) == (rel.rso['text'], rel.rso['size']):
+                # the same module linked at the same address: functions by address
+                ends = {f['start']: f['end'] for f in rel.rso_funcs}
+                p.update({f['start']: f['start'] for f in ref.rso_funcs if ends.get(f['start']) == f['end']})
+            used = {}
+            for b in p.values():
+                used[b] = used.get(b, 0) + 1
+            pairs.append({a: b for a, b in p.items() if used[b] == 1})
+        taken = [set() for _ in self.rels]
+        for f in ref.funcs:
+            g = {0: f['start']}
+            for k, p in enumerate(pairs, 1):
+                if f['start'] in p:
+                    g[k] = p[f['start']]
+                    taken[k].add(g[k])
+            self.groups.append((f'fn_{f["start"]:08X}', g))
+        for k, rel in enumerate(self.rels[1:], 1):
+            for f in rel.funcs:
+                if f['start'] not in taken[k]:
+                    self.groups.append((f'fn_{rel.region.ns}_{f["start"]:08X}', {k: f['start']}))
+        for name, g in self.groups:
+            for k, a in g.items():
+                self.rels[k].names[a] = name
+
+    # ---------------------------------------------------------------- merging
+    def delta(self, members, vals):
+        key = [0] * len(REGIONS)
+        for (k, _), v in zip(members, vals):
+            key[self.rels[k].index] = (v - vals[0]) & 0xFFFFFFFF
+        return self.deltas.setdefault(tuple(key), len(self.deltas))
+
+    def merge_literals(self, members, texts):
+        """One text for all members, with the literals that differ as offsets, or None."""
+        skel = LIT.sub('#', texts[0])
+        if any(LIT.sub('#', t) != skel for t in texts[1:]):
+            return None
+        found = [list(LIT.finditer(t)) for t in texts]
+        t0 = texts[0]
+        out, pos = [], 0
+        for j, m0 in enumerate(found[0]):
+            toks = [f[j].group() for f in found]
+            out.append(t0[pos:m0.start()])
+            pos = m0.end()
+            if all(x == toks[0] for x in toks):
+                out.append(toks[0])
+                continue
+            if t0[max(0, m0.start() - 5):m0.start()] == 'case ' or any(x.endswith('ull') for x in toks):
+                return None   # needs a constant, or 64 bits
+            vals = [int(x.rstrip('u'), 16) for x in toks]
+            out.append(f'({h(vals[0])}u + g_ppcDelta[{self.delta(members, vals)}])')
+        out.append(t0[pos:])
+        return ''.join(out)
+
+    def select(self, members, texts):
+        by = {}
+        for (k, _), t in zip(members, texts):
+            by.setdefault(t, []).append(self.rels[k].index)
+        parts = []
+        for j, (t, ids) in enumerate(by.items()):
+            cond = ' || '.join(f'g_ppcRelease == {i}' for i in ids)
+            body = '\t' + t.replace('\n', '\n\t') if t else ''
+            if j == 0:
+                parts.append(f'\tif ({cond}) {{\n{body}\n\t}}')
+            elif j < len(by) - 1:
+                parts.append(f' else if ({cond}) {{\n{body}\n\t}}')
+            else:
+                parts.append(f' else {{\n{body}\n\t}}')
+        return ''.join(parts)
+
+    def merge(self, members, bodies):
+        """(labels, entries) of one body for all members, or None."""
+        n = len(bodies[0].entries)
+        if any(len(b.entries) != n for b in bodies):
+            return None
+        labels = frozenset().union(*(b.labels for b in bodies))
+        out, deltas, selects = [], 0, 0
+        for i in range(n):
+            texts = [b.entries[i] for b in bodies]
+            if all(t == texts[0] for t in texts[1:]):
+                out.append(texts[0])
+                continue
+            t = self.merge_literals(members, texts)
+            if t is None:
+                selects += 1
+                if selects > SELECT_LIMIT:
+                    return None
+                t = self.select(members, texts)
+            else:
+                deltas += 1
+            out.append(t)
+        self.stats['delta'] += deltas
+        self.stats['select'] += selects
+        return labels, out
+
+    # ---------------------------------------------------------------- output
+    @staticmethod
+    def func_text(name, comment, labels, entries):
+        lines = [(f'// {comment}\n' if comment else '') + f'PPC_GEN_FUNC({name}) {{\n\tPPC_FUNC_PROLOGUE();']
+        for i, e in enumerate(entries):
+            if i in labels:
+                lines.append(f'loc_{(i - 1) * 4:X}:')
+            if e:
+                lines.append(e)
+        return '\n'.join(lines) + '\n}\n'
+
+    @staticmethod
+    def decl(name, ovr):
+        if ovr:
+            return f'PPC_GEN_FUNC({name}_impl); PPC_FORCEINLINE PPC_GEN_FUNC({name}) {{ ovr_{ovr}(ctx, base); }}\n'
+        return f'PPC_GEN_FUNC({name});\n'
+
+    def write(self, bodies, outdir, per_file=6000):
+        written = set()
+
+        def out(rel_path, text):
+            path = os.path.join(outdir, rel_path)
+            write_if_changed(path, text)
+            written.add(os.path.normcase(os.path.abspath(path)))
+
+        hosts = [{} for _ in self.rels]   # per release: start -> host function
+        impls = [{} for _ in self.rels]   # per release: overridden start -> recompiled original
+        decls, files, chunk, count = [], [], [], 0
 
         def flush():
-            nonlocal chunk, count, idx
-            if not chunk:
-                return
-            name = f'ppc_recomp.{idx}.cpp'
-            write_if_changed(os.path.join(outdir, name), f'#include "ppc_recomp_shared.h"\n\nnamespace {ns} {{\n\n'
-                             + ''.join(chunk) + f'}}   // namespace {ns}\n')
-            files.append(name)
-            chunk, count = [], 0
-            idx += 1
+            nonlocal chunk, count
+            if chunk:
+                name = f'ppc_recomp.{len(files)}.cpp'
+                out(name, '#include "ppc_recomp.h"\n\nnamespace ppc {\n\n' + ''.join(chunk) + '}   // namespace ppc\n')
+                files.append(name)
+                chunk, count = [], 0
 
-        for f in self.funcs:
-            g = FuncGen(self, f)
-            chunk.append(g.gen() + '\n')
-            count += (f['end'] - f['start']) // 4
+        for name, g in self.groups:
+            members = sorted(g.items())
+            bs = [bodies[k][a] for k, a in members]
+            ovrs = {self.rels[k].overrides.get(a) for k, a in members}
+            merged = self.merge(members, bs) if len(ovrs) == 1 else None
+            if merged is not None:
+                ovr = ovrs.pop()
+                chunk.append(self.func_text(name + ('_impl' if ovr else ''), bs[0].name, *merged) + '\n')
+                decls.append(self.decl(name, ovr))
+                for k, a in members:
+                    hosts[k][a] = name
+                    if ovr:
+                        impls[k][a] = name + '_impl'
+                self.stats['shared' if len(members) > 1 else 'single'] += 1
+            else:
+                cases = []
+                for (k, a), b in zip(members, bs):
+                    rel = self.rels[k]
+                    own = f'{name}_{rel.region.ns}'
+                    ovr = rel.overrides.get(a)
+                    chunk.append(self.func_text(own + ('_impl' if ovr else ''), b.name, b.labels, b.entries) + '\n')
+                    decls.append(self.decl(own, ovr))
+                    hosts[k][a] = own
+                    if ovr:
+                        impls[k][a] = own + '_impl'
+                    cases.append(f'\tcase {rel.index}: {own}(ctx, base); return;\n')
+                chunk.append(f'PPC_GEN_FUNC({name}) {{\n\tswitch (g_ppcRelease) {{\n' + ''.join(cases)
+                             + '\tdefault: return;\n\t}\n}\n\n')
+                decls.append(f'PPC_GEN_FUNC({name});\n')
+                self.stats['per release'] += 1
+            count += len(bs) * len(bs[0].entries) if merged is None else len(bs[0].entries)
             if count >= per_file:
                 flush()
         flush()
 
-        hdr = [f'#pragma once\n// {self.region.name} release ({self.region.game_id})\n#include "ppc_context.h"\n\n']
-        for a, n in sorted(self.overrides.items()):
+        ids = ', '.join(f'{r.region.game_id} ({r.region.name})' for r in self.rels)
+        hdr = [f'#pragma once\n// Generated by tools/recomp.py: the recompiled code of {ids}\n'
+               '#include "ppc_context.h"\n\nextern "C" uint32_t g_cfgFrameRate;\n']
+        for n in sorted({n for r in self.rels for n in r.overrides.values()}):
             hdr.append(f'PPC_EXTERN_FUNC(ovr_{n});\n')
-        hdr.append(f'\nnamespace {ns} {{\n')
-        for f in self.funcs:
-            a = f['start']
-            if a in self.overrides:
-                hdr.append(f'PPC_GEN_FUNC(fn_{a:08X}_impl); '
-                           f'PPC_FORCEINLINE PPC_GEN_FUNC(fn_{a:08X}) {{ ovr_{self.overrides[a]}(ctx, base); }}\n')
-            else:
-                hdr.append(f'PPC_GEN_FUNC(fn_{a:08X});\n')
-        hdr.append(f'}}   // namespace {ns}\n')
-        write_if_changed(os.path.join(outdir, 'ppc_recomp_shared.h'), ''.join(hdr))
+        hdr.append('\nnamespace ppc {\n')
+        hdr += decls
+        hdr.append('}   // namespace ppc\n')
+        out('ppc_recomp.h', ''.join(hdr))
 
-        m = [f'#include "ppc_recomp_shared.h"\n\nnamespace {ns} {{\n\nstatic const PPCFuncMapping FuncMappings[] = {{\n']
-        for f in self.funcs:
-            m.append(f'\t{{ 0x{f["start"]:08X}, fn_{f["start"]:08X} }},\n')
+        srcs = ['ppc_regions.cpp'] + files
+        for k, rel in enumerate(self.rels):
+            srcs.append(f'{rel.region.ns}/ppc_func_mapping.cpp')
+            self.write_release(rel, hosts[k], impls[k], out)
+
+        nd = len(self.deltas)
+        reg = ['// Generated by tools/recomp.py: the releases in this build\n#include "ppc_context.h"\n\n']
+        reg += [f'namespace {r.region.ns} {{ extern const PPCRegionCode Code; }}\n' for r in self.rels]
+        reg.append('\nextern const PPCRegionCode* const g_ppcRegionCode[] = {\n')
+        reg += [f'\t&{r.region.ns}::Code,\n' for r in self.rels]
+        reg.append('\tnullptr\n};\n\n')
+        reg.append('// the release being played and its address offsets in the shared code (Region_Select)\n'
+                   f'extern "C" uint32_t g_ppcRelease = 0;\nextern "C" uint32_t g_ppcDelta[{max(nd, 1)}] = {{}};\n'
+                   f'extern "C" const uint32_t g_ppcDeltaCount = {nd};\n')
+        out('ppc_regions.cpp', ''.join(reg))
+
+        src = ['# Generated by tools/recomp.py: the releases in this build\nset(PPC_RECOMP_SOURCES\n']
+        src += [f'\t${{CMAKE_CURRENT_LIST_DIR}}/{n}\n' for n in srcs]
+        src.append(')\n')
+        out('sources.cmake', ''.join(src))
+
+        # files of an earlier layout or of releases no longer here
+        for d, _, fs in os.walk(outdir, topdown=False):
+            for f in fs:
+                p = os.path.join(d, f)
+                if os.path.normcase(os.path.abspath(p)) not in written:
+                    os.remove(p)
+            if d != outdir and not os.listdir(d):
+                os.rmdir(d)
+        return files
+
+    def write_release(self, rel, hosts, impls, out):
+        ns, gid = rel.region.ns, rel.region.game_id
+        m = [f'#include "ppc_recomp.h"\n\n// {rel.region.name} release ({gid})\nnamespace {ns} {{\n\n'
+             'using namespace ppc;\n\nstatic const PPCFuncMapping FuncMappings[] = {\n']
+        for f in rel.funcs:
+            m.append(f'\t{{ 0x{f["start"]:08X}, {hosts[f["start"]]} }},\n')
         m.append('\t{ 0, nullptr }\n};\n\n')
         m.append('// recompiled originals of the functions the runtime overrides, in runtime/game_addrs.inc order\n')
         m.append('static const PPCFunc Originals[] = {\n')
-        for name, _, a in self.addrs:
-            m.append(f'\tfn_{a:08X}_impl,   // {name}\n' if a in self.overrides else f'\tnullptr,   // {name}\n')
+        for name, _, a in rel.addrs:
+            m.append(f'\t{impls[a]},   // {name}\n' if a in impls else f'\tnullptr,   // {name}\n')
         m.append('};\n\n')
+        m.append('// this release\'s g_ppcDelta\nstatic const uint32_t Deltas[] = {\n')
+        m += [f'\t0x{key[rel.index]:X},\n' for key in self.deltas] or ['\t0\n']
+        m.append('};\n\n')
+        rso = rel.rso
         rso_init = (f'0x{rso["text"]:08X}u, 0x{rso["text"] + rso["size"]:08X}u, 0x{rso["hash"]:016X}ull'
                     if rso else '0, 0, 0')
         m.append('// last three: the HOME menu module recompiled at its boot-time link address (tools/rso.py),\n'
                  '// text begin, end and FNV-1a hash; used only once the module in memory matches\n'
-                 f'extern const PPCRegionCode Code = {{ "{self.region.game_id}", FuncMappings, Originals, '
-                 f'{len(self.addrs)}, {rso_init} }};\n\n'
+                 f'extern const PPCRegionCode Code = {{ "{gid}", {rel.index}, FuncMappings, Originals, '
+                 f'{len(rel.addrs)}, Deltas, {rso_init} }};\n\n'
                  f'}}   // namespace {ns}\n')
-        write_if_changed(os.path.join(outdir, 'ppc_func_mapping.cpp'), ''.join(m))
+        out(f'{ns}/ppc_func_mapping.cpp', ''.join(m))
 
         sym = ['#pragma once\n// Known symbol addresses\n']
         seen = set()
-        for f in self.funcs:
+        for f in rel.funcs:
             n = f.get('name') or f.get('sym')
             if not n:
                 continue
@@ -878,36 +1129,24 @@ class Recompiler:
                 continue
             seen.add(cid)
             sym.append(f'#define SYM_{cid} 0x{f["start"]:08X}\n')
-        write_if_changed(os.path.join(outdir, 'ppc_symbols.h'), ''.join(sym))
-
-        src = [f'set(PPC_RECOMP_SOURCES_{self.region.game_id}\n']
-        for n in files + ['ppc_func_mapping.cpp']:
-            src.append(f'\t${{CMAKE_CURRENT_LIST_DIR}}/{n}\n')
-        src.append(')\n')
-        write_if_changed(os.path.join(outdir, 'sources.cmake'), ''.join(src))
-        return files
+        out(f'{ns}/ppc_symbols.h', ''.join(sym))
 
 
 def main():
-    region = by_id(sys.argv[1])
-    dol = Dol(region.dol())
-    funcs = json.load(open(region.out('functions.json')))
-    ovr_path = region.out('overrides.txt')
-    overrides = open(ovr_path).read().split() if os.path.exists(ovr_path) else []
-    addrs = [(name, kind, cols[region.game_id]) for name, kind, cols in load_inc()]
-    # Optional: the linked HOME menu module (see tools/rso.py), appended as an extra
-    # text section; the runtime only uses it after checking the code in memory.
-    rso = None
-    if os.path.exists(region.out('rso_info.json')):
-        rso = json.load(open(region.out('rso_info.json')))
-        img = open(region.out('rso_image.bin'), 'rb').read()
-        dol.sections.append(Section('text', 7, 0, rso['text'], img))
-        dol.text = [x for x in dol.sections if x.kind == 'text']
-        funcs = funcs + json.load(open(region.out('rso_functions.json')))
-    rc = Recompiler(region, dol, funcs, addrs, overrides)
-    files = rc.run(os.path.join(ROOT, 'generated', region.ns), rso)
-    print(f'{region.game_id}: wrote {len(files)} source files ({len(overrides)} overrides'
-          f'{", HOME menu module" if rso else ""})', file=sys.stderr)
+    regions = sorted({by_id(x) for x in sys.argv[1:]}, key=REGIONS.index)
+    if not regions:
+        sys.exit(__doc__)
+    rels = [Release(r) for r in regions]
+    gen = Generator(rels)
+    gen.pair()
+    with multiprocessing.Pool(len(rels)) as pool:
+        bodies = pool.map(release_bodies, [(r.region.game_id, r.names) for r in rels])
+    files = gen.write(bodies, os.path.join(ROOT, 'generated'))
+    st = gen.stats
+    print(f'{", ".join(r.region.game_id for r in rels)}: wrote {len(files)} source files; functions: '
+          f'{st["shared"]} shared, {st["per release"]} per release, {st["single"]} in one release; '
+          f'{st["delta"]} instructions with release offsets ({len(gen.deltas)} offsets), '
+          f'{st["select"]} picked by release', file=sys.stderr)
 
 
 if __name__ == '__main__':

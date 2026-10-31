@@ -65,8 +65,24 @@ functions the runtime overrides are identical. `tools/region_map.py` does this a
 and learns the data shifts from the address loads of identical code; `tools/game_addrs.py`
 uses it to write every named game address for each release (`runtime/game_addrs.inc`).
 
-Each release's code is generated into its own namespace (`generated/rene8p` etc.) with its
-own dispatch table; the installed disc's game ID (`sys/boot.bin`) selects one at start.
+The releases share their recompiled code (`tools/recomp.py`, all releases in one run).
+Functions are paired with the first release's (the alignment above; the HOME menu module,
+linked at the same address in all three, by address), and calls go by the pair's name
+(`fn_<USA address>`). A pair of the same length gets one body: code that is the same is
+emitted once, hex literals that differ (addresses of moved data, return addresses, the
+function's own address, jump-table bases) become `literal + g_ppcDelta[k]`, and up to 8
+instructions that differ otherwise (calls to a function only one release has) are picked by
+`g_ppcRelease`. Jump tables switch on the offset from the function start, labels are named
+by offset, so both are the same in every release. Functions that cannot be shared get one
+body per release (`fn_<USA address>_<ns>`) behind a dispatcher; functions that only one
+release has are `fn_<ns>_<address>`. With all three releases: 30,360 shared functions, 13
+per release, 22 in one release only, and 20 distinct offsets in `g_ppcDelta`. Each release
+keeps its own dispatch table (guest address -> host function, also used for crash reports),
+originals table for `PPC_ORIGINAL`, and offsets (`generated/<ns>/ppc_func_mapping.cpp`); the
+installed disc's game ID (`sys/boot.bin`) selects one at start and `Region_Select` sets
+`g_ppcRelease` and `g_ppcDelta`. A build with only some releases generates just those.
+The exe with all three is 69.5 MB (USA only: 66.4 MB; one copy per release was 184.0 MB).
+
 Per release: title ID and save folder (`52454e45`, `52454e50`, `52454e4a`), setting.txt
 area and SYSCONF country of that region, and a MEM2 dump for the recompiled HOME menu module
 (`hbm_part.rso` is the same file, but it is linked against each release's main.dol).
@@ -81,6 +97,11 @@ Verified with scripted runs (muted, 1x, below-normal priority):
   longer in game time in Europe and Japan than in USA before the first stage loads; both
   behave the same, gameplay timing is the same. Not investigated further (no reference
   capture of the PAL/Japanese releases).
+- Shared code against one copy per release: the same runs (fresh save into the first stage
+  with HOME for all three releases; crystal_goal, knights_clock, boss_lancelot for USA; 30
+  and 60 fps) load the same stages with no errors, the HOME module verifies, frame rates
+  and stage timers match, and screenshots differ no more than between two runs of the same
+  exe.
 - [ ] Play-test the launcher and overlay by hand (controller navigation, live settings)
 
 ## 60 FPS verification
