@@ -2,6 +2,7 @@
 #include "game_addrs.h"
 #include "log.h"
 
+#include <algorithm>
 #include <format>
 
 extern const PPCRegionCode* const g_ppcRegionCode[];   // generated/ppc_regions.cpp
@@ -62,6 +63,8 @@ bool Region_Select(const std::string& gameId, std::string& error)
     }
     s_release = rel;
     s_code = code;
+    g_ppcRelease = code->release;
+    std::copy_n(code->deltas, g_ppcDeltaCount, g_ppcDelta);
     g_gameAddrs = kAddrs[rel - kReleases];
     g_ppcOriginals = code->originals;
     LOG_INFO("game release: {} ({})", rel->name, rel->gameId);

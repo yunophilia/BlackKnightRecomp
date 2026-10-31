@@ -6,7 +6,8 @@ Build inputs of a release (game ID G):
       is used instead when it holds that release
   out/G/mem2_dump.bin
       MEM2 after the HOME menu module is linked (BKR_DUMPMEM2=1, see tools/rso.py); optional
-Per-release intermediate files go to out/G/, the generated code to generated/<ns>/.
+Per-release intermediate files go to out/G/, the generated code to generated/ (one body for
+the functions the releases share; each release's dispatch table in generated/<ns>/).
 """
 import os
 
@@ -17,7 +18,7 @@ class Region:
     def __init__(self, game_id, name, ns):
         self.game_id = game_id   # disc game ID, e.g. RENE8P
         self.name = name         # USA, Europe, Japan
-        self.ns = ns             # C++ namespace and generated/ subdirectory
+        self.ns = ns             # name in the generated code, generated/ subdirectory
         self.title_id = 0x00010000_00000000 | int.from_bytes(game_id[:4].encode(), 'big')
 
     def data_dir(self):

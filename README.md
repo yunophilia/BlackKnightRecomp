@@ -14,8 +14,8 @@ own disc image.
 ## How it works
 
 ```
-main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generated/<release>/*.cpp ─┐
- (PowerPC)    function discovery    PPC → C++ codegen   (28k functions each)       ├─► BlackKnightRecomp.exe
+main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generated/*.cpp ───────────┐
+ (PowerPC)    function discovery    PPC → C++ codegen   (30k functions, shared)    ├─► BlackKnightRecomp.exe
  per release                                            runtime/ ──────────────────┘
 ```
 
@@ -23,12 +23,12 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
   and quantized loads/stores) and emits one C++ function per guest function. Guest RAM is a
   4 GiB host reservation with MEM1/MEM2 mirrored at their cached/uncached addresses, so
   guest pointers map directly to host memory. Function names come from the disc's
-  `BLACKKNIGHT.sel` symbol table and Dolphin's signature database. Each release's code is
-  in its own namespace with its own dispatch table. The releases differ only slightly (the
-  code is a few hundred bytes longer or shorter, so most addresses move), so the runtime
-  refers to game functions and variables by name: `tools/game_addrs.txt` lists them for
-  the USA release, and `tools/game_addrs.py` finds them in the others by matching code
-  (`runtime/game_addrs.inc`).
+  `BLACKKNIGHT.sel` symbol table and Dolphin's signature database. The releases differ only
+  slightly (the code is a few hundred bytes longer or shorter, so most addresses move): their
+  common functions are generated once, with the addresses that differ picked per release at
+  start, and each release has its own dispatch table. The runtime refers to game functions
+  and variables by name: `tools/game_addrs.txt` lists them for the USA release, and
+  `tools/game_addrs.py` finds them in the others by matching code (`runtime/game_addrs.inc`).
 * **CPU runtime** (`runtime/cpu`): SPRs, time base / decrementer, exact `fres`/`frsqrte`
   tables, indirect call dispatch.
 * **OS** (`runtime/kernel`): the game's *own* Revolution OS (scheduler, alarms, interrupt
@@ -140,7 +140,7 @@ build steps, which sets that up.
    ```
    python tools/build_generated.py
    ```
-   It generates the code of every release whose data is there, into `generated/<release>/`;
+   It generates the code of every release whose data is there, into `generated/`;
    per-release intermediate files go to `out/<game ID>/`. With all three releases it also
    refreshes `runtime/game_addrs.inc`, the game addresses the runtime uses in each release.
    The analysis names the SDK functions (for `tools/xref.py` and reports) from
