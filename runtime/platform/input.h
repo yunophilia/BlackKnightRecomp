@@ -1,6 +1,7 @@
 #pragma once
 // Controllers, keyboard and mouse. Controllers are reported in XInput's layout and
-// ranges whatever the platform uses (Linux: SDL3 gamepads, which include Steam Input's).
+// ranges whatever the platform uses (Windows: XInput, and SDL3 gamepads for the other
+// controllers; Linux: SDL3 gamepads, which include Steam Input's).
 #include <cstdint>
 
 #include "keys.h"
@@ -21,5 +22,7 @@ constexpr int16_t PAD_RIGHT_THUMB_DEADZONE = 8689;
 bool Pad_Read(int index, PadState& out);
 // Rumble motors (0 = off .. 65535).
 void Pad_SetRumble(int index, uint16_t low, uint16_t high);
+// The controller in slot `index` is a PlayStation one (button names in the settings).
+bool Pad_PlayStation(int index);
 // A keyboard key or mouse button (Windows virtual-key code, see keys.h) is held now.
 bool Key_Down(int vk);

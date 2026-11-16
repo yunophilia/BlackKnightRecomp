@@ -135,7 +135,9 @@ void InputTab(SettingsHost host)
     Config& c = g_config;
     ImGui::SeparatorText("Controller");
     Check(host, "Rumble", c.rumble, false, "Vibrate the controller where the Wii Remote would rumble.");
-    ImGui::TextDisabled("View (Back) opens these settings. View + Start is the Wii HOME button.");
+    bool ps = Pad_PlayStation(0);   // PlayStation button names for a DualSense / DualShock
+    ImGui::TextDisabled(ps ? "Create or the touchpad opens these settings. The PS button (or Create + Options) is the Wii HOME button."
+                           : "View (Back) opens these settings. View + Start is the Wii HOME button.");
 
     ImGui::SeparatorText("Button bindings");
     static const char* actions[12] = { "Jump / homing attack (Wii A)", "Slash (swing the Remote)", "Soul Surge (Wii B)",
@@ -147,12 +149,15 @@ void InputTab(SettingsHost host)
     static const char* names[] = { "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "Start", "View (Back, also opens settings)",
                                    "Left stick click", "Right stick click", "D-pad up", "D-pad down", "D-pad left",
                                    "D-pad right", "None" };
+    static const char* psNames[] = { "Cross", "Circle", "Square", "Triangle", "L1", "R1", "L2", "R2", "Options",
+                                     "Create (Share, also opens settings)", "L3", "R3", "D-pad up", "D-pad down",
+                                     "D-pad left", "D-pad right", "None" };
     for (int i = 0; i < 12; i++)
     {
         ImGui::PushID(i);
         std::string v = c.bind[i];
         for (char& ch : v) ch = (char)toupper((unsigned char)ch);
-        if (Combo(host, actions[i], v, buttons, names, 17, false, "Controller button for this Wii action."))
+        if (Combo(host, actions[i], v, buttons, ps ? psNames : names, 17, false, "Controller button for this Wii action."))
         {
             c.bind[i] = v;
             Changed(host, false);

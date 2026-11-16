@@ -26,6 +26,9 @@
 - [x] GX on its own thread (dual-core style), disk shader cache, retrace-wait sleep
 - [x] Dolphin-format HD texture packs + texture dumping
 - [x] Wii Remote speaker audio, multiple controllers (Battle mode), button bindings
+- [x] PlayStation (DualSense, DualShock 4), Switch Pro and other non-XInput controllers on
+      Windows through SDL3 gamepads (static, HIDAPI; USB, Bluetooth, hot-plug, rumble);
+      Xbox controllers stay on XInput
 - [x] 60 FPS mode keeps game time correct through menus, FMV and cutscenes
 - [x] HOME menu module recompiled (verified by hash at runtime); intro movie 60 fps
 - [x] Soak tests: 4 x 15 min + 30 min random input (30 and 60 fps) with no errors;

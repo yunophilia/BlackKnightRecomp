@@ -17,6 +17,7 @@
             "description": "clang-cl + lld-link; finds Visual Studio's headers and the Windows SDK by itself",
             "inherits": "base",
             "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-cl",
                 "CMAKE_CXX_COMPILER": "clang-cl",
                 "CMAKE_LINKER": "lld-link",
                 "CMAKE_MT": "llvm-mt"
@@ -35,7 +36,7 @@
             "displayName": "Windows (MSVC)",
             "description": "cl + link; run from a Visual Studio x64 Developer prompt",
             "inherits": "base",
-            "cacheVariables": { "CMAKE_CXX_COMPILER": "cl" },
+            "cacheVariables": { "CMAKE_C_COMPILER": "cl", "CMAKE_CXX_COMPILER": "cl" },
             "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
         },
         {

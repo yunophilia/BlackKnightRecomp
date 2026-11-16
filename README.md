@@ -51,8 +51,8 @@ main.dol ──► tools/analyze.py ──► tools/recomp.py ──► generate
   a read-back snapshot. Renders at 3x internal resolution, 16:9. Compiled shaders are
   cached in `shadercache/`, and Dolphin-format HD texture packs are supported.
 * **Input** (`runtime/input`): the WPAD library is replaced at the API level; KPAD runs
-  recompiled on top of it. Controllers (XInput; SDL3 on Linux) and the keyboard become Wii Remotes with a
-  Nunchuk: sword swings are synthesised as accelerometer pulses, the IR pointer comes
+  recompiled on top of it. Controllers (XInput, plus SDL3 for PlayStation, Switch Pro and
+  others; SDL3 for all of them on Linux) and the keyboard become Wii Remotes with a Nunchuk: sword swings are synthesised as accelerometer pulses, the IR pointer comes
   from the mouse or right stick, and the remote speaker stream is decoded and played.
 * **Audio** (`runtime/audio`): the AX DSP microcode is replaced by a port of Dolphin's AX
   HLE; output goes through XAudio2 (SDL3 on Linux).
@@ -201,10 +201,19 @@ build steps, which sets that up from any PowerShell window
 | Left stick click | | Wii Remote 1 |
 | Right stick click | | Wii Remote 2 (e.g. deleting a save file) |
 
+Xbox controllers, PlayStation 5 DualSense and PlayStation 4 DualShock 4, Switch Pro and
+most other controllers work, over USB or Bluetooth, and can be plugged in while the game
+runs. Buttons count by position, so on a PlayStation controller Cross = A, Circle = B,
+Square = X, Triangle = Y, L1/R1 = LB/RB, L2/R2 = LT/RT, L3/R3 = stick clicks, Options =
+Start and Create (Share) = View (the touchpad click opens the settings too); the PS button
+is the HOME menu. The settings show PlayStation names when player 1 uses one. Rumble works
+on all of them.
+
 Controller, keyboard and mouse bindings can be changed in the settings (launcher or in
 game) or in `config.ini` (`[Input]` and `[Keyboard]`; a keyboard action can have several
 keys or mouse buttons, e.g. `slash = J, MOUSE1`). The table shows the defaults.
-Controllers 2-4 become Wii Remotes 2-4 (for Battle mode) while plugged in; the keyboard
+Controllers 2-4 become Wii Remotes 2-4 (for Battle mode) while plugged in (on Windows, Xbox
+controllers keep their XInput number and the others take the free slots); the keyboard
 always drives player 1. The Wii Remote pointer follows the mouse when it moves inside the window, otherwise the
 right stick moves it. Choosing "Wii Menu" in the HOME menu quits; "Reset" restarts.
 F11 or Alt+Enter toggles fullscreen.
@@ -331,8 +340,9 @@ Thanks to the Dolphin team.
 
 The exe also contains [Dear ImGui](https://github.com/ocornut/imgui) (MIT),
 [nod](https://github.com/encounter/nod) (MIT), [libarchive](https://libarchive.org) (BSD-2-Clause),
-[zlib](https://zlib.net) (zlib license), liblzma from [XZ Utils](https://tukaani.org/xz/) (0BSD)
-and [nlohmann/json](https://github.com/nlohmann/json) (MIT); their licences are in `licenses/`
+[zlib](https://zlib.net) (zlib license), liblzma from [XZ Utils](https://tukaani.org/xz/) (0BSD),
+[nlohmann/json](https://github.com/nlohmann/json) (MIT) and [SDL3](https://libsdl.org) (zlib
+license); their licences are in `licenses/`
 next to the exe.
 
 No game code or data is included; you need your own copy of the game.

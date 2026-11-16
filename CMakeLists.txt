@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.21)
 
 # Build with the presets in CMakePresets.json: clang-cl + Ninja on Windows (MSVC also
 # works), clang + Ninja on Linux. The runtime keeps its platform code in runtime/platform:
-# Win32, Direct3D 11, XInput and XAudio2 on Windows; SDL3, dxvk-native (Direct3D 11 on
-# Vulkan) and vkd3d-shader on Linux (docs/linux.md).
+# Win32, Direct3D 11, XInput (SDL3 for other controllers) and XAudio2 on Windows; SDL3,
+# dxvk-native (Direct3D 11 on Vulkan) and vkd3d-shader on Linux (docs/linux.md).
 project(BlackKnightRecomp LANGUAGES CXX)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX ON)
@@ -121,18 +121,23 @@ if(WIN32 OR LINUX)
                                                    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/out)
 endif()
 
-# ---------------------------------------------------------------- Linux platform libraries
-# Downloaded at configure time, pinned like nod and ImGui; their shared libraries are copied
-# next to the executable (out/) and into the AppImage (tools/package_linux.sh).
-#   SDL3 (https://libsdl.org, zlib): window, input, audio, dialogs
-#   dxvk-native (https://github.com/doitsujin/dxvk, zlib): Direct3D 11 on Vulkan, prebuilt
-#     for the Steam Runtime; its MinGW Windows/DirectX headers are LGPL-2.1+ (data
-#     structure definitions only, see its include/dxvk/README.md)
-#   vkd3d-shader (https://gitlab.winehq.org/wine/vkd3d, LGPL-2.1+): compiles the generated
-#     HLSL to DXBC (the D3DCompile of Wine and Proton), linked statically
-if(LINUX)
-    set(SDL_SHARED ON CACHE BOOL "" FORCE)
-    set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+# ---------------------------------------------------------------- SDL3
+# https://libsdl.org (zlib), downloaded at configure time. Linux: a shared library for the
+# window, input, audio and dialogs. Windows: linked statically, only its gamepad support,
+# for PlayStation, Switch and other non-XInput controllers (HIDAPI and DirectInput
+# drivers; Xbox controllers stay on XInput, platform/win32/input.cpp).
+if(WIN32 OR LINUX)
+    if(WIN32)
+        enable_language(C)
+        set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+        set(SDL_STATIC ON CACHE BOOL "" FORCE)
+        foreach(sub AUDIO VIDEO RENDER GPU CAMERA DIALOG POWER SENSOR HAPTIC TRAY)
+            set(SDL_${sub} OFF CACHE BOOL "" FORCE)
+        endforeach()
+    else()
+        set(SDL_SHARED ON CACHE BOOL "" FORCE)
+        set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+    endif()
     set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
     set(SDL_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -142,7 +147,18 @@ if(LINUX)
         URL_HASH SHA256=9c75cf16330322c217dedd2e0609f1124f1b54b8633e763467b4684d0f4334a3
         DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
     FetchContent_MakeAvailable(SDL3)
+endif()
 
+# ---------------------------------------------------------------- Linux platform libraries
+# Downloaded at configure time, pinned like nod and ImGui; their shared libraries are copied
+# next to the executable (out/) and into the AppImage (tools/package_linux.sh).
+#   SDL3 (above): window, input, audio, dialogs
+#   dxvk-native (https://github.com/doitsujin/dxvk, zlib): Direct3D 11 on Vulkan, prebuilt
+#     for the Steam Runtime; its MinGW Windows/DirectX headers are LGPL-2.1+ (data
+#     structure definitions only, see its include/dxvk/README.md)
+#   vkd3d-shader (https://gitlab.winehq.org/wine/vkd3d, LGPL-2.1+): compiles the generated
+#     HLSL to DXBC (the D3DCompile of Wine and Proton), linked statically
+if(LINUX)
     FetchContent_Declare(dxvk_native
         URL https://github.com/doitsujin/dxvk/releases/download/v3.1.1/dxvk-native-3.1.1-steamrt-sniper.tar.gz
         URL_HASH SHA256=506fa1ea5bb6ce9a89e11436f7ab5191bc0196e8a577e0cf0b16a45bbc9991b7
@@ -260,7 +276,7 @@ add_custom_target(bkr_version
 target_sources(BlackKnightRecomp PRIVATE ${BKR_VERSION_CPP})
 add_dependencies(BlackKnightRecomp bkr_version)
 if(WIN32)
-    target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json winhttp windowscodecs bcrypt d3d11 dxgi d3dcompiler xinput winmm ole32 uuid shell32 xaudio2 dbghelp)
+    target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json winhttp windowscodecs bcrypt d3d11 dxgi d3dcompiler xinput SDL3::SDL3-static winmm ole32 uuid shell32 xaudio2 dbghelp)
 else()
     target_link_libraries(BlackKnightRecomp PRIVATE bkr_installer imgui bkr_archive bkr_json SDL3::SDL3 dxvk vkd3d_shader pthread dl)
 endif()
@@ -281,6 +297,7 @@ add_custom_command(TARGET BlackKnightRecomp POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/out/licenses
     COMMAND ${CMAKE_COMMAND} -E copy ${BKR_LICENSES}/nod-LICENSE-MIT.txt ${BKR_LICENSES}/nlohmann-json-LICENSE.MIT.txt
             ${CMAKE_SOURCE_DIR}/out/licenses/
+    COMMAND ${CMAKE_COMMAND} -E copy ${sdl3_SOURCE_DIR}/LICENSE.txt ${CMAKE_SOURCE_DIR}/out/licenses/SDL3-LICENSE.txt
     COMMAND ${CMAKE_COMMAND} -E copy ${imgui_SOURCE_DIR}/LICENSE.txt ${CMAKE_SOURCE_DIR}/out/licenses/imgui-LICENSE.txt
     COMMAND ${CMAKE_COMMAND} -E copy ${BKR_DEPS_PREFIX}/libarchive/src/bkr_libarchive/COPYING ${CMAKE_SOURCE_DIR}/out/licenses/libarchive-COPYING.txt
     COMMAND ${CMAKE_COMMAND} -E copy ${BKR_DEPS_PREFIX}/zlib/src/bkr_zlib/LICENSE ${CMAKE_SOURCE_DIR}/out/licenses/zlib-LICENSE.txt
