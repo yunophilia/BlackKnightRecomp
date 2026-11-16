@@ -6,6 +6,7 @@
 #include "vertex_loader.h"
 #include "hires.h"
 #include "../tas/tas.h"
+#include <algorithm>
 #include <type_traits>
 #include <thread>
 #include <deque>
@@ -18,6 +19,7 @@
 #include "video.h"
 #include "../kernel/memory.h"
 #include "../log.h"
+#include "../platform/platform.h"
 
 #include <d3dcompiler.h>
 #include <unordered_map>
@@ -67,8 +69,9 @@ struct KeyHash
     size_t operator()(const K& k) const { return (size_t)Hash64(&k, sizeof(K)); }
 };
 
-// Compiled shaders are cached on disk (shadercache/ next to the exe), keyed by a hash
-// of the generated source, so areas seen before do not stutter on compilation.
+// Compiled shaders are cached on disk (shadercache/ in the user directory, which is next
+// to the exe on Windows), keyed by a hash of the generated source, so areas seen before do
+// not stutter on compilation.
 static std::filesystem::path s_shaderCacheDir;   // --precompile-shaders <dir>
 
 static std::filesystem::path ShaderCacheDir()
@@ -77,16 +80,32 @@ static std::filesystem::path ShaderCacheDir()
     if (dir.empty())
     {
         if (!s_shaderCacheDir.empty()) dir = s_shaderCacheDir;
-        else
-        {
-            wchar_t buf[MAX_PATH];
-            GetModuleFileNameW(nullptr, buf, MAX_PATH);
-            dir = std::filesystem::path(buf).parent_path() / "shadercache";
-        }
+        else dir = Platform_UserDir() / "shadercache";
         std::error_code ec;
         std::filesystem::create_directories(dir, ec);
     }
     return dir;
+}
+
+// The cache that ships with the game, when it is somewhere else (read-only, next to the
+// executable in the Linux AppImage); empty when it is the one above.
+static const std::filesystem::path& ShippedShaderCacheDir()
+{
+    static std::filesystem::path dir = [] {
+        std::filesystem::path d = Platform_ExeDir() / "shadercache";
+        std::error_code ec;
+        bool same = !s_shaderCacheDir.empty() || std::filesystem::equivalent(d, ShaderCacheDir(), ec) || !std::filesystem::is_directory(d, ec);
+        return same ? std::filesystem::path() : d;
+    }();
+    return dir;
+}
+
+// Opens a cache file for reading: the user's cache, else the shipped one.
+static FILE* OpenCacheFile(const std::filesystem::path& path)
+{
+    if (FILE* f = _wfopen(path.c_str(), L"rb")) return f;
+    if (ShippedShaderCacheDir().empty()) return nullptr;
+    return _wfopen((ShippedShaderCacheDir() / path.filename()).c_str(), L"rb");
 }
 
 static std::filesystem::path ShaderCachePath(const std::string& src, const char* target)
@@ -127,7 +146,7 @@ static ID3DBlob* CompileHLSL(const std::string& src, const char* target)
     ID3DBlob* blob = nullptr;
     ID3DBlob* err = nullptr;
     std::filesystem::path cachePath = ShaderCachePath(src, target);
-    if (FILE* f = _wfopen(cachePath.c_str(), L"rb"))
+    if (FILE* f = OpenCacheFile(cachePath))
     {
         fseek(f, 0, SEEK_END);
         long n = ftell(f);
@@ -561,7 +580,7 @@ static ID3DBlob* LoadCachedBlob(const std::string& src, const char* target)
 {
     std::filesystem::path cachePath = ShaderCachePath(src, target);
     ID3DBlob* blob = nullptr;
-    if (FILE* f = _wfopen(cachePath.c_str(), L"rb"))
+    if (FILE* f = OpenCacheFile(cachePath))
     {
         fseek(f, 0, SEEK_END);
         long n = ftell(f);
@@ -612,7 +631,7 @@ bool g_asyncShaders = true;
 
 static void CompileWorker()
 {
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+    Thread_SetPriority(ThreadPriority::BelowNormal);
     for (;;)
     {
         CompileJob j;
@@ -674,13 +693,19 @@ template <typename K, typename S>
 static int PreloadKind(const char* file, std::unordered_map<K, S*, KeyHash<K>>& cache, std::string (*gen)(const K&), const char* target)
 {
     std::filesystem::path p = ShaderCacheDir() / file;
-    FILE* f = _wfopen(p.c_str(), L"rb");
-    if (!f) return 0;
     std::vector<K> keys;
-    K k;
-    while (fread(&k, sizeof(K), 1, f) == 1)
-        if (!cache.count(k)) { cache[k] = nullptr; keys.push_back(k); }
-    fclose(f);
+    bool any = false;
+    for (const std::filesystem::path& dir : { ShaderCacheDir(), ShippedShaderCacheDir() })
+    {
+        FILE* f = dir.empty() ? nullptr : _wfopen((dir / file).c_str(), L"rb");
+        if (!f) continue;
+        any = true;
+        K k;
+        while (fread(&k, sizeof(K), 1, f) == 1)
+            if (!cache.count(k)) { cache[k] = nullptr; keys.push_back(k); }
+        fclose(f);
+    }
+    if (!any) return 0;
     int n = 0, queued = 0;
     for (auto& key : keys)
     {

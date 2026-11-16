@@ -1,12 +1,13 @@
 #include "settings_ui.h"
+#include "../platform/platform.h"
 #include "../config.h"
 #include "../gx/video.h"
 #include "../input/gamepad.h"
 #include "mods_ui.h"
 #include "../version.h"
+#include "../platform/input.h"
 
 #include <imgui.h>
-#include <windows.h>
 
 #include <algorithm>
 #include <format>
@@ -176,7 +177,7 @@ void InputTab(SettingsHost host)
         // waiting for a key: wait until everything is released (the click on "Set"), then
         // take the next key or mouse button; Escape cancels
         int held = Gamepad_HeldKey();
-        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) s_capture = -1;
+        if (Key_Down(VK_ESCAPE)) s_capture = -1;
         else if (!s_captureArmed) s_captureArmed = held == 0;
         else if (held)
         {
@@ -385,19 +386,12 @@ void SettingsUI_DrawVersion()
 void SettingsUI_AddFallbackFonts()
 {
     // after the main font: Chinese, Japanese and Korean names and symbols (mod titles) from
-    // Windows' fonts where they exist; glyphs load as text needs them
+    // the system's fonts where they exist; glyphs load as text needs them
     ImGuiIO& io = ImGui::GetIO();
     if (io.Fonts->Fonts.empty()) io.Fonts->AddFontDefault();
-    char dir[MAX_PATH];
-    UINT n = GetWindowsDirectoryA(dir, MAX_PATH);
-    if (!n) return;
     ImFontConfig cfg;
     cfg.MergeMode = true;
-    for (const char* file : { "msyh.ttc", "msjh.ttc", "YuGothM.ttc", "malgun.ttf", "seguisym.ttf" })
-    {
-        std::string path = std::string(dir, n) + "\\Fonts\\" + file;
-        if (GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES) io.Fonts->AddFontFromFileTTF(path.c_str(), 18.0f, &cfg);
-    }
+    for (const std::string& path : Platform_UiFallbackFonts()) io.Fonts->AddFontFromFileTTF(path.c_str(), 18.0f, &cfg);
 }
 
 void SettingsUI_ApplyStyle()

@@ -1,5 +1,5 @@
-#include "memory.h"
-#include "../log.h"
+#include "../../kernel/memory.h"
+#include "../../log.h"
 
 #include <windows.h>
 

@@ -3,63 +3,45 @@
 #include "ui_image.h"
 #include "ui_shot.h"
 #include "../log.h"
+#include "../platform/platform.h"
+#include "../platform/ui.h"
 #include "../tas/tas.h"
 
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
-#include <imgui_impl_win32.h>
 
+#include <algorithm>
 #include <atomic>
-#include <mutex>
 #include <string>
-#include <vector>
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void App_Restart();
 void Gamepad_StopRumble();
 
 namespace
 {
-HWND s_hwnd = nullptr;
 ID3D11Device* s_dev = nullptr;
 ID3D11DeviceContext* s_ctx = nullptr;
-bool s_ready = false;
+std::atomic<bool> s_ready{ false };
 std::atomic<bool> s_open{ false };
 std::atomic<bool> s_homePress{ false };
-std::mutex s_msgMutex;
-std::vector<MSG> s_msgs;   // window messages, replayed on the render thread
 // test aid: BKR_UI_SHOT_OVERLAY=<file.bmp> opens the overlay BKR_UI_SHOT_AFTER seconds
 // (default 30) into the game, saves a screenshot BKR_UI_SHOT_HOLD seconds later (default 1)
 // and closes it again
 const char* s_shotPath = nullptr;
-ULONGLONG s_shotOpenAt = 0;
-ULONGLONG s_shotHold = 1000;
-
-bool IsInput(UINT msg)
-{
-    return (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) || (msg >= WM_KEYFIRST && msg <= WM_KEYLAST) ||
-           msg == WM_INPUTLANGCHANGE || msg == WM_SETFOCUS || msg == WM_KILLFOCUS || msg == WM_MOUSELEAVE;
-}
-
-std::string WindowsFont(const char* file)
-{
-    char dir[MAX_PATH];
-    UINT n = GetWindowsDirectoryA(dir, MAX_PATH);
-    return n ? std::string(dir, n) + "\\Fonts\\" + file : std::string();
-}
+uint64_t s_shotOpenAt = 0;
+uint64_t s_shotHold = 1000;
 }   // namespace
 
-void Overlay_Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* ctx)
+void Overlay_Init(void* window, ID3D11Device* device, ID3D11DeviceContext* ctx)
 {
     s_shotPath = getenv("BKR_UI_SHOT_OVERLAY");
     if (Tas_Active() && !s_shotPath) return;   // scripted runs drive the game; no overlay
     if (s_shotPath)
     {
         const char* after = getenv("BKR_UI_SHOT_AFTER");
-        s_shotOpenAt = GetTickCount64() + (after ? atoi(after) : 30) * 1000ull;
+        s_shotOpenAt = Platform_TickMs() + (after ? atoi(after) : 30) * 1000ull;
         if (const char* hold = getenv("BKR_UI_SHOT_HOLD")) s_shotHold = atoi(hold) * 1000ull;
     }
-    s_hwnd = hwnd;
     s_dev = device;
     s_ctx = ctx;
     IMGUI_CHECKVERSION();
@@ -67,35 +49,17 @@ void Overlay_Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* ctx)
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;   // nothing to remember between runs
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
-    std::string font = WindowsFont("segoeui.ttf");
-    if (!font.empty() && GetFileAttributesA(font.c_str()) != INVALID_FILE_ATTRIBUTES)
-        io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
+    std::string font = Platform_UiFont();
+    if (!font.empty()) io.Fonts->AddFontFromFileTTF(font.c_str(), 18.0f);
     SettingsUI_AddFallbackFonts();
     SettingsUI_ApplyStyle();
-    ImGui_ImplWin32_Init(hwnd);
+    UiBackend_Init(window);
     ImGui_ImplDX11_Init(device, ctx);
     UiImage_SetDevice(device);
     s_ready = true;
 }
 
-bool Overlay_WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-    if (!s_ready || !IsInput(msg)) return false;
-    if (msg == WM_KEYDOWN && (wp == VK_F1 || (wp == VK_ESCAPE && s_open)))
-    {
-        Overlay_Toggle();
-        return true;
-    }
-    if (!s_open) return false;
-    std::lock_guard lk(s_msgMutex);
-    MSG m{};
-    m.hwnd = hwnd;
-    m.message = msg;
-    m.wParam = wp;
-    m.lParam = lp;
-    s_msgs.push_back(m);
-    return msg != WM_SETFOCUS && msg != WM_KILLFOCUS;   // the game sees no keys or clicks while open
-}
+bool Overlay_Ready() { return s_ready; }
 
 void Overlay_Toggle()
 {
@@ -108,24 +72,17 @@ bool Overlay_IsOpen() { return s_open; }
 
 bool Overlay_TakeHomePress() { return s_homePress.exchange(false); }
 
-bool Overlay_ShotPending() { return s_shotPath && s_shotOpenAt && GetTickCount64() >= s_shotOpenAt; }
+bool Overlay_ShotPending() { return s_shotPath && s_shotOpenAt && Platform_TickMs() >= s_shotOpenAt; }
 
 void Overlay_Render(float w, float h)
 {
     if (!s_ready) return;
-    {
-        std::vector<MSG> msgs;
-        {
-            std::lock_guard lk(s_msgMutex);
-            msgs.swap(s_msgs);
-        }
-        for (auto& m : msgs) ImGui_ImplWin32_WndProcHandler(m.hwnd, m.message, m.wParam, m.lParam);
-    }
-    if (s_shotPath && s_shotOpenAt && GetTickCount64() >= s_shotOpenAt && !s_open) s_open = true;
+    UiBackend_ReplayInput();
+    if (s_shotPath && s_shotOpenAt && Platform_TickMs() >= s_shotOpenAt && !s_open) s_open = true;
     if (!s_open) return;
 
     ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
+    UiBackend_NewFrame();
     ImGui::GetIO().DisplaySize = ImVec2(w, h);   // the bound target (an off-screen one for screenshots)
     // scale with the window: designed for 720p
     float scale = std::max(0.75f, ImGui::GetIO().DisplaySize.y / 720.0f);
@@ -177,7 +134,7 @@ void Overlay_Render(float w, float h)
         {
             LOG_INFO("quit from the settings overlay");
             Gamepad_StopRumble();
-            TerminateProcess(GetCurrentProcess(), 0);
+            Platform_Terminate(0);
         }
         ImGui::SameLine();
         ImGui::TextDisabled("View / F1 / Esc closes");
@@ -189,7 +146,7 @@ void Overlay_Render(float w, float h)
 
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-    if (s_shotPath && s_shotOpenAt && GetTickCount64() >= s_shotOpenAt + s_shotHold)
+    if (s_shotPath && s_shotOpenAt && Platform_TickMs() >= s_shotOpenAt + s_shotHold)
     {
         UI_SaveBoundTarget(s_dev, s_ctx, s_shotPath);
         LOG_INFO("settings overlay screenshot saved to {}", s_shotPath);

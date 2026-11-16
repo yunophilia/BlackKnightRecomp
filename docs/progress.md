@@ -190,7 +190,8 @@ ON command completes and an UNMUTE succeeds (state machine around 0x801355A0).
   PATH is preferred when it is newer than VS's bundled clang. CMake rejects anything
   older than VS2022. Full build ~2.5 min (MSVC 2019 took ~25-30 min); the clang build
   used about 11% less CPU than the MSVC 2019 build over the same scripted 60 fps run.
-- `tools/dev_build.bat` finds the newest VS with vswhere, runs VsDevCmd and builds.
+- `tools/dev_build.ps1` finds the newest VS with vswhere, enters its developer environment
+  (`Enter-VsDevShell`) and builds.
 - Recompiled code avoids MSVC intrinsics (`ppc_bswap*`, `ppc_rotl32` in `ppc_context.h`)
   so the `linux-clang` preset builds it (verified with clang 21 in WSL).
 

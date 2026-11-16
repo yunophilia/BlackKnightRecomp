@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstring>
-#include <intrin.h>
+#include "../platform/compat.h"
 
 // Guest physical memory layout (Wii)
 constexpr uint32_t MEM1_SIZE = 0x01800000;   // 24 MiB

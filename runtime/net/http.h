@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <string>
 
-// HTTPS downloads for the mod browser (WinHTTP; redirects are followed). Blocking: call
-// them from a worker thread.
+// HTTPS downloads for the mod browser (platform/http.h; redirects are followed, never from
+// https to http). Blocking: call them from a worker thread.
 
 struct HttpProgress
 {
