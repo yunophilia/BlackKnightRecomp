@@ -18,7 +18,7 @@ enum : uint16_t
 {
     PAD_DPAD_UP = 0x0001, PAD_DPAD_DOWN = 0x0002, PAD_DPAD_LEFT = 0x0004, PAD_DPAD_RIGHT = 0x0008,
     PAD_START = 0x0010, PAD_BACK = 0x0020, PAD_LTHUMB = 0x0040, PAD_RTHUMB = 0x0080,
-    PAD_LB = 0x0100, PAD_RB = 0x0200, PAD_HOME = 0x0400,   // 0x0400: synthesised (Back+Start or H)
+    PAD_LB = 0x0100, PAD_RB = 0x0200, PAD_HOME = 0x0400,   // 0x0400: Back+Start, H, or the PS/Home button (SDL)
     PAD_A = 0x1000, PAD_B = 0x2000, PAD_X = 0x4000, PAD_Y = 0x8000,
 };
 
@@ -27,6 +27,7 @@ bool Gamepad_IsConnected(int index);
 bool Gamepad_RumbleAllowed();   // a person is playing: no input script, window focused
 void Gamepad_StopRumble();      // all motors off
 void Gamepad_ReloadBindings();  // config.ini bindings changed (settings UI)
+bool Gamepad_Scripted();        // automated input (TAS, input script, --autopress): real controllers unused
 
 // Keyboard and mouse binding names (config.ini [Keyboard])
 int Gamepad_KeyCode(const std::string& name);            // virtual-key code, 0 if unknown

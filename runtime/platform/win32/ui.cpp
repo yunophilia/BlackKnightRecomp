@@ -26,7 +26,12 @@ static std::wstring Widen(const std::string& s)
 
 // ---------------------------------------------------------------- ImGui platform backend
 void UiBackend_Init(void* window) { ImGui_ImplWin32_Init((HWND)window); }
-void UiBackend_NewFrame() { ImGui_ImplWin32_NewFrame(); }
+void Pad_FeedImGui();   // input.cpp: PlayStation and other non-XInput controllers
+void UiBackend_NewFrame()
+{
+    ImGui_ImplWin32_NewFrame();
+    Pad_FeedImGui();
+}
 void UiBackend_Shutdown() { ImGui_ImplWin32_Shutdown(); }
 
 // The overlay's input: window messages, replayed on the render thread

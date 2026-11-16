@@ -137,6 +137,8 @@ static void ApplyBindings(GamepadState& out, uint32_t phys, float lt, float rt)
 }
 
 bool g_autoPress = false;   // test aid: tap A every few seconds
+static bool ScriptLoaded();
+bool Gamepad_Scripted() { return ScriptLoaded() || g_autoPress || Tas_Active(); }
 
 // Rumble goes to the real controller, so it is only allowed when a person is playing:
 // not during scripted/automated input, and only while the game window has focus.
@@ -196,6 +198,8 @@ void Gamepad_LoadScript(const char* path)
     s_scriptStart = Platform_TickMs();
 }
 
+static bool ScriptLoaded() { return !s_script.empty(); }
+
 void Gamepad_Poll(int index, GamepadState& out)
 {
     out = GamepadState();
@@ -228,6 +232,7 @@ void Gamepad_Poll(int index, GamepadState& out)
         out.connected = true;
         float lt = st.lt / 255.0f, rt = st.rt / 255.0f;
         uint32_t phys = st.buttons & ~PAD_HOME;
+        if (st.buttons & PAD_HOME) out.buttons |= PAD_HOME;   // PS / Home button (SDL)
         if (index == 0)
         {
             // View (Back) toggles the settings overlay when released, unless Start was
@@ -313,7 +318,7 @@ void Gamepad_Poll(int index, GamepadState& out)
 
 bool Gamepad_RumbleAllowed()
 {
-    if (!s_script.empty() || g_autoPress || Tas_Active()) return false;
+    if (Gamepad_Scripted()) return false;
     return Window_Handle() && Window_Focused();
 }
 

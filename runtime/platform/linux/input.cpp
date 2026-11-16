@@ -2,6 +2,7 @@
 // on Linux, translated to XInput's layout and Windows key codes.
 #include "../input.h"
 #include "sdl.h"
+#include "../sdl_gamepad.h"
 #include "../../input/gamepad.h"
 #include "../../log.h"
 
@@ -37,13 +38,6 @@ void RemovePad(SDL_JoystickID id)
             s_pads[i] = nullptr;
         }
 }
-
-int16_t Axis(SDL_Gamepad* p, SDL_GamepadAxis a, bool invert)
-{
-    int v = SDL_GetGamepadAxis(p, a);
-    if (invert) v = -v - 1;   // SDL: down is positive; XInput: up is positive
-    return (int16_t)v;
-}
 }   // namespace
 
 void Input_HandleEvent(const SDL_Event& e)
@@ -57,25 +51,7 @@ bool Pad_Read(int index, PadState& out)
     std::lock_guard lk(s_padMutex);
     SDL_Gamepad* p = index >= 0 && index < 4 ? s_pads[index] : nullptr;
     if (!p) return false;
-    static const struct { SDL_GamepadButton b; uint16_t bit; } kButtons[] = {
-        { SDL_GAMEPAD_BUTTON_DPAD_UP, PAD_DPAD_UP }, { SDL_GAMEPAD_BUTTON_DPAD_DOWN, PAD_DPAD_DOWN },
-        { SDL_GAMEPAD_BUTTON_DPAD_LEFT, PAD_DPAD_LEFT }, { SDL_GAMEPAD_BUTTON_DPAD_RIGHT, PAD_DPAD_RIGHT },
-        { SDL_GAMEPAD_BUTTON_START, PAD_START }, { SDL_GAMEPAD_BUTTON_BACK, PAD_BACK },
-        { SDL_GAMEPAD_BUTTON_LEFT_STICK, PAD_LTHUMB }, { SDL_GAMEPAD_BUTTON_RIGHT_STICK, PAD_RTHUMB },
-        { SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, PAD_LB }, { SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, PAD_RB },
-        // by position, like XInput: bottom A, right B, left X, top Y
-        { SDL_GAMEPAD_BUTTON_SOUTH, PAD_A }, { SDL_GAMEPAD_BUTTON_EAST, PAD_B },
-        { SDL_GAMEPAD_BUTTON_WEST, PAD_X }, { SDL_GAMEPAD_BUTTON_NORTH, PAD_Y },
-    };
-    out = PadState();
-    for (auto& k : kButtons)
-        if (SDL_GetGamepadButton(p, k.b)) out.buttons |= k.bit;
-    out.lx = Axis(p, SDL_GAMEPAD_AXIS_LEFTX, false);
-    out.ly = Axis(p, SDL_GAMEPAD_AXIS_LEFTY, true);
-    out.rx = Axis(p, SDL_GAMEPAD_AXIS_RIGHTX, false);
-    out.ry = Axis(p, SDL_GAMEPAD_AXIS_RIGHTY, true);
-    out.lt = (uint8_t)(SDL_GetGamepadAxis(p, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) * 255 / 32767);
-    out.rt = (uint8_t)(SDL_GetGamepadAxis(p, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) * 255 / 32767);
+    SdlGamepad_Read(p, out);
     return true;
 }
 
@@ -85,6 +61,13 @@ void Pad_SetRumble(int index, uint16_t low, uint16_t high)
     SDL_Gamepad* p = index >= 0 && index < 4 ? s_pads[index] : nullptr;
     // XInput motors run until changed; SDL's stop after a duration (at most ~65 s)
     if (p) SDL_RumbleGamepad(p, low, high, low || high ? 0xFFFF : 0);
+}
+
+bool Pad_PlayStation(int index)
+{
+    std::lock_guard lk(s_padMutex);
+    SDL_Gamepad* p = index >= 0 && index < 4 ? s_pads[index] : nullptr;
+    return p && SdlGamepad_PlayStation(p);
 }
 
 bool Key_Down(int vk)
