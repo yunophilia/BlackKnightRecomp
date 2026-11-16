@@ -41,8 +41,9 @@ or very large image, the browser shows no preview. Removing a mod deletes its fo
 of moving it to the trash.
 
 Requirements: x86-64, glibc 2.35 or newer (Ubuntu 22.04, Debian 12, Fedora 36, current
-SteamOS 3 or later), a Vulkan driver (Mesa or NVIDIA), and FUSE 2 to run AppImages (on Ubuntu
-`libfuse2t64`; without it, start it with `--appimage-extract-and-run`).
+SteamOS 3 or later) and a Vulkan driver (Mesa or NVIDIA). The AppImage brings its own FUSE
+library and only needs `fusermount3` (package `fuse3`, part of desktop installations); without
+it, start it with `--appimage-extract-and-run`.
 
 ### Steam Deck
 
@@ -110,8 +111,10 @@ TAS scripts follow guest time, so they reach the same places.
 
 ## Checklist for testers
 
-The Linux build was developed and tested with software rendering only (lavapipe in WSL).
-What a first test on real hardware should cover, in about 20 minutes:
+The scripted tests (docs/tas.md) pass on a laptop with NVIDIA and Intel graphics under
+GNOME on Wayland and X11, from the build directory and from the AppImage. On such a laptop,
+dxvk picks the NVIDIA GPU by itself; `DXVK_FILTER_DEVICE_NAME=Intel` selects the other.
+What a test on other hardware should cover, in about 20 minutes:
 
 1. Start the AppImage from a terminal (`./BlackKnightRecomp-*.AppImage`) so its messages
    are visible. The launcher should open; install from your disc image (the file dialog
