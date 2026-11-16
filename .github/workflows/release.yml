@@ -9,13 +9,13 @@
 # into the release. The two build jobs use the environment and start together, so one
 # approval covers both.
 #
-# The inputs are pinned to a tag of the private repository (PRIVATE_INPUTS_REF below), so
-# every release rebuilds from exactly the inputs it was made with. Whenever the inputs
-# change, create a new annotated tag in the private repository (inputs-<name>) and bump
-# PRIVATE_INPUTS_REF to it in the same PR as the change that needs them. v1.0.0 predates this
-# pinning: its workflow reads the private repository's default branch with the USA files at
-# the top level, which is now only the layout of the tag inputs-v1.0.0, so re-running v1.0.0's
-# workflow no longer works (its release files stay as published).
+# The inputs are read from the private repository's tag with the same name as the release
+# tag (v1.0.2 builds from the private v1.0.2), so every release rebuilds from exactly the
+# inputs it was made with. Before pushing a release tag here, push the same tag to the
+# private repository (annotated, on the commit with that release's inputs, even when they are
+# unchanged); without it the build jobs stop at "Fetch build inputs". v1.0.0 and v1.0.1 used
+# other names (v1.0.0 read the default branch, v1.0.1 the tag inputs-multiregion-1); since
+# the inputs moved to one folder per release, re-running v1.0.0's workflow no longer works.
 name: Release
 
 on:
@@ -26,10 +26,6 @@ on:
 # FetchContent dependencies, appimagetool); only the publish job can write (the release)
 permissions:
   contents: read
-
-env:
-  # build inputs: tag in yunophilia/BlackKnightRecomp-private (see the header)
-  PRIVATE_INPUTS_REF: inputs-multiregion-2
 
 jobs:
   windows:
@@ -45,7 +41,7 @@ jobs:
         with:
           repository: yunophilia/BlackKnightRecomp-private
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
-          ref: ${{ env.PRIVATE_INPUTS_REF }}
+          ref: ${{ github.ref_name }}   # the private tag named like this release
           path: private-inputs
           persist-credentials: false   # the token is not kept in the checkout
 
@@ -123,7 +119,7 @@ jobs:
         with:
           repository: yunophilia/BlackKnightRecomp-private
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
-          ref: ${{ env.PRIVATE_INPUTS_REF }}
+          ref: ${{ github.ref_name }}   # the private tag named like this release
           path: private-inputs
           persist-credentials: false   # the token is not kept in the checkout
 
