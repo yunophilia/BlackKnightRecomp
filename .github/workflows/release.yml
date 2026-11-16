@@ -9,13 +9,13 @@
 # into the release. The two build jobs use the environment and start together, so one
 # approval covers both.
 #
-# The inputs are pinned to a tag of the private repository (PRIVATE_INPUTS_REF below), so
-# every release rebuilds from exactly the inputs it was made with. Whenever the inputs
-# change, create a new annotated tag in the private repository (inputs-<name>) and bump
-# PRIVATE_INPUTS_REF to it in the same PR as the change that needs them. Releases tagged
-# before this pinning (v1.0.0) keep their old workflow, which reads the private repository's
-# default branch; that still gives their inputs, because the top-level USA files are never
-# moved or changed (they are tagged inputs-v1.0.0).
+# The inputs are read from the private repository's tag with the same name as the release
+# tag (v1.0.2 builds from the private v1.0.2), so every release rebuilds from exactly the
+# inputs it was made with. Before pushing a release tag here, push the same tag to the
+# private repository (annotated, on the commit with that release's inputs, even when they are
+# unchanged); without it the build jobs stop at "Fetch build inputs". v1.0.0 and v1.0.1 used
+# other names (v1.0.0 read the default branch, v1.0.1 the tag inputs-multiregion-1); since
+# the inputs moved to one folder per release, re-running v1.0.0's workflow no longer works.
 name: Release
 
 on:
@@ -26,10 +26,6 @@ on:
 # FetchContent dependencies, appimagetool); only the publish job can write (the release)
 permissions:
   contents: read
-
-env:
-  # build inputs: tag in yunophilia/BlackKnightRecomp-private (see the header)
-  PRIVATE_INPUTS_REF: inputs-multiregion-1
 
 jobs:
   windows:
@@ -45,19 +41,17 @@ jobs:
         with:
           repository: yunophilia/BlackKnightRecomp-private
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
-          ref: ${{ env.PRIVATE_INPUTS_REF }}
+          ref: ${{ github.ref_name }}   # the private tag named like this release
           path: private-inputs
           persist-credentials: false   # the token is not kept in the checkout
 
-      # Private repository layout, one folder per release (the USA files may also be at the
-      # top level, as before):
+      # Private repository layout, one folder per release:
       #   <ID>/sys/main.dol  <ID>/files/BLACKKNIGHT.sel  <ID>/files/hbm_part.rso  <ID>/mem2_dump.bin
       - name: Place build inputs
         shell: pwsh
         run: |
           foreach ($id in "RENE8P", "RENP8P", "RENJ8P") {
             $src = "private-inputs/$id"
-            if (-not (Test-Path $src) -and $id -eq "RENE8P") { $src = "private-inputs" }
             New-Item -ItemType Directory -Force game/$id/sys, game/$id/files, out/$id | Out-Null
             Copy-Item $src/sys/main.dol game/$id/sys/
             Copy-Item $src/files/BLACKKNIGHT.sel, $src/files/hbm_part.rso game/$id/files/
@@ -125,7 +119,7 @@ jobs:
         with:
           repository: yunophilia/BlackKnightRecomp-private
           token: ${{ secrets.PRIVATE_FILES_TOKEN }}
-          ref: ${{ env.PRIVATE_INPUTS_REF }}
+          ref: ${{ github.ref_name }}   # the private tag named like this release
           path: private-inputs
           persist-credentials: false   # the token is not kept in the checkout
 
@@ -133,7 +127,6 @@ jobs:
         run: |
           for id in RENE8P RENP8P RENJ8P; do
             src=private-inputs/$id
-            if [ ! -d "$src" ] && [ $id = RENE8P ]; then src=private-inputs; fi
             mkdir -p game/$id/sys game/$id/files out/$id
             cp $src/sys/main.dol game/$id/sys/
             cp $src/files/BLACKKNIGHT.sel $src/files/hbm_part.rso game/$id/files/
