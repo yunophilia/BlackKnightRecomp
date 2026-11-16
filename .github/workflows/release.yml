@@ -76,11 +76,12 @@ jobs:
           git diff --exit-code runtime/game_addrs.inc   # the committed address table matches
 
       - name: Build
-        shell: cmd
+        shell: pwsh
         env:
           BKR_VERSION: ${{ github.ref_name }}   # shown in the launcher and the overlay
         run: |
-          call tools\dev_build.bat || (type out\build.log & exit /b 1)
+          ./tools/dev_build.ps1
+          if ($LASTEXITCODE -ne 0) { Get-Content out/build.log; exit 1 }
 
       - name: Package
         shell: pwsh

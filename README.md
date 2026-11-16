@@ -124,8 +124,9 @@ Requirements:
 - Optional: a newer standalone [LLVM](https://github.com/llvm/llvm-project/releases)
   (`winget install LLVM.LLVM`); the presets use whichever `clang-cl` comes first on `PATH`
 
-Run the commands from a "Developer PowerShell for VS", or use `tools/dev_build.bat` for the
-build steps, which sets that up.
+Run the commands from a "Developer PowerShell for VS", or use `tools/dev_build.ps1` for the
+build steps, which sets that up from any PowerShell window
+(`powershell -ExecutionPolicy Bypass -File tools\dev_build.ps1` where scripts are not allowed).
 
 1. Configure and build the installer (before the game code is generated, only
    `bkr_install` is built):
@@ -166,7 +167,7 @@ build steps, which sets that up.
    cmake --build --preset windows-clang
    ```
    The exe is written to `out/`. Rebuilds are incremental, so after editing the runtime
-   only the build command is needed (`tools/dev_build.bat` runs it). Other presets:
+   only the build command is needed (`tools/dev_build.ps1` runs it). Other presets:
    `windows-msvc` (run it from a Visual Studio x64 Developer prompt; with VS2019 use `vcvars64.bat 10.0.19041.0`, its linker crashes on newer SDKs) and `linux-clang`
    (the Linux build; packages and details in [docs/linux.md](docs/linux.md)).
    `tools/package.ps1` collects the exe and README into `dist/BlackKnightRecomp/`, with a

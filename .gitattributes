@@ -1,8 +1,6 @@
+# every text file is checked out with LF, on every platform
+* text=auto eol=lf
 *.bin binary
 *.rar binary
 *.png binary
 *.jpg binary
-# shell scripts run on Linux (also from a Windows checkout, e.g. in WSL)
-*.sh text eol=lf
-# packaged into the AppImage as they are (appimagetool rejects CRLF in .desktop files)
-data/linux/** text eol=lf
