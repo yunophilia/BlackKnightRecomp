@@ -31,7 +31,14 @@ try
 {
     if (-not $env:VSCMD_VER)
     {
+        # where the Visual Studio Installer puts it, else a vswhere.exe on PATH
         $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        if (-not (Test-Path $vswhere))
+        {
+            $onPath = Get-Command vswhere.exe -CommandType Application -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+            if ($onPath) { $vswhere = $onPath.Source }
+        }
         $vsDir = $null
         if (Test-Path $vswhere)
         {
